@@ -112,9 +112,15 @@ mercadex/
 }
 ```
 
-### Frontend: React 18 + Next.js 14
+### Frontend: Protótipo HTML/JS Vanilla evoluindo para React 18 + Next.js 14
 
-**Por que React?**
+**Fase 1: Prototipação Rápida (Atual)**
+Inicialmente, o frontend será desenvolvido apenas como um **protótipo estático** utilizando **HTML5, Vanilla JavaScript e Tailwind CSS via CDN**. Esta abordagem permite uma validação imediata da interface, fluxos e design sem o overhead de configuração de um framework complexo.
+
+**Fase 2: Arquitetura Definitiva (Futuro)**
+Posteriormente, conforme a validação do produto avance, migraremos para a estrutura sugerida (React + Next.js).
+
+**Por que React? (Fase 2)**
 - Melhor UX (reatividade)
 - Maior comunidade frontend
 - Fácil encontrar desenvolvedores
