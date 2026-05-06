@@ -4,6 +4,7 @@
 
 Neste diagrama ER, além das entidades `Usuário`, `Produto` e `Pedido`, estão as entidades de suporte fundamentais para um e-commerce: `Categoria` (para organizar os produtos), `ItemPedido` (para quebrar o relacionamento N:M entre Pedidos e Produtos, guardando o valor histórico na hora da compra), `Carrinho` e `ItemCarrinho`.
 
+
 ```mermaid
 erDiagram
     USUARIO {
