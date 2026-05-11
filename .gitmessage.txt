@@ -1,0 +1,14 @@
+# <type>(<scope>): <subject>
+#
+# Types: feat, fix, docs, refactor, test, chore, build, ci, perf
+# Scope: optional, but use it when the change is clearly tied to one area
+# Subject: imperative mood, concise, lowercase
+#
+# Body:
+# - What changed
+# - Why it changed
+# - Any tradeoffs or follow-up work
+#
+# Footer:
+# - BREAKING CHANGE: ...
+# - Closes #123
