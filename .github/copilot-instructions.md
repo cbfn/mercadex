@@ -7,7 +7,7 @@ These instructions apply to the Mercadex workspace. Treat `docs/ADR.md` as the s
 ## Hard Rules
 
 - Use semantic commit messages for every commit, with a clear type and concise scope when relevant.
-- Follow git-flow branch naming when creating or naming work branches.
+- Follow git-flow branch naming when creating or naming work branches: use `feature/<short-description>` for new work, `bugfix/<short-description>` for non-production fixes, `hotfix/<short-description>` for urgent production fixes, and `release/<version-or-name>` for release preparation branches.
 - Run the relevant tests before every commit. If tests do not exist yet for the touched area, add the smallest useful validation you can.
 
 ## Architecture Rules
