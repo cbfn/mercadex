@@ -1,54 +1,299 @@
 # Mercadex — Marketplace de Eletrônicos
 
-O **Mercadex** é um protótipo de *e-commerce* voltado para a venda de eletrônicos. O projeto apresenta uma interface interativa e amigável construída com tecnologias web modernas (HTML, CSS e JavaScript puros, utilizando o suporte visual do Tailwind CSS).
+[![Status](https://img.shields.io/badge/status-MVP%20Phase%201-blue)]()
+[![License](https://img.shields.io/badge/license-MIT-green)]()
+
+## 📋 Sobre o Projeto
+
+**Mercadex** é um marketplace de eletrônicos em desenvolvimento, construído como MVP (Produto Mínimo Viável) com arquitetura monolítica modular. O projeto separa claramente frontend e backend, permitindo evolução independente de cada camada.
+
+**Objetivo:** Validar fluxos de compra e UX antes de escalar para produção. A Fase 1 (atual) foca na prototipagem do frontend com interface interativa; a Fase 2 implementará o backend robusto com persistência de dados.
+
+---
 
 ## 🚀 Funcionalidades
 
-- **Catálogo de Produtos:** Listagem de eletrônicos variados com opções de listagem e filtragem por categoria.
-- **Detalhes do Produto:** Informações detalhadas apresentadas em um modal interativo (especificações, preços, avaliações).
-- **Carrinho de Compras:** Adicionar, alterar quantidades e remover produtos do carrinho atualizações de valores (subtotal e total) em tempo real.
-- **Fluxo de Checkout:** Um fluxo dinâmico divido em etapas completas, englobando dados de entrega, simulação de pagamento (Pix, Cartão, Boleto) e painel de Pedido Confirmado!
-- **Responsividade:** O design é todo flexível, ajustando-se tanto a telas de dispositivos móveis quanto ao desktop.
+### Fase 1 (Atual - Protótipo Frontend)
+- ✅ **Catálogo Dinâmico:** Listagem de eletrônicos com filtragem por categoria
+- ✅ **Modal de Detalhes:** Visualização completa de especificações, preços e avaliações
+- ✅ **Carrinho Interativo:** Adicionar, alterar quantidades, remover itens com atualização em tempo real
+- ✅ **Checkout Multi-Etapa:** Entrega → Pagamento (Pix/Cartão/Boleto) → Confirmação
+- ✅ **Design Responsivo:** Layout fluido para mobile, tablet e desktop
+- ✅ **Estado em Memória:** Gerenciamento de carrinho e checkout sem backend
 
-## 🛠 Tecnologias Utilizadas
+### Fase 2 (Planejado)
+- 🔄 Backend com API REST em Node.js + TypeScript
+- 🔄 Autenticação com JWT e refresh tokens
+- 🔄 Persistência em PostgreSQL
+- 🔄 Integração com gateways de pagamento (Stripe/Pix)
+- 🔄 Sistema de pedidos e tracking
+- 🔄 Dashboard administrativo
+- 🔄 Frontend migrado para React + Next.js
 
-- **HTML5:** Estruturação semântica em blocos (separando categorias, grid de produtos e modais).
-- **CSS3 (`fronted/css/style.css`):** Animações customizadas (`keyframes`), comportamento do painel lateral e barras de scroll padronizadas.
-- **JavaScript Vanilla (`frontend/js/main.js`):** Gerenciamento de estado (`state`) do carrinho, navegação multi-etapas para finalização de compra e renderizações dinâmicas na interface.
-- **Tailwind CSS:** Para estilização utilitária aplicada via CDN e organização do layout fluido.
+---
 
-## 💻 Como Rodar o Projeto Localmente
+## 🛠 Tech Stack
 
-Sendo uma aplicação estática na sua camada frontend, o método mais rápido e indicado de rodar é subindo um servidor HTTP local simples com a ajuda do **Python 3**.
+### Frontend (Fase 1 - Atual)
+| Tecnologia | Uso | Motivo |
+|-----------|-----|--------|
+| **HTML5** | Estrutura semântica | Padrão web, SEO nativo |
+| **CSS3** | Animações e estilos customizados | Controle fino de UX |
+| **JavaScript Vanilla** | Lógica de estado e interatividade | Sem dependências externas (MVP rápido) |
+| **Tailwind CSS** | Utilidades de layout (via CDN) | Desenvolvimento ágil |
 
-**Passo a passo:**
-
-1. Abra seu Terminal e verifique se o Python está devidamente instalado em sua máquina:
-   ```bash
-   python3 --version
-   ```
-
-2. Pelo terminal (na pasta raiz do projeto Mercadex), inicie o módulo HTTP Server nativo do Python:
-   ```bash
-   python3 -m http.server 8000
-   ```
-   *(Caso não funcione, seu sistema pode suportar apenas `python -m http.server 8000` ou até `python -m SimpleHTTPServer 8000` em versões antigas).*
-
-3. Em seguida, acesse através de seu navegador (Browser):
-   👉 **[http://localhost:8000/frontend/](http://localhost:8000/frontend/)**
-
-> **Importante:** Sempre rode o comando estando do raiz do repositório, garantindo que o seu servidor consiga alcançar devidamente o arquivo da logomarca na raiz (`logo-mercadex.png`), preservando a referência relativa dos assets.
-
-## 🤝 Contribuindo
-
-### Configurar o template de commit
-
-Este repositório inclui um template de mensagem de commit em `.gitmessage.txt` que segue o padrão [Conventional Commits](https://www.conventionalcommits.org/). Para ativá-lo localmente, execute na raiz do projeto:
-
-```bash
-git config commit.template .gitmessage.txt
+### Backend (Fase 2 - Planejado)
+```
+Node.js 20+ (runtime)
+├── TypeScript (type safety)
+├── Express.js (API REST)
+├── PostgreSQL 15+ (persistência)
+├── TypeORM/Prisma (ORM)
+├── JWT (autenticação)
+└── Redis (cache/async jobs)
 ```
 
-A partir daí, cada `git commit` (sem `-m`) abrirá o editor com o template preenchido como guia.
+---
 
-Para referência completa de convenções de branch e commits, consulte [`.github/copilot-instructions.md`](.github/copilot-instructions.md).
+## 📁 Estrutura do Projeto
+
+```
+mercadex/
+├── README.md                  # Este arquivo
+├── .gitignore                 # Configuração de versionamento
+├── CLAUDE.md                  # Documentação para Claude Code
+├── logo-mercadex.png         # Asset - logomarca
+│
+├── frontend/                  # Frontend Phase 1 (estático)
+│   ├── index.html            # HTML semântico
+│   ├── css/
+│   │   └── style.css         # Animações, componentes customizados
+│   ├── js/
+│   │   └── main.js           # Gerenciamento de estado + interatividade
+│   └── assets/
+│       └── (imagens, ícones)
+│
+├── backend/                   # Backend Phase 2 (estrutura preparada)
+│   ├── src/
+│   │   ├── modules/
+│   │   │   ├── auth/         # Autenticação
+│   │   │   ├── users/        # Gestão de usuários
+│   │   │   ├── products/     # Catálogo
+│   │   │   ├── cart/         # Carrinho
+│   │   │   └── orders/       # Pedidos
+│   │   ├── shared/           # Código compartilhado
+│   │   │   ├── middleware/
+│   │   │   ├── utils/
+│   │   │   ├── errors/
+│   │   │   └── types/
+│   │   └── app.ts            # Entry point
+│   ├── tests/                # Testes unitários e integração
+│   └── package.json          # Dependências (Fase 2)
+│
+└── docs/                      # Documentação técnica
+    ├── ADR.md                # Decisões arquiteturais
+    ├── DIAGRAMAS.md          # Diagramas de fluxo
+    ├── BACKLOG.md            # Roadmap do projeto
+    ├── USER_STORIES.md       # Histórias de usuário
+    └── PRD_CHECKOUT.md       # Product Requirements (checkout)
+```
+
+---
+
+## 🚀 Como Rodar Localmente
+
+### Pré-requisitos
+
+- **Python 3.7+** (para servir frontend estático)
+- **Git** (para versionamento)
+- [Opcional] **Node.js 20+** e **npm** (para Phase 2)
+
+### Startup Rápido (Frontend Phase 1)
+
+```bash
+# 1. Clone e navegue até o diretório raiz
+git clone https://github.com/cbfn/mercadex.git
+cd mercadex
+
+# 2. Inicie servidor HTTP (Python 3)
+python3 -m http.server 8000
+
+# 3. Acesse no navegador
+# http://localhost:8000/frontend/
+```
+
+**⚠️ Importante:** Execute sempre da **raiz do projeto** para que assets relativos (logo) funcionem corretamente.
+
+### Alternativas para Servir Frontend
+
+```bash
+# Usando Node.js (se instalado)
+npx http-server frontend -p 8000
+
+# Usando PHP
+php -S localhost:8000
+
+# Usando Ruby
+ruby -run -ehttpd . -p8000
+```
+
+---
+
+## 📖 Como Usar o Mercadex
+
+### Fluxo do Cliente
+
+1. **Navegação:** Browse produtos por categoria
+2. **Detalhes:** Clique em um produto para modal com especificações
+3. **Carrinho:** Adicione itens, ajuste quantidades
+4. **Checkout:** Preencha entrega, escolha pagamento, veja confirmação
+5. **Estado:** Carrinho persiste em `localStorage` durante sessão
+
+### Exemplo de Interação (JSON do Estado)
+
+```javascript
+// State armazenado em memória (frontend/js/main.js)
+state = {
+  cart: [
+    { id: 1, name: "Smartphone X", price: 999.99, qty: 1 },
+    { id: 5, name: "Fone Bluetooth", price: 199.99, qty: 2 }
+  ],
+  checkout: {
+    currentStep: "payment",  // "delivery" | "payment" | "confirmation"
+    delivery: { address: "...", zip: "..." },
+    payment: { method: "pix" }
+  }
+}
+```
+
+---
+
+## 🔧 Desenvolvimento
+
+### Estrutura Frontend (Fase 1)
+
+**HTML Semântico:**
+```html
+<main id="products-section">
+  <section class="category"></section>
+  <article class="product-card" data-product-id="1"></article>
+</main>
+```
+
+**JavaScript - Padrão State:**
+```javascript
+// Object global gerenciando todo state
+const state = {
+  cart: [],
+  checkout: { currentStep: "delivery", ... },
+  ...
+};
+
+// Funções puras atualizando state
+function addToCart(productId) { state.cart.push(...); render(); }
+```
+
+**Tailwind CSS via CDN:**
+```html
+<script src="https://cdn.tailwindcss.com"></script>
+```
+
+### Debug e Desenvolvimento
+
+```javascript
+// No console do navegador (DevTools)
+console.log(state);        // Inspecione estado atual
+state.cart = [];           // Reset carrinho
+localStorage.clear();      // Limpe cache
+```
+
+---
+
+## 🤝 Como Contribuir
+
+### Workflow Git
+
+```
+main (produção)
+ ↓
+develop (integração)
+ ↓
+feature/nome-curto (seu trabalho)
+```
+
+### Passos para Contribuir
+
+1. **Fork** o repositório
+2. **Clone** seu fork: `git clone https://github.com/SEU_USER/mercadex.git`
+3. **Crie branch:** `git checkout -b feature/descricao-curta`
+4. **Commit com mensagens descritivas:** `git commit -m "feat: adiciona filtro por preço"`
+5. **Push:** `git push origin feature/descricao-curta`
+6. **Abra Pull Request** contra `develop`
+
+### Convenções
+
+- **Commits:** Use `feat:`, `fix:`, `docs:`, `refactor:`, `test:`
+- **Branches:** `feature/`, `bugfix/`, `docs/`
+- **Code style:** Prettier + ESLint (configurar em Fase 2)
+
+---
+
+## 📚 Documentação
+
+- **[CLAUDE.md](./CLAUDE.md)** - Instruções para Claude Code e arquitetura geral
+- **[docs/ADR.md](./docs/ADR.md)** - Decisões arquiteturais e trade-offs
+- **[docs/DIAGRAMAS.md](./docs/DIAGRAMAS.md)** - Fluxogramas de negócio
+- **[docs/USER_STORIES.md](./docs/USER_STORIES.md)** - Histórias de usuário
+- **[docs/BACKLOG.md](./docs/BACKLOG.md)** - Roadmap e prioridades
+
+---
+
+## ❓ FAQ / Troubleshooting
+
+**P: O servidor não consegue acessar a logo?**
+- R: Execute `python3 -m http.server 8000` **da raiz** do repositório, não da pasta `frontend/`
+
+**P: Posso rodar o backend agora?**
+- R: Não. A Fase 1 é frontend-only. Backend será implementado em Fase 2 com Node.js + TypeScript
+
+**P: Como limpo o carrinho?**
+- R: Console do navegador: `state.cart = []` ou `localStorage.clear()`
+
+**P: Qual é o plano pós-MVP?**
+- R: Ver [docs/BACKLOG.md](./docs/BACKLOG.md) para roadmap completo (React, API, DB, etc.)
+
+---
+
+## 📊 Roadmap
+
+| Fase | Status | Foco | ETA |
+|------|--------|------|-----|
+| **1** | 🔄 Em Progresso | Frontend interativo, UX validation | Maio 2026 |
+| **2** | 📋 Planejado | Backend API, PostgreSQL, Auth | Jun-Jul 2026 |
+| **3** | 📋 Planejado | Frontend React, Integração pagamento | Ago 2026 |
+
+---
+
+## 📄 Licença
+
+Este projeto é licenciado sob a **MIT License** - veja [LICENSE](./LICENSE) para detalhes.
+
+---
+
+## 👤 Autor
+
+**Leandro Prado Pires**
+- Email: leandropradopires02@gmail.com
+- GitHub: [@cbfn](https://github.com/cbfn)
+
+---
+
+## 🙋 Suporte
+
+Encontrou um bug ou tem uma sugestão?
+- **Issues:** [GitHub Issues](https://github.com/cbfn/mercadex/issues)
+- **Discussões:** [GitHub Discussions](https://github.com/cbfn/mercadex/discussions)
+
+---
+
+**Última atualização:** Maio 2026 | Mercadex MVP Phase 1
