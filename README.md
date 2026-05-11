@@ -38,3 +38,17 @@ Sendo uma aplicação estática na sua camada frontend, o método mais rápido e
    👉 **[http://localhost:8000/frontend/](http://localhost:8000/frontend/)**
 
 > **Importante:** Sempre rode o comando estando do raiz do repositório, garantindo que o seu servidor consiga alcançar devidamente o arquivo da logomarca na raiz (`logo-mercadex.png`), preservando a referência relativa dos assets.
+
+## 🤝 Contribuindo
+
+### Configurar o template de commit
+
+Este repositório inclui um template de mensagem de commit em `.gitmessage.txt` que segue o padrão [Conventional Commits](https://www.conventionalcommits.org/). Para ativá-lo localmente, execute na raiz do projeto:
+
+```bash
+git config commit.template .gitmessage.txt
+```
+
+A partir daí, cada `git commit` (sem `-m`) abrirá o editor com o template preenchido como guia.
+
+Para referência completa de convenções de branch e commits, consulte [`.github/copilot-instructions.md`](.github/copilot-instructions.md).
