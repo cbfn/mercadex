@@ -10,8 +10,8 @@
 
 - [ ] Relevant tests or checks were run
 - [ ] The change matches the ADR and repo structure
-- [ ] The branch follows git-flow naming
-- [ ] The commit message uses a semantic format
+- [ ] The branch follows git-flow naming (for example, `feature/<name>` or `hotfix/<name>`; see `.github/copilot-instructions.md`)
+- [ ] The commit message uses a semantic format (for example, `feat: add X` or `fix: resolve Y`; see `.gitmessage.txt`)
 
 ## Notes
 
