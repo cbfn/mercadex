@@ -1,0 +1,5 @@
+fdb053e chore(root): add root package.json for frontend PR support
+ab4e1f4 feat(frontend): apply frontend-only changes from migration branch
+0a1bd11 Merge pull request #1 from cbfn/feature/copilot-instructions
+package.json
+{"baseRefName":"main","commits":1,"headRefName":"feature/frontend-only","url":"https://github.com/cbfn/mercadex/pull/3"}
