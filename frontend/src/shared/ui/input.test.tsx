@@ -1,10 +1,48 @@
+import React from "react";
 import { render, screen } from "@testing-library/react";
-import { describe, it, expect } from "vitest";
-import { Input } from "./input";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
+import { Input } from "@/shared/ui/input";
 
 describe("Input", () => {
-  it("should render correctly", () => {
-    render(<Input placeholder="Type here" />);
-    expect(screen.getByPlaceholderText("Type here")).toBeInTheDocument();
+  it("renders an input element", () => {
+    render(<Input aria-label="test" />);
+    expect(screen.getByRole("textbox")).toBeInTheDocument();
+  });
+
+  it("applies uiInput class", () => {
+    const { container } = render(<Input />);
+    expect((container.firstChild as HTMLElement).className).toContain("uiInput");
+  });
+
+  it("merges extra className", () => {
+    const { container } = render(<Input className="custom" />);
+    const cls = (container.firstChild as HTMLElement).className;
+    expect(cls).toContain("uiInput");
+    expect(cls).toContain("custom");
+  });
+
+  it("forwards placeholder", () => {
+    render(<Input placeholder="Enter name" />);
+    expect(screen.getByPlaceholderText("Enter name")).toBeInTheDocument();
+  });
+
+  it("fires onChange", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(<Input aria-label="name" onChange={onChange} />);
+
+    await user.type(screen.getByRole("textbox"), "a");
+    expect(onChange).toHaveBeenCalled();
+  });
+
+  it("supports required attribute", () => {
+    render(<Input required aria-label="req" />);
+    expect(screen.getByRole("textbox")).toBeRequired();
+  });
+
+  it("forwards value prop", () => {
+    render(<Input value="hello" readOnly aria-label="val" />);
+    expect(screen.getByRole("textbox")).toHaveValue("hello");
   });
 });
