@@ -11,7 +11,7 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Select } from "@/shared/ui/select";
 import { formatBRL } from "@/shared/lib/currency";
-import logoMercadex from "../../../../assets/logo-mercadex.png";
+import logoMercadex from "@/assets/logo-mercadex.png";
 import { ShoppingBag, Search } from "lucide-react";
 
 export function StorefrontPage() {
