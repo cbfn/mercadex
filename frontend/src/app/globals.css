@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+	:root {
+		--background: 220 33% 99%;
+		--foreground: 224 56% 15%;
+		--card: 0 0% 100%;
+		--card-foreground: 224 56% 15%;
+		--primary: 34 97% 52%;
+		--primary-foreground: 224 56% 12%;
+		--secondary: 222 46% 16%;
+		--secondary-foreground: 0 0% 100%;
+		--muted: 215 28% 95%;
+		--muted-foreground: 220 14% 44%;
+		--accent: 210 100% 96%;
+		--accent-foreground: 219 66% 28%;
+		--border: 220 25% 89%;
+		--input: 220 25% 89%;
+		--ring: 34 97% 52%;
+		--radius: 0.9rem;
+	}
+
+	* {
+		@apply border-border;
+	}
+
+	body {
+		@apply min-h-screen bg-background font-sans text-foreground antialiased;
+		background-image: radial-gradient(circle at 0% 0%, rgba(255, 178, 51, 0.15), transparent 35%),
+			radial-gradient(circle at 100% 0%, rgba(23, 45, 102, 0.12), transparent 40%);
+	}
+}
+
+@layer components {
+	.mesh-bg {
+		background-image: radial-gradient(circle at 15% 20%, rgba(255, 156, 24, 0.22), transparent 30%),
+			radial-gradient(circle at 85% 0%, rgba(31, 63, 140, 0.2), transparent 35%),
+			linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.94));
+	}
+}
