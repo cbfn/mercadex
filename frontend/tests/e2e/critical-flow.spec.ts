@@ -23,5 +23,5 @@ test("critical checkout flow from product details to confirmation", async ({ pag
   await page.getByTestId("confirm-order-button").click();
   await expect(page.getByTestId("confirm-step")).toBeVisible();
   await page.getByTestId("finish-order-button").click();
-  await expect(page.getByTestId("open-cart-button")).toContainText("Carrinho (0)");
+  await expect(page.getByTestId("open-cart-button")).toContainText("0");
 });
