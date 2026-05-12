@@ -2,6 +2,7 @@
 
 [![Status](https://img.shields.io/badge/status-MVP%20Phase%201-blue)]()
 [![License](https://img.shields.io/badge/license-MIT-green)]()
+[![Frontend CI](https://github.com/cbfn/mercadex/actions/workflows/ci.yml/badge.svg)](https://github.com/cbfn/mercadex/actions/workflows/ci.yml)
 
 ## 📋 Sobre o Projeto
 
