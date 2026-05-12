@@ -11,6 +11,8 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Select } from "@/shared/ui/select";
 import { formatBRL } from "@/shared/lib/currency";
+import logoMercadex from "../../../../assets/logo-mercadex.png";
+import { ShoppingBag, Search } from "lucide-react";
 
 export function StorefrontPage() {
   const { category, searchQuery, sortBy, filteredProducts, setCategory, setSearchQuery, setSortBy, resetFilters } =
@@ -25,7 +27,7 @@ export function StorefrontPage() {
 
       <header className="header">
         <div className="container headerRow">
-          <strong>Mercadex</strong>
+          <Image src={logoMercadex} alt="Mercadex" width={447} height={128} className="brandLogo" priority />
           <Input
             data-testid="search-input"
             aria-label="Buscar produtos"
@@ -33,8 +35,9 @@ export function StorefrontPage() {
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
           />
-          <Button onClick={openCart} data-testid="open-cart-button">
-            Carrinho ({quantity})
+          <Button onClick={openCart} data-testid="open-cart-button" variant="primary">
+            <ShoppingBag size={20} strokeWidth={1.5} />
+            {quantity}
           </Button>
         </div>
       </header>

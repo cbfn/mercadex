@@ -1,21 +1,23 @@
 :root {
-  --bg: #f6f8fc;
+  --bg: #f5f5f7;
   --surface: #ffffff;
-  --surface-soft: #f2f4f8;
-  --text: #1e2633;
-  --muted: #5f6d85;
-  --line: #dde3ee;
-  --primary: #ff8a00;
-  --primary-strong: #e97800;
-  --secondary: #3b5bdb;
-  --success: #228b22;
-  --danger: #d94848;
+  --surface-soft: #fbfbfd;
+  --text: #1d1d1f;
+  --muted: #86868b;
+  --line: rgba(0, 0, 0, 0.08); /* softer, semitransparent lines */
+  --primary: #0066cc; /* Apple Blue */
+  --primary-strong: #004499;
+  --secondary: #000000;
+  --success: #34c759;
+  --danger: #ff3b30;
   --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
-  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.08);
-  --shadow-md: 0 8px 24px rgba(16, 24, 40, 0.12);
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+  --shadow-sm: 0 4px 10px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.1);
+  --blur: blur(20px);
 }
 
 * {
@@ -28,7 +30,9 @@ body {
   padding: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 button,
@@ -51,7 +55,9 @@ a {
   position: sticky;
   top: 0;
   z-index: 20;
-  background: var(--surface);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
   border-bottom: 1px solid var(--line);
 }
 
@@ -60,6 +66,11 @@ a {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.brandLogo {
+  width: clamp(150px, 18vw, 210px);
+  height: auto;
 }
 
 .toolbar {
@@ -76,46 +87,57 @@ a {
 }
 
 .categories button {
-  border: 1px solid var(--line);
+  border: none;
   background: var(--surface);
-  border-radius: var(--radius-lg);
-  padding: 8px 12px;
-  color: var(--muted);
+  border-radius: 999px;
+  padding: 8px 16px;
+  color: var(--text);
+  font-weight: 500;
+  box-shadow: var(--shadow-sm);
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.categories button:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 .categories button[aria-pressed="true"] {
-  border-color: var(--secondary);
-  background: #e9eeff;
-  color: #1f3e9a;
+  background: var(--text);
+  color: var(--surface);
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 14px;
-  padding-bottom: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 24px;
+  padding-bottom: 32px;
 }
 
 .card {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  gap: 12px;
+  padding: 16px;
+  background: var(--surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.3s cubic-bezier(0.2, 0, 0, 1);
 }
 
 .card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
+  transform: scale(1.02);
+  box-shadow: var(--shadow-lg);
 }
 
 .card img {
   width: 100%;
-  height: 180px;
+  height: 220px;
   object-fit: cover;
   border-radius: var(--radius-md);
+  background: var(--surface-soft);
 }
 
 .row {
@@ -136,58 +158,77 @@ a {
 }
 
 .uiCard {
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   background: var(--surface);
-  padding: 12px;
+  padding: 20px;
   box-shadow: var(--shadow-sm);
 }
 
 .uiInput,
 .uiSelect {
   width: 100%;
-  border: 1px solid var(--line);
+  border: none;
+  background: var(--surface-soft);
   border-radius: var(--radius-md);
-  padding: 10px 12px;
-  background: var(--surface);
+  padding: 14px 16px;
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--line);
+  transition: box-shadow 0.2s ease;
 }
 
 .uiInput:focus,
 .uiSelect:focus {
-  outline: 2px solid #ffce91;
-  border-color: var(--primary);
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--primary);
 }
 
 .uiButton {
   border: none;
-  border-radius: var(--radius-md);
-  padding: 10px 14px;
+  border-radius: 999px;
+  padding: 12px 20px;
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .uiButtonPrimary {
-  background: var(--primary);
-  color: #fff;
+  background: var(--text);
+  color: var(--surface);
 }
 
 .uiButtonPrimary:hover {
-  background: var(--primary-strong);
+  background: #333336;
 }
 
 .uiButtonSecondary {
-  background: #e9eeff;
-  color: #1f3e9a;
-}
-
-.uiButtonGhost {
-  background: #eef2f8;
+  background: rgba(0, 0, 0, 0.05);
   color: var(--text);
 }
 
+.uiButtonSecondary:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.uiButtonGhost {
+  background: transparent;
+  color: var(--primary);
+}
+
+.uiButtonGhost:hover {
+  background: rgba(0, 102, 204, 0.1);
+}
+
 .uiButtonDanger {
-  background: #ffe8e8;
+  background: transparent;
   color: var(--danger);
+}
+
+.uiButtonDanger:hover {
+  background: rgba(255, 59, 48, 0.1);
 }
 
 .uiBadge {
@@ -220,11 +261,12 @@ a {
 .pageOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(20, 30, 45, 0.45);
+  background: rgba(0, 0, 0, 0.4);
   z-index: 30;
   opacity: 0;
   pointer-events: none;
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   animation: overlay-in 0.3s ease forwards;
 }
 
@@ -235,18 +277,19 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 24px;
 }
 
 .modalCard {
   width: min(780px, 100%);
   max-height: 85vh;
   overflow: auto;
-  background: var(--surface);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--line);
-  animation: modal-in 0.22s ease forwards;
+  box-shadow: var(--shadow-lg), 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+  animation: modal-in 0.3s cubic-bezier(0.2, 0, 0, 1) forwards;
 }
 
 .modalHeader {
@@ -294,47 +337,50 @@ a {
   width: min(440px, 100vw);
   height: 100vh;
   z-index: 45;
-  background: var(--surface);
-  border-left: 1px solid var(--line);
-  box-shadow: var(--shadow-md);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
-  animation: drawer-in 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: drawer-in 0.4s cubic-bezier(0.2, 0, 0, 1) forwards;
 }
 
 .drawerHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px;
+  padding: 20px 24px;
   border-bottom: 1px solid var(--line);
 }
 
 .drawerBody {
-  padding: 16px;
+  padding: 24px;
   overflow: auto;
 }
 
 .panelSection {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
 .cartItem {
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  padding: 10px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 12px;
   display: grid;
-  grid-template-columns: 56px 1fr;
-  gap: 10px;
+  grid-template-columns: 64px 1fr;
+  gap: 12px;
+  box-shadow: var(--shadow-sm);
 }
 
 .cartItem img {
-  width: 56px;
-  height: 56px;
-  border-radius: var(--radius-sm);
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-md);
   object-fit: cover;
+  background: var(--surface-soft);
 }
 
 .totals {
