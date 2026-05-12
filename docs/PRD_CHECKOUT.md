@@ -36,9 +36,9 @@ O checkout do Mercadex é o fluxo final de compra que converte itens no carrinho
 ## Regras Básicas de Pagamento (MVP)
 
 ### Métodos Aceitos
-- **PIX** (prioridade 1) — Padrão inicial, transação imediata
-- **Débito/Crédito** (prioridade 2, planejado) — Via integração com gateway (ex: Stripe, Mercado Pago)
-- Boleto bancário (fora do escopo MVP)
+- **PIX** — Único método implementado no MVP. Transação imediata via QR code ou copia-e-cola.
+- **Cartão de Crédito/Débito** (planejado pós-MVP) — Via gateway (ex: Stripe, Mercado Pago)
+- **Boleto bancário** (planejado pós-MVP)
 
 ### Limites de Transação
 - **Mínimo:** R$ 10,00
@@ -59,7 +59,7 @@ O checkout do Mercadex é o fluxo final de compra que converte itens no carrinho
 
 3. ETAPA 2 - PAGAMENTO
    ├─ Exibir resumo do pedido (itens + frete + total)
-   ├─ Selecionar método (PIX default)
+   ├─ Método de pagamento: PIX (único método disponível no MVP)
    ├─ Para PIX:
    │  ├─ Gerar QR code + cópia e cola
    │  ├─ Exibir timeout de 10 minutos
@@ -78,7 +78,7 @@ O checkout do Mercadex é o fluxo final de compra que converte itens no carrinho
 | Cenário | Comportamento |
 |---------|---|
 | **Pagamento falhado** | Exibir mensagem clara ("Falha ao processar PIX") + opção de tentar novamente |
-| **Timeout PIX (10min)** | Exibir aviso, permitir novo QR code ou trocar método de pagamento |
+| **Timeout PIX (10min)** | Exibir aviso e permitir gerar novo QR code |
 | **Carrinho alterado** | Se item foi removido do estoque durante checkout, notificar e permitir revisão |
 | **Sessão expirada** | Salvar carrinho localmente; ao voltar, restaurar estado de checkout |
 
@@ -92,7 +92,7 @@ O checkout do Mercadex é o fluxo final de compra que converte itens no carrinho
 ### Segurança Mínima (MVP)
 
 - **HTTPS obrigatório** — Todas as comunicações criptografadas
-- **PCI-DSS compliance:** Não armazenar dados de cartão/PIX no banco local; delegar ao gateway
+- **PCI-DSS compliance:** Não armazenar dados de PIX no banco local; delegar ao gateway
 - **Rate limiting:** Máx 5 tentativas de pagamento falhado por sessão
 - **CSRF tokens:** Validar origem de requisições POST
 - **Logs de auditoria:** Registrar tentativas de pagamento (não dados sensíveis)

@@ -328,8 +328,8 @@ Branch: main (produção)
 
 | Fase | Duração | Escopo |
 |------|---------|--------|
-| **Fase 1 (MVP)** | 6-8 semanas | Setup, Auth, Produtos, Carrinho, Checkout básico |
-| **Fase 2** | 4-6 semanas | Pagamento integrado, Sistema de avaliação |
+| **Fase 1 (MVP)** | 6-8 semanas | Setup, Auth, Produtos, Carrinho, Checkout com PIX |
+| **Fase 2** | 4-6 semanas | Pagamento via Cartão de Crédito/Débito e Boleto, Sistema de avaliação |
 | **Fase 3** | 4-6 semanas | Chat vendedor/comprador, Notificações |
 | **Fase 4** | Contínuo | Escalabilidade, Analytics, Recomendações |
 
