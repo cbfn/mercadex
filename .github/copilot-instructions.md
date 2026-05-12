@@ -20,9 +20,12 @@ These instructions apply to the Mercadex workspace. Treat `docs/ADR.md` as the s
 
 ## Frontend Rules
 
-- Treat the current frontend as a static prototype built with HTML, CSS, and Vanilla JavaScript.
-- Do not introduce React, Next.js, or other future-phase frontend patterns unless the task explicitly asks for migration work.
-- Keep frontend changes consistent with the existing prototype structure and asset layout.
+- The frontend is Next.js 14 (App Router) with TypeScript and CSS Modules, located in `frontend/`.
+- Use `"use client"` only for components that require browser APIs or React hooks; keep server components the default.
+- Manage state with `useReducer` + React Context. Do not introduce Redux, Zustand, or TanStack Query unless explicitly requested.
+- Restore browser-only state (e.g., `localStorage`) inside `useEffect` after mount to avoid SSR hydration mismatches.
+- Keep UI primitives in `frontend/src/shared/ui/`. Do not introduce external component libraries (Shadcn/ui, MUI, etc.) unless the task explicitly asks for it.
+- Follow Feature-Sliced Design: `src/features/<name>/components/` for UI, `src/features/<name>/model/` for state/hooks.
 
 ## Code Quality Rules
 
@@ -30,6 +33,17 @@ These instructions apply to the Mercadex workspace. Treat `docs/ADR.md` as the s
 - Validate inputs at the boundary and use structured error handling instead of throwing ad hoc strings.
 - Keep functions and modules focused on a single responsibility.
 - Add or update tests whenever behavior changes.
+
+## Testing Rules
+
+- Structure every test using the **AAA pattern**: **Arrange** (set up data and dependencies), **Act** (invoke the unit under test), **Assert** (verify the outcome). Keep each phase clearly separated with a blank line between them.
+- Name test cases as full sentences describing the expected behavior: `it("returns empty array when no products match the filter")`.
+- One behavior per test. Do not assert multiple unrelated outcomes in a single `it` block.
+- Use `describe` blocks to group related tests by component, hook, or function name.
+- Prefer `userEvent` over `fireEvent` for user interaction tests in React Testing Library.
+- Mock only external dependencies (APIs, `localStorage`, timers). Do not mock the unit under test itself.
+- Keep Arrange setup local to the test. Extract to `beforeEach` only when all tests in the `describe` block share identical setup.
+- Cover the happy path, edge cases, and error/empty states at minimum.
 
 ## Workflow Rules
 
