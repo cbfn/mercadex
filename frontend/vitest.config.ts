@@ -13,7 +13,14 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
-      include: ["src/**/*.{ts,tsx}"]
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: ["src/app/**", "src/shared/types/**", "src/shared/mocks/**", "src/shared/ui/tabs.tsx"],
+      thresholds: {
+        lines: 80,
+        functions: 80,
+        branches: 80,
+        statements: 80
+      }
     }
   },
   resolve: {

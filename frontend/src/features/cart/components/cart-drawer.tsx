@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useCallback, useMemo, useState } from "react";
+import { Trash2, QrCode, Clipboard, CheckCircle2 } from "lucide-react";
 import { useCart } from "@/features/cart/model/cart-context";
 import { SHIPPING } from "@/shared/lib/cart";
 import { formatBRL } from "@/shared/lib/currency";
@@ -60,8 +61,8 @@ export function CartDrawer() {
                     <Button variant="ghost" onClick={() => updateQty(item.id, 1)}>
                       +
                     </Button>
-                    <Button variant="danger" onClick={() => removeFromCart(item.id)}>
-                      Remover
+                    <Button variant="danger" aria-label="Remover" onClick={() => removeFromCart(item.id)}>
+                      <Trash2 size={16} />
                     </Button>
                   </div>
                 </div>
@@ -114,11 +115,14 @@ export function CartDrawer() {
 
       {checkoutStep === 2 && (
         <div className="panelSection" data-testid="payment-step">
-          <div data-testid="pix-content">
-            <h3>Pague via PIX</h3>
+          <div data-testid="pix-content" style={{ display: "flex", flexDirection: "column", gap: "10px", alignItems: "flex-start" }}>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <QrCode size={20} /> Pague via PIX
+            </h3>
             <p>Total a transferir: <strong>{formatBRL(total)}</strong></p>
             <p>Chave PIX: <strong>{PIX_KEY}</strong></p>
             <Button type="button" onClick={handleCopyPix} data-testid="copy-pix-button">
+              {copied ? <CheckCircle2 size={16} /> : <Clipboard size={16} />}
               {copied ? "Copiado!" : "Copiar chave"}
             </Button>
             <Image

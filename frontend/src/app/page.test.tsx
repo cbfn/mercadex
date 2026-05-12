@@ -11,7 +11,7 @@ describe("HomePage", () => {
         <HomePage />
       </CartProvider>
     );
-    expect(screen.getByText("Mercadex")).toBeInTheDocument();
+    expect(screen.getByAltText("Mercadex")).toBeInTheDocument();
     expect(screen.getAllByTestId("product-card").length).toBeGreaterThan(0);
   });
 });

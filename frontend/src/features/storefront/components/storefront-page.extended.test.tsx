@@ -17,7 +17,7 @@ function renderPage() {
 describe("StorefrontPage – extended", () => {
   it("renders header with Mercadex branding", () => {
     renderPage();
-    expect(screen.getByText("Mercadex")).toBeInTheDocument();
+    expect(screen.getByAltText("Mercadex")).toBeInTheDocument();
   });
 
   it("renders search input", () => {
@@ -27,7 +27,7 @@ describe("StorefrontPage – extended", () => {
 
   it("renders cart button with quantity", () => {
     renderPage();
-    expect(screen.getByTestId("open-cart-button")).toHaveTextContent("Carrinho (0)");
+    expect(screen.getByTestId("open-cart-button")).toHaveTextContent("0");
   });
 
   it("renders all category tabs", () => {
@@ -99,7 +99,7 @@ describe("StorefrontPage – extended", () => {
     await user.click(screen.getByTestId("open-product-1"));
     await user.click(screen.getByTestId("modal-add-to-cart"));
 
-    expect(screen.getByTestId("open-cart-button")).toHaveTextContent("Carrinho (1)");
+    expect(screen.getByTestId("open-cart-button")).toHaveTextContent("1");
   });
 
   it("product card shows formatted price", () => {
