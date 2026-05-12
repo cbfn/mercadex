@@ -28,7 +28,7 @@ body {
   padding: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 button,
@@ -81,6 +81,9 @@ a {
   border-radius: var(--radius-lg);
   padding: 8px 12px;
   color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
 }
 
 .categories button[aria-pressed="true"] {
@@ -100,6 +103,12 @@ a {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
 }
 
 .card img {
@@ -213,6 +222,10 @@ a {
   inset: 0;
   background: rgba(20, 30, 45, 0.45);
   z-index: 30;
+  opacity: 0;
+  pointer-events: none;
+  backdrop-filter: blur(2px);
+  animation: overlay-in 0.3s ease forwards;
 }
 
 .overlay {
@@ -233,6 +246,7 @@ a {
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-md);
   border: 1px solid var(--line);
+  animation: modal-in 0.22s ease forwards;
 }
 
 .modalHeader {
@@ -285,6 +299,7 @@ a {
   box-shadow: var(--shadow-md);
   display: flex;
   flex-direction: column;
+  animation: drawer-in 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 .drawerHeader {
@@ -327,6 +342,73 @@ a {
   border-radius: var(--radius-md);
   padding: 10px;
   background: var(--surface-soft);
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.scrollbar-x::-webkit-scrollbar {
+  height: 0;
+}
+
+.scrollbar-x {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+    pointer-events: none;
+  }
+  to {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes drawer-in {
+  from {
+    transform: translateX(110%);
+  }
+  to {
+    transform: translateX(0);
+  }
 }
 
 .tabButton {
