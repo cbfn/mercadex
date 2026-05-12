@@ -22,7 +22,7 @@
 - ✅ **Persistência de Carrinho:** Estado restaurado do `localStorage` após navegação (sem SSR mismatch)
 - ✅ **Testes Automatizados:** 164 testes unitários com cobertura ≥ 80% (Vitest + React Testing Library)
 - ✅ **CI Integrado:** GitHub Actions valida lint, type-check e testes a cada push
-- ✅ **Design Responsivo:** Layout fluido para mobile, tablet e desktop (CSS Modules customizados)
+- ✅ **Design Responsivo:** Layout fluido para mobile, tablet e desktop (Tailwind CSS + tokens do design system)
 
 ### Backend (Próxima Etapa - Fase 3)
 - 🔄 API REST em Node.js + TypeScript + Express.js
@@ -42,7 +42,8 @@
 | **Next.js** | 14 (App Router) | Meta-framework React, SSR, file-based routing |
 | **React** | 18 | Componentes UI reativos |
 | **TypeScript** | strict | Type safety, reduz bugs em produção |
-| **CSS Modules** | globals.css | Estilos customizados sem dependências externas |
+| **Tailwind CSS** | globals.css + tailwind.config.ts | Estilos utilitários + tokens semânticos |
+| **UI shadcn-style** | src/shared/ui | Componentes reutilizáveis com padrão visual único |
 | **Vitest** | 2 | Testes unitários (22 suítes, 164 testes) |
 | **React Testing Library** | 16 | Testes de componentes orientados a comportamento |
 | **Playwright** | — | Testes E2E (configurado, fluxos críticos) |
@@ -75,7 +76,7 @@ mercadex/
 │   ├── playwright.config.ts         # Testes E2E
 │   └── src/
 │       ├── app/
-│       │   ├── globals.css          # Estilos globais (sem Tailwind/Shadcn)
+│       │   ├── globals.css          # Tokens e estilos globais (Tailwind)
 │       │   ├── layout.tsx           # Root layout com providers
 │       │   ├── page.tsx             # Página principal
 │       │   └── providers.tsx        # CartProvider wrapper
@@ -187,6 +188,12 @@ useEffect(() => {
 ---
 
 ## 🔧 Desenvolvimento
+
+### Design System (Obrigatório)
+
+- O frontend deve seguir o padrão definido em `docs/DESIGN_SYSTEM.md`.
+- Toda solicitação de UI nova, ajuste visual ou componente deve reutilizar os estilos e decisões desse documento.
+- Tipografia padrão do projeto: **Inter**.
 
 ### Convenções Frontend
 

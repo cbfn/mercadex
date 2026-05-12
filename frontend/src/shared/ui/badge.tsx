@@ -12,11 +12,11 @@ export function Badge({ className, variant = "neutral", ...props }: BadgeProps) 
     <span
       {...props}
       className={cn(
-        "uiBadge",
-        variant === "neutral" && "uiBadgeNeutral",
-        variant === "success" && "uiBadgeSuccess",
-        variant === "info" && "uiBadgeInfo",
-        variant === "warning" && "uiBadgeWarning",
+        "uiBadge inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold",
+        variant === "neutral" && "uiBadgeNeutral bg-muted text-foreground",
+        variant === "success" && "uiBadgeSuccess bg-emerald-100 text-emerald-800",
+        variant === "info" && "uiBadgeInfo bg-sky-100 text-sky-800",
+        variant === "warning" && "uiBadgeWarning bg-amber-100 text-amber-800",
         className
       )}
     />

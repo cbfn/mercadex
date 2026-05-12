@@ -1,7 +1,8 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useReducer, useState } from "react";
 import type { ReactNode } from "react";
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 import { addItem, cartQuantity, cartSubtotal, cartTotal, removeItem, updateItemQty } from "@/shared/lib/cart";
 import type { CartItem, CheckoutStep, PaymentTab } from "@/shared/types/cart";
 import type { Product } from "@/shared/types/catalog";
@@ -12,75 +13,12 @@ interface CartState {
   checkoutStep: CheckoutStep;
   paymentTab: PaymentTab;
   selectedProductId: number | null;
-}
-
-type Action =
-  | { type: "ADD"; product: Product; qty: number }
-  | { type: "REMOVE"; id: number }
-  | { type: "UPDATE_QTY"; id: number; delta: number }
-  | { type: "OPEN_CART" }
-  | { type: "CLOSE_CART" }
-  | { type: "SET_STEP"; step: CheckoutStep }
-  | { type: "SET_TAB"; tab: PaymentTab }
-  | { type: "OPEN_PRODUCT"; id: number }
-  | { type: "CLOSE_PRODUCT" }
-  | { type: "FINISH_ORDER" }
-  | { type: "RESTORE"; state: CartState };
-
-const initialState: CartState = {
-  items: [],
-  isOpen: false,
-  checkoutStep: 0,
-  paymentTab: "pix",
-  selectedProductId: null
-};
-
-function loadFromStorage(): CartState {
-  if (typeof window === "undefined") return initialState;
-
-  const raw = window.localStorage.getItem("mercadex:cart-state");
-  if (!raw) return initialState;
-
-  try {
-    return { ...initialState, ...(JSON.parse(raw) as Partial<CartState>) };
-  } catch {
-    return initialState;
-  }
-}
-
-function reducer(state: CartState, action: Action): CartState {
-  switch (action.type) {
-    case "ADD":
-      return { ...state, items: addItem(state.items, action.product, action.qty) };
-    case "REMOVE":
-      return { ...state, items: removeItem(state.items, action.id) };
-    case "UPDATE_QTY":
-      return { ...state, items: updateItemQty(state.items, action.id, action.delta) };
-    case "OPEN_CART":
-      return { ...state, isOpen: true, checkoutStep: 0 };
-    case "CLOSE_CART":
-      return { ...state, isOpen: false };
-    case "SET_STEP":
-      return { ...state, checkoutStep: action.step };
-    case "SET_TAB":
-      return { ...state, paymentTab: action.tab };
-    case "OPEN_PRODUCT":
-      return { ...state, selectedProductId: action.id };
-    case "CLOSE_PRODUCT":
-      return { ...state, selectedProductId: null };
-    case "FINISH_ORDER":
-      return { ...state, items: [], isOpen: false, checkoutStep: 0, paymentTab: "pix" };
-    case "RESTORE":
-      return action.state;
-    default:
-      return state;
-  }
-}
-
-interface CartContextValue extends CartState {
   quantity: number;
   subtotal: number;
   total: number;
+}
+
+interface CartActions {
   addToCart: (product: Product, qty?: number) => void;
   removeFromCart: (id: number) => void;
   updateQty: (id: number, delta: number) => void;
@@ -93,49 +31,81 @@ interface CartContextValue extends CartState {
   finishOrder: () => void;
 }
 
-const CartContext = createContext<CartContextValue | null>(null);
+export type CartStore = CartState & CartActions;
 
-export function CartProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, initialState);
-  const [hydrated, setHydrated] = useState(false);
+const STORAGE_KEY = "mercadex:cart-state";
 
-  useEffect(() => {
-    const stored = loadFromStorage();
-    dispatch({ type: "RESTORE", state: stored });
-    setHydrated(true);
-  }, []);
+const initialState: CartState = {
+  items: [],
+  isOpen: false,
+  checkoutStep: 0,
+  paymentTab: "pix",
+  selectedProductId: null,
+  quantity: 0,
+  subtotal: 0,
+  total: 0
+};
 
-  useEffect(() => {
-    if (!hydrated) return;
-    window.localStorage.setItem("mercadex:cart-state", JSON.stringify(state));
-  }, [state, hydrated]);
-
-  const value = useMemo<CartContextValue>(() => {
-    return {
-      ...state,
-      quantity: cartQuantity(state.items),
-      subtotal: cartSubtotal(state.items),
-      total: cartTotal(state.items),
-      addToCart: (product, qty = 1) => dispatch({ type: "ADD", product, qty }),
-      removeFromCart: (id) => dispatch({ type: "REMOVE", id }),
-      updateQty: (id, delta) => dispatch({ type: "UPDATE_QTY", id, delta }),
-      openCart: () => dispatch({ type: "OPEN_CART" }),
-      closeCart: () => dispatch({ type: "CLOSE_CART" }),
-      setStep: (step) => dispatch({ type: "SET_STEP", step }),
-      setTab: (tab) => dispatch({ type: "SET_TAB", tab }),
-      openProduct: (id) => dispatch({ type: "OPEN_PRODUCT", id }),
-      closeProduct: () => dispatch({ type: "CLOSE_PRODUCT" }),
-      finishOrder: () => dispatch({ type: "FINISH_ORDER" })
-    };
-  }, [state]);
-
-  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+function withDerived(items: CartItem[]) {
+  return {
+    items,
+    quantity: cartQuantity(items),
+    subtotal: cartSubtotal(items),
+    total: cartTotal(items)
+  };
 }
 
-export function useCart() {
-  const context = useContext(CartContext);
-  if (!context) {
-    throw new Error("useCart must be used inside CartProvider");
-  }
-  return context;
+export const useCart = create<CartStore>()(
+  persist(
+    (set, get) => ({
+      ...initialState,
+      addToCart: (product, qty = 1) => {
+        const items = addItem(get().items, product, qty);
+        set(withDerived(items));
+      },
+      removeFromCart: (id) => {
+        const items = removeItem(get().items, id);
+        set(withDerived(items));
+      },
+      updateQty: (id, delta) => {
+        const items = updateItemQty(get().items, id, delta);
+        set(withDerived(items));
+      },
+      openCart: () => set({ isOpen: true, checkoutStep: 0 }),
+      closeCart: () => set({ isOpen: false }),
+      setStep: (step) => set({ checkoutStep: step }),
+      setTab: (tab) => set({ paymentTab: tab }),
+      openProduct: (id) => set({ selectedProductId: id }),
+      closeProduct: () => set({ selectedProductId: null }),
+      finishOrder: () => set({ ...withDerived([]), isOpen: false, checkoutStep: 0, paymentTab: "pix" })
+    }),
+    {
+      name: STORAGE_KEY,
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        items: state.items,
+        isOpen: state.isOpen,
+        checkoutStep: state.checkoutStep,
+        paymentTab: state.paymentTab,
+        selectedProductId: state.selectedProductId
+      }),
+      merge: (persistedState, currentState) => {
+        const persisted = persistedState as Partial<CartState>;
+        const items = persisted.items ?? currentState.items;
+        return {
+          ...currentState,
+          ...persisted,
+          ...withDerived(items)
+        };
+      }
+    }
+  )
+);
+
+export function CartProvider({ children }: { children: ReactNode }) {
+  return children;
+}
+
+export function resetCartStore() {
+  useCart.setState(initialState);
 }

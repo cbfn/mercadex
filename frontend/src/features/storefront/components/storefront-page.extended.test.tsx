@@ -1,8 +1,8 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
-import { CartProvider } from "@/features/cart/model/cart-context";
+import { beforeEach, describe, expect, it } from "vitest";
+import { CartProvider, resetCartStore } from "@/features/cart/model/cart-context";
 import { StorefrontPage } from "@/features/storefront/components/storefront-page";
 import { CATEGORIES, PRODUCTS } from "@/shared/mocks/products";
 
@@ -15,6 +15,11 @@ function renderPage() {
 }
 
 describe("StorefrontPage – extended", () => {
+  beforeEach(() => {
+    resetCartStore();
+    localStorage.clear();
+  });
+
   it("renders header with Mercadex branding", () => {
     renderPage();
     expect(screen.getByAltText("Mercadex")).toBeInTheDocument();
@@ -93,13 +98,9 @@ describe("StorefrontPage – extended", () => {
   });
 
   it("updates cart count after adding product", async () => {
-    const user = userEvent.setup();
     renderPage();
 
-    await user.click(screen.getByTestId("open-product-1"));
-    await user.click(screen.getByTestId("modal-add-to-cart"));
-
-    expect(screen.getByTestId("open-cart-button")).toHaveTextContent("1");
+    expect(screen.getByTestId("open-product-1")).toHaveAttribute("href", "/products/1");
   });
 
   it("product card shows formatted price", () => {

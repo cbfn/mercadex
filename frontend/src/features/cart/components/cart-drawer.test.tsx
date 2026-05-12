@@ -1,8 +1,8 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
-import { CartProvider, useCart } from "@/features/cart/model/cart-context";
+import { beforeEach, describe, expect, it } from "vitest";
+import { CartProvider, resetCartStore, useCart } from "@/features/cart/model/cart-context";
 import { CartDrawer } from "@/features/cart/components/cart-drawer";
 import { PRODUCTS } from "@/shared/mocks/products";
 
@@ -36,6 +36,11 @@ function renderCartDrawer(autoAdd = false) {
 }
 
 describe("CartDrawer", () => {
+  beforeEach(() => {
+    resetCartStore();
+    localStorage.clear();
+  });
+
   it("shows empty cart message", async () => {
     const user = userEvent.setup();
     render(
