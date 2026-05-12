@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useReducer } from "react";
+import { createContext, useContext, useEffect, useMemo, useReducer, useState } from "react";
 import type { ReactNode } from "react";
 import { addItem, cartQuantity, cartSubtotal, cartTotal, removeItem, updateItemQty } from "@/shared/lib/cart";
 import type { CartItem, CheckoutStep, PaymentTab } from "@/shared/types/cart";
@@ -24,7 +24,8 @@ type Action =
   | { type: "SET_TAB"; tab: PaymentTab }
   | { type: "OPEN_PRODUCT"; id: number }
   | { type: "CLOSE_PRODUCT" }
-  | { type: "FINISH_ORDER" };
+  | { type: "FINISH_ORDER" }
+  | { type: "RESTORE"; state: CartState };
 
 const initialState: CartState = {
   items: [],
@@ -69,6 +70,8 @@ function reducer(state: CartState, action: Action): CartState {
       return { ...state, selectedProductId: null };
     case "FINISH_ORDER":
       return { ...state, items: [], isOpen: false, checkoutStep: 0, paymentTab: "pix" };
+    case "RESTORE":
+      return action.state;
     default:
       return state;
   }
@@ -93,11 +96,19 @@ interface CartContextValue extends CartState {
 const CartContext = createContext<CartContextValue | null>(null);
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, initialState, loadFromStorage);
+  const [state, dispatch] = useReducer(reducer, initialState);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
+    const stored = loadFromStorage();
+    dispatch({ type: "RESTORE", state: stored });
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
     window.localStorage.setItem("mercadex:cart-state", JSON.stringify(state));
-  }, [state]);
+  }, [state, hydrated]);
 
   const value = useMemo<CartContextValue>(() => {
     return {
