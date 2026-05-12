@@ -1,0 +1,117 @@
+import React from "react";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it } from "vitest";
+import { CartProvider, useCart } from "@/features/cart/model/cart-context";
+import { CartDrawer } from "@/features/cart/components/cart-drawer";
+import { PRODUCTS } from "@/shared/mocks/products";
+
+function CartSetup({ autoAdd = false }: { autoAdd?: boolean }) {
+  const cart = useCart();
+
+  React.useEffect(() => {
+    if (autoAdd) {
+      cart.addToCart(PRODUCTS[0], 1);
+      cart.openCart();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div>
+      <button data-testid="setup-open" onClick={() => { cart.addToCart(PRODUCTS[0], 1); cart.openCart(); }}>
+        setup
+      </button>
+      <CartDrawer />
+    </div>
+  );
+}
+
+function renderCartDrawer(autoAdd = false) {
+  return render(
+    <CartProvider>
+      <CartSetup autoAdd={autoAdd} />
+    </CartProvider>
+  );
+}
+
+describe("CartDrawer", () => {
+  it("shows empty cart message", async () => {
+    const user = userEvent.setup();
+    render(
+      <CartProvider>
+        <CartSetupOpenEmpty />
+      </CartProvider>
+    );
+
+    await user.click(screen.getByTestId("open-empty"));
+    expect(screen.getByText("Seu carrinho esta vazio.")).toBeInTheDocument();
+  });
+
+  it("renders cart items after adding product", async () => {
+    const user = userEvent.setup();
+    renderCartDrawer();
+
+    await user.click(screen.getByTestId("setup-open"));
+    expect(screen.getAllByTestId("cart-item")).toHaveLength(1);
+  });
+
+  it("displays subtotal, shipping, and total", async () => {
+    const user = userEvent.setup();
+    renderCartDrawer();
+
+    await user.click(screen.getByTestId("setup-open"));
+    expect(screen.getByText(/Subtotal/)).toBeInTheDocument();
+    expect(screen.getByText(/Frete/)).toBeInTheDocument();
+    expect(screen.getByText(/Total/)).toBeInTheDocument();
+  });
+
+  it("navigates to delivery step", async () => {
+    const user = userEvent.setup();
+    renderCartDrawer();
+
+    await user.click(screen.getByTestId("setup-open"));
+    await user.click(screen.getByTestId("go-to-delivery"));
+    expect(screen.getByTestId("delivery-step")).toBeInTheDocument();
+  });
+
+  it("can go back from delivery to cart", async () => {
+    const user = userEvent.setup();
+    renderCartDrawer();
+
+    await user.click(screen.getByTestId("setup-open"));
+    await user.click(screen.getByTestId("go-to-delivery"));
+    await user.click(screen.getByRole("button", { name: "Voltar" }));
+    expect(screen.getByTestId("cart-step")).toBeInTheDocument();
+  });
+
+  it("removes item from cart", async () => {
+    const user = userEvent.setup();
+    renderCartDrawer();
+
+    await user.click(screen.getByTestId("setup-open"));
+    await user.click(screen.getByRole("button", { name: "Remover" }));
+    expect(screen.getByText("Seu carrinho esta vazio.")).toBeInTheDocument();
+  });
+
+  it("increments and decrements item quantity", async () => {
+    const user = userEvent.setup();
+    renderCartDrawer();
+
+    await user.click(screen.getByTestId("setup-open"));
+    const plusButtons = screen.getAllByRole("button", { name: "+" });
+    await user.click(plusButtons[0]);
+
+    expect(screen.getByText("2")).toBeInTheDocument();
+  });
+});
+
+function CartSetupOpenEmpty() {
+  const cart = useCart();
+  return (
+    <div>
+      <button data-testid="open-empty" onClick={cart.openCart}>open</button>
+      <CartDrawer />
+    </div>
+  );
+}
