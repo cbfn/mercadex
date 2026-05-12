@@ -112,13 +112,13 @@ mercadex/
 }
 ```
 
-### Frontend: Protótipo HTML/JS Vanilla evoluindo para React 18 + Next.js 14
+### Frontend: React 18 + Next.js 14 (Migrado — Fase 2 concluída)
 
-**Fase 1: Prototipação Rápida (Atual)**
-Inicialmente, o frontend será desenvolvido apenas como um **protótipo estático** utilizando **HTML5, Vanilla JavaScript e Tailwind CSS via CDN**. Esta abordagem permite uma validação imediata da interface, fluxos e design sem o overhead de configuração de um framework complexo.
+**Fase 1: Prototipação Rápida (Concluída)**
+O frontend foi inicialmente desenvolvido como protótipo estático com HTML5, Vanilla JavaScript e CSS3. Permitiu validação rápida de UX e fluxos.
 
-**Fase 2: Arquitetura Definitiva (Futuro)**
-Posteriormente, conforme a validação do produto avance, migraremos para a estrutura sugerida (React + Next.js).
+**Fase 2: Arquitetura Definitiva (Implementada em 2026-05-11)**
+Migração concluída para Next.js 14 com App Router. O protótipo estático foi removido e substituído pela aplicação React em `frontend/src/`.
 
 **Por que React? (Fase 2)**
 - Melhor UX (reatividade)
@@ -135,15 +135,17 @@ Posteriormente, conforme a validação do produto avance, migraremos para a estr
 {
   "frontend": {
     "framework": "React 18",
-    "meta-framework": "Next.js 14",
-    "language": "TypeScript",
-    "styling": "Tailwind CSS",
-    "ui-components": "Shadcn/ui",
-    "state": "TanStack Query + Zustand",
-    "forms": "React Hook Form",
-    "validation": "Zod",
-    "testing": "Vitest + React Testing Library",
-    "e2e": "Playwright"
+    "meta-framework": "Next.js 14 (App Router)",
+    "language": "TypeScript (strict)",
+    "styling": "CSS customizado (globals.css) — sem Tailwind nem Shadcn/ui no MVP",
+    "ui-components": "Componentes próprios em shared/ui/ (Button, Card, Drawer, Modal, Input, Select, Badge, Tabs)",
+    "state": "useReducer + React Context (CartContext)",
+    "forms": "HTML nativo com validação required",
+    "validation": "TypeScript types",
+    "testing": "Vitest 2 + React Testing Library",
+    "coverage": "@vitest/coverage-v8 (threshold: 80% lines/functions/branches/statements)",
+    "ci": "GitHub Actions (.github/workflows/ci.yml)",
+    "e2e": "Playwright (planejado)"
   }
 }
 ```
@@ -371,7 +373,7 @@ TypeScript-first, schemas mais enxutos, melhor performance em runtime validation
 5. ⬜ CRUD de Produtos
 6. ⬜ Sistema de Carrinho
 7. ⬜ Checkout básico (sem pagamento)
-8. ⬜ Frontend React/Next.js
+8. ✅ Frontend React/Next.js (migrado em 2026-05-11)
 9. ⬜ Integração completa
 10. ⬜ Deploy em staging
 

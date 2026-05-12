@@ -6,21 +6,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Mercadex** é um marketplace de eletrônicos em MVP, com arquitetura monolítica modular separando frontend e backend. O projeto é um e-commerce com funcionalidades de catálogo, carrinho de compras, e checkout.
 
-**Status atual (Fase 1 - MVP):**
-- Frontend: HTML5 + Vanilla JavaScript + Tailwind CSS (prototipagem estática, rodando)
+**Status atual (Fase 2 - Frontend migrado):**
+- Frontend: Next.js 14 (App Router) + TypeScript + CSS Modules customizados (`frontend/`)
 - Backend: Estrutura preparada (Node.js + TypeScript + Express), ainda sem implementação
 - Banco de dados: PostgreSQL (planejado)
+- CI: GitHub Actions (`.github/workflows/ci.yml`) com cobertura mínima de 80%
 
 Ver `docs/ADR.md` para decisões arquiteturais completas.
 
 ## Tech Stack
 
-### Frontend (Current - Prototyping)
-- **HTML5** semântico com estrutura modular
-- **Vanilla JavaScript** para gerenciamento de estado (carrinho, checkout)
-- **CSS3** com animações e comportamentos customizados (`frontend/css/style.css`)
-- **Tailwind CSS** via CDN (utilitários de layout)
-- Sem framework (planejado migrar para React + Next.js na Fase 2)
+### Frontend (Atual - Next.js 14)
+- **Next.js 14** com App Router e `"use client"` para componentes interativos
+- **React 18** + **TypeScript** (strict)
+- **CSS Modules** customizados (`src/app/globals.css`) — sem Tailwind nem Shadcn/ui
+- **Vitest 2** + **React Testing Library** para testes unitários
+- **@vitest/coverage-v8** para cobertura, thresholds em 80% (lines/functions/branches/statements)
+- Estrutura Feature-Sliced: `src/features/`, `src/shared/`, `src/app/`
 
 ### Backend (Planned - Fase 2)
 - Node.js 20+ com TypeScript
@@ -34,36 +36,50 @@ Ver `docs/ADR.md` para decisões arquiteturais completas.
 
 ### Frontend Development
 
-O frontend é uma aplicação estática rodando sobre HTTP server local.
-
-**Start dev server:**
 ```bash
-cd /Users/leandropradopires/Projetos/ia_para_devs/mercadex
-python3 -m http.server 8000
+cd frontend
+npm install
+npm run dev      # http://localhost:3000
+npm run test     # Vitest (watch)
+npm run test:coverage  # Vitest com relatório de cobertura (threshold 80%)
+npm run build    # Build de produção Next.js
 ```
-
-Acesso: http://localhost:8000/frontend/
-
-**Importante:** Rode do diretório raiz do projeto para manter referências relativas de assets funcionando (logo em `/logo-mercadex.png`).
 
 ### Estrutura Frontend
 
 ```
 frontend/
-├── index.html          # HTML semântico (estrutura)
-├── css/
-│   └── style.css       # Animações, painel lateral, scrollbars
-├── js/
-│   └── main.js         # Estado, gerenciamento de carrinho, checkout
-└── assets/
-    └── logo-mercadex.png
+├── src/
+│   ├── app/
+│   │   ├── globals.css      # Estilos globais (CSS customizado)
+│   │   ├── layout.tsx        # Root layout (providers)
+│   │   ├── page.tsx          # Página principal
+│   │   └── providers.tsx     # CartProvider wrapper
+│   ├── features/
+│   │   ├── cart/
+│   │   │   ├── components/cart-drawer.tsx   # Drawer com fluxo de checkout 4 etapas
+│   │   │   └── model/cart-context.tsx       # Reducer + Context + localStorage
+│   │   ├── catalog/
+│   │   │   └── model/use-catalog-filters.ts # Hook de filtragem/ordenação
+│   │   ├── product-detail/
+│   │   │   └── components/product-modal.tsx # Modal de detalhe do produto
+│   │   └── storefront/
+│   │       └── components/storefront-page.tsx  # Página principal do catálogo
+│   └── shared/
+│       ├── lib/               # Utilitários puros (cart, catalog, cn, currency)
+│       ├── mocks/products.ts  # Dados mock de produtos e categorias
+│       ├── types/             # Tipos TypeScript (cart, catalog)
+│       └── ui/                # Componentes UI primitivos (button, card, drawer, input, modal, select, badge, tabs)
+├── assets/
+│   └── logo-mercadex.png
+├── vitest.config.ts
+└── vitest.setup.ts
 ```
 
-**Principais componentes em main.js:**
-- `state` objeto: gerencia carrinho, checkout (etapas), formulários
-- `renderProducts()`: lista dinâmica de produtos com filtro por categoria
-- `updateCart()`, `removeFromCart()`: manipulação do carrinho
-- `checkoutSteps()`: fluxo multi-etapa (entrega → pagamento → confirmação)
+**Padrões de estado:**
+- `CartContext` (useReducer): gerencia itens, etapas de checkout, produto selecionado
+- `localStorage` restaurado apenas após montagem (evita hydration mismatch SSR)
+- `useCatalogFilters`: filtragem por categoria, busca e ordenação
 
 ## Architecture Decisions
 
@@ -86,10 +102,12 @@ Ver `docs/ADR.md` para contexto completo de cada decisão, riscos, e mitigaçõe
 
 ## Key Patterns
 
-### Frontend JavaScript
-- **State management:** Objeto `state` global em memory (sem Redux/Context)
-- **Event handling:** Event listeners em dados-attributes (`data-product-id`, etc)
-- **DOM updates:** Renderização imperative em funções (não reativa)
+### Frontend React/Next.js
+- **State management:** `useReducer` + React Context (`CartContext`); sem Redux nem Zustand
+- **Hydration safety:** `useReducer` inicializa com `initialState`; `localStorage` restaurado via `useEffect` com action `RESTORE` após montagem
+- **Feature-Sliced Design:** `features/<nome>/components/` e `features/<nome>/model/` por domínio
+- **UI primitivos:** Componentes em `shared/ui/` sem dependência de biblioteca de componentes externa
+- **Testes:** Cada componente/hook tem arquivo `.test.tsx` ou `.test.ts` co-localizado
 
 ### Backend (Planned)
 - **Módulos DDD light:** Cada módulo com controllers → services → repositories → entities
@@ -98,15 +116,17 @@ Ver `docs/ADR.md` para contexto completo de cada decisão, riscos, e mitigaçõe
 
 ## Important Notes
 
-1. **Phase 1 Focus:** Frontend é prioritário (validar UX/flows). Backend é MVP com CRUD básico.
+1. **Fase 2 em andamento:** Frontend Next.js 14 implementado e com CI. Backend ainda não implementado.
 
-2. **Prototipagem:** Frontend atual é intencional como protótipo estático → refatorar para React quando validado.
+2. **Cobertura mínima:** `vitest.config.ts` enforça 80% para lines/functions/branches/statements via `@vitest/coverage-v8`.
 
 3. **Security:** JWT + refresh tokens (planned backend), HTTPS obrigatório, CORS whitelist, rate limiting (ver ADR seção 6).
 
-4. **Deployment:** Phase 1 é static frontend + backend simples. Fase 2 considera Railway/Heroku.
+4. **Deployment:** Frontend Next.js pronto para deploy em Vercel. Backend aguarda implementação.
 
 5. **No package.json no backend yet:** Estrutura criada mas dependências não instaladas (aguardando setup inicial).
+
+6. **Frontend `node_modules` na raiz:** O `node_modules/` da raiz não deve ser rastreado pelo git (`.gitignore` adicionado). Dependências do frontend ficam em `frontend/node_modules/`.
 
 ## Development Flow
 
