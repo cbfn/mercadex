@@ -120,10 +120,10 @@
 
 ### Critérios de Aceitação
 
-**Cenário 1: Exibir opção de PIX como método padrão**
+**Cenário 1: Exibir PIX como único método de pagamento disponível (MVP)**
 - Dado que o cliente está na etapa de pagamento
-- Quando carrega a página de seleção de método de pagamento
-- Então PIX é exibido como opção padrão/pré-selecionada com clareza visual
+- Quando carrega a página de pagamento
+- Então PIX é exibido como único método disponível, com instruções claras de uso
 
 **Cenário 2: Gerar QR code válido e código PIX para cópia**
 - Dado que o cliente selecionou PIX como método
@@ -143,12 +143,12 @@
 **Cenário 5: Timeout do QR code após 10 minutos**
 - Dado que o QR code foi gerado há 10 minutos e não foi pago
 - Quando o timer chega a zero
-- Então exibe mensagem: "QR code expirado" com opção de "Gerar Novo QR Code" ou "Tentar Outro Método de Pagamento"
+- Então exibe mensagem: "QR code expirado" com opção de "Gerar Novo QR Code"
 
 **Cenário 6: Pagamento falhado com opção de tentar novamente**
 - Dado que o cliente escaneou e tentou pagar via PIX
 - Quando o banco rejeita a transação (saldo insuficiente, etc)
-- Então exibe erro específico: "Falha ao processar pagamento. Verifique seus dados bancários." com opção de tentar novamente ou escolher outro método
+- Então exibe erro específico: "Falha ao processar pagamento. Verifique seus dados bancários." com opção de tentar novamente
 
 **Cenário 7: Copiar código PIX para área de transferência**
 - Dado que o QR code foi gerado

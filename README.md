@@ -1,6 +1,6 @@
 # Mercadex — Marketplace de Eletrônicos
 
-[![Status](https://img.shields.io/badge/status-MVP%20Phase%201-blue)]()
+[![Status](https://img.shields.io/badge/status-MVP%20Phase%202-blue)]()
 [![License](https://img.shields.io/badge/license-MIT-green)]()
 [![Frontend CI](https://github.com/cbfn/mercadex/actions/workflows/ci.yml/badge.svg)](https://github.com/cbfn/mercadex/actions/workflows/ci.yml)
 
@@ -8,42 +8,47 @@
 
 **Mercadex** é um marketplace de eletrônicos em desenvolvimento, construído como MVP (Produto Mínimo Viável) com arquitetura monolítica modular. O projeto separa claramente frontend e backend, permitindo evolução independente de cada camada.
 
-**Objetivo:** Validar fluxos de compra e UX antes de escalar para produção. A Fase 1 (atual) foca na prototipagem do frontend com interface interativa; a Fase 2 implementará o backend robusto com persistência de dados.
+**Objetivo:** Validar fluxos de compra e UX antes de escalar para produção. A Fase 2 (atual) conta com frontend React/Next.js 14 completo com testes automatizados; a próxima etapa é a implementação do backend com persistência de dados.
 
 ---
 
 ## 🚀 Funcionalidades
 
-### Fase 1 (Atual - Protótipo Frontend)
-- ✅ **Catálogo Dinâmico:** Listagem de eletrônicos com filtragem por categoria
+### Frontend (Fase 2 - Concluído em 2026-05-11)
+- ✅ **Catálogo Dinâmico:** Listagem de eletrônicos com filtragem por categoria, busca e ordenação
 - ✅ **Modal de Detalhes:** Visualização completa de especificações, preços e avaliações
 - ✅ **Carrinho Interativo:** Adicionar, alterar quantidades, remover itens com atualização em tempo real
-- ✅ **Checkout Multi-Etapa:** Entrega → Pagamento (Pix/Cartão/Boleto) → Confirmação
-- ✅ **Design Responsivo:** Layout fluido para mobile, tablet e desktop
-- ✅ **Estado em Memória:** Gerenciamento de carrinho e checkout sem backend
+- ✅ **Checkout Multi-Etapa:** Entrega → Pagamento (PIX) → Confirmação
+- ✅ **Persistência de Carrinho:** Estado restaurado do `localStorage` após navegação (sem SSR mismatch)
+- ✅ **Testes Automatizados:** 164 testes unitários com cobertura ≥ 80% (Vitest + React Testing Library)
+- ✅ **CI Integrado:** GitHub Actions valida lint, type-check e testes a cada push
+- ✅ **Design Responsivo:** Layout fluido para mobile, tablet e desktop (CSS Modules customizados)
 
-### Fase 2 (Planejado)
-- 🔄 Backend com API REST em Node.js + TypeScript
+### Backend (Próxima Etapa - Fase 3)
+- 🔄 API REST em Node.js + TypeScript + Express.js
 - 🔄 Autenticação com JWT e refresh tokens
-- 🔄 Persistência em PostgreSQL
-- 🔄 Integração com gateways de pagamento (Stripe/Pix)
+- 🔄 Persistência em PostgreSQL + TypeORM/Prisma
+- 🔄 Integração com gateway de pagamento para PIX (MVP) e futuramente Cartão de Crédito e Boleto
 - 🔄 Sistema de pedidos e tracking
-- 🔄 Dashboard administrativo
-- 🔄 Frontend migrado para React + Next.js
+- 🔄 Cache com Redis e jobs assíncronos (Bull)
 
 ---
 
 ## 🛠 Tech Stack
 
-### Frontend (Fase 1 - Atual)
-| Tecnologia | Uso | Motivo |
-|-----------|-----|--------|
-| **HTML5** | Estrutura semântica | Padrão web, SEO nativo |
-| **CSS3** | Animações e estilos customizados | Controle fino de UX |
-| **JavaScript Vanilla** | Lógica de estado e interatividade | Sem dependências externas (MVP rápido) |
-| **Tailwind CSS** | Utilidades de layout (via CDN) | Desenvolvimento ágil |
+### Frontend (Fase 2 - Atual)
+| Tecnologia | Versão | Uso |
+|-----------|--------|-----|
+| **Next.js** | 14 (App Router) | Meta-framework React, SSR, file-based routing |
+| **React** | 18 | Componentes UI reativos |
+| **TypeScript** | strict | Type safety, reduz bugs em produção |
+| **CSS Modules** | globals.css | Estilos customizados sem dependências externas |
+| **Vitest** | 2 | Testes unitários (22 suítes, 164 testes) |
+| **React Testing Library** | 16 | Testes de componentes orientados a comportamento |
+| **Playwright** | — | Testes E2E (configurado, fluxos críticos) |
+| **lucide-react** | — | Ícones SVG |
 
-### Backend (Fase 2 - Planejado)
+### Backend (Planejado)
 ```
 Node.js 20+ (runtime)
 ├── TypeScript (type safety)
@@ -51,7 +56,8 @@ Node.js 20+ (runtime)
 ├── PostgreSQL 15+ (persistência)
 ├── TypeORM/Prisma (ORM)
 ├── JWT (autenticação)
-└── Redis (cache/async jobs)
+├── Zod (validação de inputs)
+└── Redis (cache/async jobs via Bull)
 ```
 
 ---
@@ -60,43 +66,48 @@ Node.js 20+ (runtime)
 
 ```
 mercadex/
-├── README.md                  # Este arquivo
-├── .gitignore                 # Configuração de versionamento
-├── CLAUDE.md                  # Documentação para Claude Code
-├── logo-mercadex.png         # Asset - logomarca
+├── README.md
+├── CLAUDE.md                        # Guia para Claude Code
 │
-├── frontend/                  # Frontend Phase 1 (estático)
-│   ├── index.html            # HTML semântico
-│   ├── css/
-│   │   └── style.css         # Animações, componentes customizados
-│   ├── js/
-│   │   └── main.js           # Gerenciamento de estado + interatividade
-│   └── assets/
-│       └── (imagens, ícones)
+├── frontend/                        # Next.js 14 (App Router) + TypeScript
+│   ├── next.config.mjs
+│   ├── vitest.config.ts             # Vitest + coverage-v8 (threshold 80%)
+│   ├── playwright.config.ts         # Testes E2E
+│   └── src/
+│       ├── app/
+│       │   ├── globals.css          # Estilos globais (sem Tailwind/Shadcn)
+│       │   ├── layout.tsx           # Root layout com providers
+│       │   ├── page.tsx             # Página principal
+│       │   └── providers.tsx        # CartProvider wrapper
+│       ├── features/                # Feature-Sliced Design
+│       │   ├── cart/
+│       │   │   ├── components/cart-drawer.tsx   # Drawer + fluxo de checkout
+│       │   │   └── model/cart-context.tsx       # useReducer + Context + localStorage
+│       │   ├── catalog/
+│       │   │   └── model/use-catalog-filters.ts # Hook de filtragem/ordenação
+│       │   ├── product-detail/
+│       │   │   └── components/product-modal.tsx
+│       │   └── storefront/
+│       │       └── components/storefront-page.tsx
+│       └── shared/
+│           ├── lib/                 # Utilitários puros (cart, catalog, cn, currency)
+│           ├── mocks/products.ts    # Dados mock (produtos e categorias)
+│           ├── types/               # Tipos TypeScript (cart, catalog)
+│           └── ui/                  # Primitivos UI próprios (Button, Card, Drawer,
+│                                    #   Input, Modal, Select, Badge, Tabs)
 │
-├── backend/                   # Backend Phase 2 (estrutura preparada)
-│   ├── src/
-│   │   ├── modules/
-│   │   │   ├── auth/         # Autenticação
-│   │   │   ├── users/        # Gestão de usuários
-│   │   │   ├── products/     # Catálogo
-│   │   │   ├── cart/         # Carrinho
-│   │   │   └── orders/       # Pedidos
-│   │   ├── shared/           # Código compartilhado
-│   │   │   ├── middleware/
-│   │   │   ├── utils/
-│   │   │   ├── errors/
-│   │   │   └── types/
-│   │   └── app.ts            # Entry point
-│   ├── tests/                # Testes unitários e integração
-│   └── package.json          # Dependências (Fase 2)
+├── backend/                         # Estrutura preparada (sem implementação)
+│   └── src/
+│       ├── modules/                 # auth, users, products, cart, orders
+│       ├── shared/                  # middleware, errors, utils
+│       └── config/
 │
-└── docs/                      # Documentação técnica
-    ├── ADR.md                # Decisões arquiteturais
-    ├── DIAGRAMAS.md          # Diagramas de fluxo
-    ├── BACKLOG.md            # Roadmap do projeto
-    ├── USER_STORIES.md       # Histórias de usuário
-    └── PRD_CHECKOUT.md       # Product Requirements (checkout)
+└── docs/                            # Documentação técnica
+    ├── ADR.md                       # Decisões arquiteturais
+    ├── DIAGRAMAS.md
+    ├── BACKLOG.md
+    ├── USER_STORIES.md
+    └── PRD_CHECKOUT.md
 ```
 
 ---
@@ -105,37 +116,42 @@ mercadex/
 
 ### Pré-requisitos
 
-- **Python 3.7+** (para servir frontend estático)
-- **Git** (para versionamento)
-- [Opcional] **Node.js 20+** e **npm** (para Phase 2)
+- **Node.js 20+** e **npm**
+- **Git**
 
-### Startup Rápido (Frontend Phase 1)
+### Frontend (Next.js 14)
 
 ```bash
-# 1. Clone e navegue até o diretório raiz
+# 1. Clone o repositório
 git clone https://github.com/cbfn/mercadex.git
-cd mercadex
+cd mercadex/frontend
 
-# 2. Inicie servidor HTTP (Python 3)
-python3 -m http.server 8000
+# 2. Instale as dependências
+npm install
 
-# 3. Acesse no navegador
-# http://localhost:8000/frontend/
+# 3. Inicie o servidor de desenvolvimento
+npm run dev
+# Acesse: http://localhost:3000
+
+# 4. Build de produção
+npm run build && npm start
 ```
 
-**⚠️ Importante:** Execute sempre da **raiz do projeto** para que assets relativos (logo) funcionem corretamente.
-
-### Alternativas para Servir Frontend
+### Testes
 
 ```bash
-# Usando Node.js (se instalado)
-npx http-server frontend -p 8000
+cd frontend
 
-# Usando PHP
-php -S localhost:8000
+# Unitários (Vitest + React Testing Library)
+npm run test            # execução única
+npm run test:watch      # modo watch
 
-# Usando Ruby
-ruby -run -ehttpd . -p8000
+# Cobertura (threshold: 80% em lines/functions/branches/statements)
+npm run test:coverage
+
+# E2E (Playwright)
+npm run test:e2e
+npm run test:e2e:ui     # com interface visual
 ```
 
 ---
@@ -144,69 +160,78 @@ ruby -run -ehttpd . -p8000
 
 ### Fluxo do Cliente
 
-1. **Navegação:** Browse produtos por categoria
-2. **Detalhes:** Clique em um produto para modal com especificações
-3. **Carrinho:** Adicione itens, ajuste quantidades
-4. **Checkout:** Preencha entrega, escolha pagamento, veja confirmação
-5. **Estado:** Carrinho persiste em `localStorage` durante sessão
+1. **Navegação:** Browse produtos por categoria, busca e ordenação
+2. **Detalhes:** Clique em um produto para modal com especificações completas
+3. **Carrinho:** Adicione itens, ajuste quantidades — estado persiste no `localStorage`
+4. **Checkout:** Preencha entrega, realize o pagamento via PIX, veja confirmação
 
-### Exemplo de Interação (JSON do Estado)
+### Gerenciamento de Estado (CartContext)
 
-```javascript
-// State armazenado em memória (frontend/js/main.js)
-state = {
-  cart: [
-    { id: 1, name: "Smartphone X", price: 999.99, qty: 1 },
-    { id: 5, name: "Fone Bluetooth", price: 199.99, qty: 2 }
-  ],
-  checkout: {
-    currentStep: "payment",  // "delivery" | "payment" | "confirmation"
-    delivery: { address: "...", zip: "..." },
-    payment: { method: "pix" }
-  }
-}
+```typescript
+// Estado gerenciado via useReducer + React Context
+// frontend/src/features/cart/model/cart-context.tsx
+type CartState = {
+  items: CartItem[];
+  isOpen: boolean;
+  step: "cart" | "delivery" | "payment" | "confirmation";
+  selectedProductId: string | null;
+};
+
+// localStorage restaurado em useEffect após montagem (evita SSR hydration mismatch)
+useEffect(() => {
+  const saved = localStorage.getItem("cart");
+  if (saved) dispatch({ type: "RESTORE", payload: JSON.parse(saved) });
+}, []);
 ```
 
 ---
 
 ## 🔧 Desenvolvimento
 
-### Estrutura Frontend (Fase 1)
+### Convenções Frontend
 
-**HTML Semântico:**
-```html
-<main id="products-section">
-  <section class="category"></section>
-  <article class="product-card" data-product-id="1"></article>
-</main>
+**Feature-Sliced Design:**
+```
+src/features/<nome>/
+├── components/   # UI do domínio
+└── model/        # hooks, context, reducers
 ```
 
-**JavaScript - Padrão State:**
-```javascript
-// Object global gerenciando todo state
-const state = {
-  cart: [],
-  checkout: { currentStep: "delivery", ... },
-  ...
-};
+**Componentes server vs client:**
+```tsx
+// "use client" apenas quando necessário (hooks ou browser APIs)
+"use client";
+export function CartDrawer() { ... }
 
-// Funções puras atualizando state
-function addToCart(productId) { state.cart.push(...); render(); }
+// server component por padrão (sem diretiva)
+export default function Page() { ... }
 ```
 
-**Tailwind CSS via CDN:**
-```html
-<script src="https://cdn.tailwindcss.com"></script>
+**Padrão de testes (AAA):**
+```tsx
+it("adds item to cart when button is clicked", async () => {
+  // Arrange
+  const user = userEvent.setup();
+  render(<StorefrontPage />, { wrapper: CartProvider });
+
+  // Act
+  await user.click(screen.getByRole("button", { name: /adicionar/i }));
+
+  // Assert
+  expect(screen.getByText("1")).toBeInTheDocument();
+});
 ```
 
-### Debug e Desenvolvimento
+### Scripts disponíveis
 
-```javascript
-// No console do navegador (DevTools)
-console.log(state);        // Inspecione estado atual
-state.cart = [];           // Reset carrinho
-localStorage.clear();      // Limpe cache
-```
+| Comando | Descrição |
+|---------|-----------|
+| `npm run dev` | Servidor de desenvolvimento (Next.js) |
+| `npm run build` | Build de produção |
+| `npm run lint` | ESLint com zero warnings |
+| `npm run test` | Testes unitários (Vitest) |
+| `npm run test:coverage` | Cobertura (threshold 80%) |
+| `npm run test:e2e` | Testes E2E (Playwright) |
 
 ---
 
@@ -233,9 +258,9 @@ feature/nome-curto (seu trabalho)
 
 ### Convenções
 
-- **Commits:** Use `feat:`, `fix:`, `docs:`, `refactor:`, `test:`
-- **Branches:** `feature/`, `bugfix/`, `docs/`
-- **Code style:** Prettier + ESLint (configurar em Fase 2)
+- **Commits semânticos:** `feat:`, `fix:`, `refactor:`, `test:`, `docs:`
+- **Branches git-flow:** `feature/`, `bugfix/`, `hotfix/`, `release/`
+- **Code style:** ESLint + TypeScript strict (sem `any`)
 
 ---
 
@@ -251,27 +276,31 @@ feature/nome-curto (seu trabalho)
 
 ## ❓ FAQ / Troubleshooting
 
-**P: O servidor não consegue acessar a logo?**
-- R: Execute `python3 -m http.server 8000` **da raiz** do repositório, não da pasta `frontend/`
+**P: Erro de hidratação SSR no carrinho?**
+- R: O estado do `localStorage` é restaurado apenas em `useEffect` após montagem. Não inicialize o estado com `localStorage` diretamente no `useState`/`useReducer`.
+
+**P: Os testes estão falhando com erro de `CartProvider`?**
+- R: Componentes que usam `useCart` precisam ser renderizados dentro de `CartProvider`. Use o wrapper nas chamadas de `render()`.
 
 **P: Posso rodar o backend agora?**
-- R: Não. A Fase 1 é frontend-only. Backend será implementado em Fase 2 com Node.js + TypeScript
+- R: Não. O backend ainda não foi implementado (estrutura de pastas preparada). Veja [docs/ADR.md](./docs/ADR.md) para o plano de implementação.
 
-**P: Como limpo o carrinho?**
-- R: Console do navegador: `state.cart = []` ou `localStorage.clear()`
+**P: Como limpo o carrinho no desenvolvimento?**
+- R: Console do navegador: `localStorage.removeItem("cart")` e recarregue a página.
 
 **P: Qual é o plano pós-MVP?**
-- R: Ver [docs/BACKLOG.md](./docs/BACKLOG.md) para roadmap completo (React, API, DB, etc.)
+- R: Ver [docs/BACKLOG.md](./docs/BACKLOG.md) para roadmap completo.
 
 ---
 
 ## 📊 Roadmap
 
-| Fase | Status | Foco | ETA |
-|------|--------|------|-----|
-| **1** | 🔄 Em Progresso | Frontend interativo, UX validation | Maio 2026 |
-| **2** | 📋 Planejado | Backend API, PostgreSQL, Auth | Jun-Jul 2026 |
-| **3** | 📋 Planejado | Frontend React, Integração pagamento | Ago 2026 |
+| Fase | Status | Foco | Conclusão |
+|------|--------|------|-----------|
+| **1** | ✅ Concluído | Prototipagem frontend (HTML/CSS/JS Vanilla) | Abr 2026 |
+| **2** | ✅ Concluído | Frontend Next.js 14 + testes (Vitest + Playwright) | Mai 2026 |
+| **3** | 🔄 Em andamento | Backend API REST (Node.js + TypeScript + PostgreSQL) | Jun-Jul 2026 |
+| **4** | 📋 Planejado | Integração frontend ↔ backend, autenticação, pagamentos | Ago 2026 |
 
 ---
 
@@ -297,4 +326,4 @@ Encontrou um bug ou tem uma sugestão?
 
 ---
 
-**Última atualização:** Maio 2026 | Mercadex MVP Phase 1
+**Última atualização:** Maio 2026 | Mercadex MVP Phase 2 — Frontend Next.js 14
