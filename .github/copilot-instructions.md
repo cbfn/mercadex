@@ -3,6 +3,7 @@
 ## Scope
 
 These instructions apply to the Mercadex workspace. Treat `docs/ADR.md` as the source of truth for architecture and stack decisions unless the user explicitly overrides it.
+For frontend visual and interaction decisions, treat `docs/DESIGN_SYSTEM.md` as mandatory source of truth.
 
 ## Hard Rules
 
@@ -20,11 +21,12 @@ These instructions apply to the Mercadex workspace. Treat `docs/ADR.md` as the s
 
 ## Frontend Rules
 
-- The frontend is Next.js 14 (App Router) with TypeScript and CSS Modules, located in `frontend/`.
+- The frontend is Next.js 14 (App Router) with TypeScript and Tailwind CSS, located in `frontend/`.
 - Use `"use client"` only for components that require browser APIs or React hooks; keep server components the default.
-- Manage state with `useReducer` + React Context. Do not introduce Redux, Zustand, or TanStack Query unless explicitly requested.
+- Manage state with Zustand in the current frontend architecture. Do not introduce Redux, Context reducers as global store replacements, or TanStack Query unless explicitly requested.
 - Restore browser-only state (e.g., `localStorage`) inside `useEffect` after mount to avoid SSR hydration mismatches.
-- Keep UI primitives in `frontend/src/shared/ui/`. Do not introduce external component libraries (Shadcn/ui, MUI, etc.) unless the task explicitly asks for it.
+- Follow `docs/DESIGN_SYSTEM.md` for every UI change, including typography, tokens, spacing, and UX writing.
+- Keep UI primitives in `frontend/src/shared/ui/` using shadcn-style component patterns and Tailwind utility classes.
 - Follow Feature-Sliced Design: `src/features/<name>/components/` for UI, `src/features/<name>/model/` for state/hooks.
 
 ## Code Quality Rules

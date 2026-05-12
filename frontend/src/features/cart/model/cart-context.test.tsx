@@ -1,8 +1,8 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
-import { CartProvider, useCart } from "@/features/cart/model/cart-context";
+import { beforeEach, describe, expect, it } from "vitest";
+import { CartProvider, resetCartStore, useCart } from "@/features/cart/model/cart-context";
 import { PRODUCTS } from "@/shared/mocks/products";
 
 function TestHarness() {
@@ -40,6 +40,11 @@ function renderWithProvider() {
 }
 
 describe("CartProvider / useCart", () => {
+  beforeEach(() => {
+    resetCartStore();
+    localStorage.clear();
+  });
+
   it("starts with empty cart", () => {
     renderWithProvider();
     expect(screen.getByTestId("qty")).toHaveTextContent("0");
@@ -147,24 +152,22 @@ describe("CartProvider / useCart", () => {
     expect(screen.getByTestId("step")).toHaveTextContent("0");
   });
 
-  it("persists state to localStorage", async () => {
+  it("updates zustand store state after add", async () => {
     const user = userEvent.setup();
     renderWithProvider();
 
     await user.click(screen.getByTestId("add"));
-
-    const stored = localStorage.getItem("mercadex:cart-state");
-    expect(stored).toBeTruthy();
-    const parsed = JSON.parse(stored!);
-    expect(parsed.items).toHaveLength(1);
+    expect(useCart.getState().items).toHaveLength(1);
   });
 
-  it("throws when useCart is called outside CartProvider", () => {
+  it("works outside provider because state is global", () => {
     function Orphan() {
-      useCart();
-      return null;
+      const cart = useCart();
+      return <span data-testid="orphan-qty">{cart.quantity}</span>;
     }
-    expect(() => render(<Orphan />)).toThrow("useCart must be used inside CartProvider");
+
+    render(<Orphan />);
+    expect(screen.getByTestId("orphan-qty")).toHaveTextContent("0");
   });
 
   it("total includes shipping when cart has items", async () => {

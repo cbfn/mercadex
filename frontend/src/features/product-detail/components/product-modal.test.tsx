@@ -1,8 +1,8 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
-import { CartProvider, useCart } from "@/features/cart/model/cart-context";
+import { beforeEach, describe, expect, it } from "vitest";
+import { CartProvider, resetCartStore, useCart } from "@/features/cart/model/cart-context";
 import { ProductModal } from "@/features/product-detail/components/product-modal";
 import { PRODUCTS } from "@/shared/mocks/products";
 
@@ -29,6 +29,11 @@ function renderModal(productId = PRODUCTS[0].id) {
 }
 
 describe("ProductModal", () => {
+  beforeEach(() => {
+    resetCartStore();
+    localStorage.clear();
+  });
+
   it("renders nothing when no product is selected", () => {
     const { container } = render(
       <CartProvider>

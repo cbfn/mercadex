@@ -7,19 +7,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Mercadex** é um marketplace de eletrônicos em MVP, com arquitetura monolítica modular separando frontend e backend. O projeto é um e-commerce com funcionalidades de catálogo, carrinho de compras, e checkout.
 
 **Status atual (Fase 2 - Frontend migrado):**
-- Frontend: Next.js 14 (App Router) + TypeScript + CSS Modules customizados (`frontend/`)
+- Frontend: Next.js 14 (App Router) + TypeScript + Tailwind CSS + componentes shadcn-style (`frontend/`)
 - Backend: Estrutura preparada (Node.js + TypeScript + Express), ainda sem implementação
 - Banco de dados: PostgreSQL (planejado)
 - CI: GitHub Actions (`.github/workflows/ci.yml`) com cobertura mínima de 80%
 
 Ver `docs/ADR.md` para decisões arquiteturais completas.
+Ver `docs/DESIGN_SYSTEM.md` para padrões visuais, tipografia e UX writing do frontend.
 
 ## Tech Stack
 
 ### Frontend (Atual - Next.js 14)
 - **Next.js 14** com App Router e `"use client"` para componentes interativos
 - **React 18** + **TypeScript** (strict)
-- **CSS Modules** customizados (`src/app/globals.css`) — sem Tailwind nem Shadcn/ui
+- **Tailwind CSS** com tokens globais em `src/app/globals.css`
+- **Componentes shadcn-style** em `src/shared/ui/`
+- **Tipografia padrão:** Inter
 - **Vitest 2** + **React Testing Library** para testes unitários
 - **@vitest/coverage-v8** para cobertura, thresholds em 80% (lines/functions/branches/statements)
 - Estrutura Feature-Sliced: `src/features/`, `src/shared/`, `src/app/`
@@ -54,11 +57,11 @@ frontend/
 │   │   ├── globals.css      # Estilos globais (CSS customizado)
 │   │   ├── layout.tsx        # Root layout (providers)
 │   │   ├── page.tsx          # Página principal
-│   │   └── providers.tsx     # CartProvider wrapper
+│   │   └── products/[id]/page.tsx  # Página de produto
 │   ├── features/
 │   │   ├── cart/
 │   │   │   ├── components/cart-drawer.tsx   # Drawer com fluxo de checkout 4 etapas
-│   │   │   └── model/cart-context.tsx       # Reducer + Context + localStorage
+│   │   │   └── model/cart-context.tsx       # Zustand + persistência local
 │   │   ├── catalog/
 │   │   │   └── model/use-catalog-filters.ts # Hook de filtragem/ordenação
 │   │   ├── product-detail/
@@ -77,8 +80,8 @@ frontend/
 ```
 
 **Padrões de estado:**
-- `CartContext` (useReducer): gerencia itens, etapas de checkout, produto selecionado
-- `localStorage` restaurado apenas após montagem (evita hydration mismatch SSR)
+- Store global com Zustand para itens, etapas de checkout e estado de UI do carrinho
+- Persistência local de estado via `localStorage`
 - `useCatalogFilters`: filtragem por categoria, busca e ordenação
 
 ## Architecture Decisions
@@ -103,10 +106,11 @@ Ver `docs/ADR.md` para contexto completo de cada decisão, riscos, e mitigaçõe
 ## Key Patterns
 
 ### Frontend React/Next.js
-- **State management:** `useReducer` + React Context (`CartContext`); sem Redux nem Zustand
-- **Hydration safety:** `useReducer` inicializa com `initialState`; `localStorage` restaurado via `useEffect` com action `RESTORE` após montagem
+- **State management:** Zustand em `features/cart/model/cart-context.tsx`
+- **Hydration safety:** estado persistido no store com integração de `localStorage`
 - **Feature-Sliced Design:** `features/<nome>/components/` e `features/<nome>/model/` por domínio
-- **UI primitivos:** Componentes em `shared/ui/` sem dependência de biblioteca de componentes externa
+- **UI primitivos:** Componentes em `shared/ui/` com padrão shadcn-style + Tailwind
+- **Design source of truth:** seguir `docs/DESIGN_SYSTEM.md` para qualquer tarefa visual
 - **Testes:** Cada componente/hook tem arquivo `.test.tsx` ou `.test.ts` co-localizado
 
 ### Backend (Planned)
