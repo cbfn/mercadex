@@ -8,6 +8,7 @@
 
 > Esta é a trilha de fechamento. Conecta frontend e backend, garante
 > qualidade com testes e JSDoc, e configura o CI/CD final.
+> Regra de documentação: novos módulos, funções públicas, contratos de API e utilitários compartilhados devem ser documentados com JSDoc.
 
 ---
 
@@ -578,12 +579,12 @@ jobs:
       - name: Executar migrations
         run: npx prisma migrate deploy
         env:
-          DATABASE_URL: postgresql://mercadex:mercadex_test@localhost:5432/mercadex_test
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Testes com cobertura
         run: npm run test:coverage
         env:
-          DATABASE_URL: postgresql://mercadex:mercadex_test@localhost:5432/mercadex_test
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JWT_SECRET: ci_test_secret_nao_usar_em_producao
           JWT_REFRESH_SECRET: ci_test_refresh_secret_nao_usar_em_producao
           NODE_ENV: test
@@ -592,7 +593,7 @@ jobs:
 **Commit:**
 ```bash
 git add .github/workflows/ci.yml
-git commit -m "ci: atualiza pipeline com backend, Jest e PostgreSQL no CI"
+git commit -m "ci: atualiza pipeline com backend, Jest e Neon no CI"
 ```
 
 ---
@@ -612,8 +613,8 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
 
 # ─── Backend ─────────────────────────────────────────────────────────────────
-# Banco de dados PostgreSQL local
-DATABASE_URL=postgresql://mercadex:mercadex_dev@localhost:5432/mercadex
+# Neon Postgres
+DATABASE_URL=postgresql://USER:PASSWORD@ep-your-project-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
 
 # JWT — gerar com: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 JWT_SECRET=
@@ -644,7 +645,7 @@ git commit -m "docs: documenta todas as variaveis de ambiente necessarias"
 - [ ] Stripe integrado no frontend (formulário de pagamento)
 - [ ] JSDoc adicionado em todos os arquivos
 - [ ] Cobertura de testes ≥ 80% (frontend e backend)
-- [ ] CI/CD atualizado com job de backend + PostgreSQL
+- [ ] CI/CD atualizado com job de backend + Neon
 - [ ] `.env.example` documentado
 - [ ] `npm run build` passando (frontend)
 - [ ] `npm run test:coverage` passando (frontend e backend)

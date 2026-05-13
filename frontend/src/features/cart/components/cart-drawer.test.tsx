@@ -1,7 +1,6 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it } from "vitest";
 import { CartProvider, resetCartStore, useCart } from "@/features/cart/model/cart-context";
 import { CartDrawer } from "@/features/cart/components/cart-drawer";
 import { PRODUCTS } from "@/shared/mocks/products";

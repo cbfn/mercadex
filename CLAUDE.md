@@ -6,10 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Mercadex** é um marketplace de eletrônicos em MVP, com arquitetura monolítica modular separando frontend e backend. O projeto é um e-commerce com funcionalidades de catálogo, carrinho de compras, e checkout.
 
-**Status atual (Fase 2 - Frontend migrado):**
-- Frontend: Next.js 14 (App Router) + TypeScript + Tailwind CSS + componentes shadcn-style (`frontend/`)
-- Backend: Estrutura preparada (Node.js + TypeScript + Express), ainda sem implementação
-- Banco de dados: PostgreSQL (planejado)
+**Status atual (Fase 3 - Backend em andamento):**
+- Frontend: Next.js 16.2 (App Router) + TypeScript + Tailwind CSS + componentes shadcn-style (`frontend/`)
+- Backend: Node.js + TypeScript + Express com auth, produtos e Prisma/Neon iniciados
+- Banco de dados: Neon Postgres com Prisma 6.19.3
 - CI: GitHub Actions (`.github/workflows/ci.yml`) com cobertura mínima de 80%
 
 Ver `docs/ADR.md` para decisões arquiteturais completas.
@@ -17,23 +17,29 @@ Ver `docs/DESIGN_SYSTEM.md` para padrões visuais, tipografia e UX writing do fr
 
 ## Tech Stack
 
-### Frontend (Atual - Next.js 14)
-- **Next.js 14** com App Router e `"use client"` para componentes interativos
-- **React 18** + **TypeScript** (strict)
+### Frontend (Atual - Next.js 16.2)
+- **Next.js 16.2** com App Router e `"use client"` para componentes interativos
+- **React 19** + **TypeScript** (strict)
 - **Tailwind CSS** com tokens globais em `src/app/globals.css`
 - **Componentes shadcn-style** em `src/shared/ui/`
 - **Tipografia padrão:** Inter
-- **Vitest 2** + **React Testing Library** para testes unitários
-- **@vitest/coverage-v8** para cobertura, thresholds em 80% (lines/functions/branches/statements)
+- **Jest 30** + **React Testing Library** para testes unitários
+- Cobertura com thresholds em 80% (lines/functions/branches/statements)
 - Estrutura Feature-Sliced: `src/features/`, `src/shared/`, `src/app/`
 
-### Backend (Planned - Fase 2)
+### Backend (Em andamento)
 - Node.js 20+ com TypeScript
 - Express.js para API REST
-- PostgreSQL 15+
-- TypeORM/Prisma para ORM
+- Neon Postgres
+- Prisma 6.19.3
 - JWT para autenticação
 - Redis para cache e async jobs (Bull)
+
+## Coding Standards
+
+- Documente novos módulos, funções públicas, contratos de API e utilitários compartilhados com JSDoc.
+- Prefira commits pequenos e descritivos.
+- Mantenha o backend modular em `backend/src/modules/`.
 
 ## Running the Project
 
@@ -120,17 +126,19 @@ Ver `docs/ADR.md` para contexto completo de cada decisão, riscos, e mitigaçõe
 
 ## Important Notes
 
-1. **Fase 2 em andamento:** Frontend Next.js 14 implementado e com CI. Backend ainda não implementado.
+1. **Fase atual:** Frontend Next.js 16.2 estabilizado e backend em implementação com Prisma/Neon.
 
-2. **Cobertura mínima:** `vitest.config.ts` enforça 80% para lines/functions/branches/statements via `@vitest/coverage-v8`.
+2. **Cobertura mínima:** Jest enforça 80% para lines/functions/branches/statements.
 
-3. **Security:** JWT + refresh tokens (planned backend), HTTPS obrigatório, CORS whitelist, rate limiting (ver ADR seção 6).
+3. **Security:** JWT + refresh tokens no backend, HTTPS obrigatório, CORS whitelist, rate limiting (ver ADR seção 6).
 
-4. **Deployment:** Frontend Next.js pronto para deploy em Vercel. Backend aguarda implementação.
+4. **Deployment:** Frontend Next.js pronto para deploy em Vercel. Backend em evolução, com Prisma e Neon já alinhados.
 
-5. **No package.json no backend yet:** Estrutura criada mas dependências não instaladas (aguardando setup inicial).
+5. **Backend estruturado:** `backend/package.json`, `backend/tsconfig.json` e o schema Prisma já existem e são a base das próximas trilhas.
 
 6. **Frontend `node_modules` na raiz:** O `node_modules/` da raiz não deve ser rastreado pelo git (`.gitignore` adicionado). Dependências do frontend ficam em `frontend/node_modules/`.
+
+7. **Documentação:** novos módulos, funções públicas, contratos de API e utilitários compartilhados devem usar JSDoc.
 
 ## Development Flow
 
