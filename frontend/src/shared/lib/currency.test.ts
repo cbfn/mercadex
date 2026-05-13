@@ -1,4 +1,3 @@
-import { describe, expect, it } from "vitest";
 import { formatBRL } from "@/shared/lib/currency";
 
 describe("formatBRL", () => {

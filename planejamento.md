@@ -10,10 +10,10 @@
 
 ## Visão Geral
 
-O Mercadex é um marketplace de eletrônicos. O projeto possui um frontend Next.js 14
-funcional com 164 testes, e um backend ainda não implementado. Este planejamento
-cobre a limpeza do repositório, atualização de dependências e desenvolvimento
-completo do produto.
+O Mercadex é um marketplace de eletrônicos. O projeto possui um frontend Next.js 16.2
+funcional com 163 testes unitários e cobertura acima de 80%, e um backend base já iniciado com Prisma 6.19.3 e Neon.
+Este planejamento cobre a limpeza do repositório, atualização de dependências e
+desenvolvimento completo do produto.
 
 **Repositório:** `github.com/cbfn/mercadex`
 **Branch principal:** `main`
@@ -78,6 +78,10 @@ git commit -m "chore: remove arquivos .DS_Store"
 - `refactor:` refatoração sem mudança de comportamento
 - `test:` adição ou correção de testes
 - `docs:` documentação
+
+**Regra de documentação:**
+- Todo novo módulo, função pública, contrato de API e utilitário compartilhado deve ser documentado com JSDoc.
+- A documentação deve explicar intenção, parâmetros, retorno e efeitos colaterais quando existirem.
 
 ---
 
@@ -186,8 +190,8 @@ mercadex/
 | 1.3 | 1 | Remoção de duplicatas | 15 min | 1.2 |
 | 1.4 | 1 | Reorganização da árvore de diretórios | 1h | 1.3 |
 | 1.5 | 1 | Migração Vitest → Jest | 2h | 1.4 |
-| 1.6 | 1 | Atualização de dependências (Next.js 16, React 19) | 3h | 1.5 |
-| 1.7 | 1 | Setup do backend (package.json, tsconfig, Prisma) | 2h | 1.4 |
+| 1.6 | 1 | Atualização de dependências (Next.js 16.2, React 19) | 3h | 1.5 |
+| 1.7 | 1 | Setup do backend (package.json, tsconfig, Prisma 6.19.3 + Neon) | 2h | 1.4 |
 | 2.1 | 2 | Schema Prisma completo | 2h | 1.7 |
 | 2.2 | 2 | Módulo Auth (register, login, JWT, middleware) | 1 dia | 2.1 |
 | 2.3 | 2 | Módulo Produtos (CRUD + categorias) | 1 dia | 2.2 |

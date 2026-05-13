@@ -1,7 +1,6 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
 import { Select } from "@/shared/ui/select";
 
 describe("Select", () => {
@@ -37,7 +36,7 @@ describe("Select", () => {
 
   it("fires onChange on selection", async () => {
     const user = userEvent.setup();
-    const onChange = vi.fn();
+    const onChange = jest.fn();
     render(
       <Select aria-label="sort" onChange={onChange}>
         <option value="a">Option A</option>

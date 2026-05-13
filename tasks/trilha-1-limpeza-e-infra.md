@@ -8,6 +8,7 @@
 
 > ⚠️ Cada tarefa deve ser commitada separadamente para facilitar rollback.
 > Abrir PR para `develop` ao concluir todas as tarefas desta trilha.
+> Regra de documentação: novos módulos, funções públicas, contratos de API e utilitários compartilhados devem ser documentados com JSDoc.
 
 ---
 
@@ -83,28 +84,30 @@ git commit -m "chore: arquiva prototipo HTML Fase 1 em docs/fase1-prototipo"
 
 ---
 
-## Tarefa 1.3 — Remoção de duplicatas exatas
+## Tarefa 1.3 — Validação de duplicatas exatas
 
 **Tempo:** 15 minutos
-**Risco:** Baixo (conteúdo idêntico confirmado)
+**Risco:** Baixo (somente se os diretórios originais ainda forem duplicatas exatas)
 
-Os arquivos `docs/ADR.md` e `docs/DIAGRAMAS.md` na raiz são cópias exatas dos
-arquivos em `mercadex/docs/`. O `backend/` na raiz está vazio.
+Nesta versão do repositório, `docs/` e `backend/` são diretórios reais do
+projeto e **não devem ser removidos**. Esta etapa serve apenas para confirmar se
+a estrutura ainda contém duplicatas exatas do layout antigo.
 
 ```bash
 BASE=/media/henrique-ferraz/Hdd_500/projetos/mercadex
 
-# Remover docs/ duplicado da raiz
-rm -rf "$BASE/docs"
+# Validar que docs/ e backend/ são diretórios ativos
+test -f "$BASE/docs/ADR.md"
+test -f "$BASE/backend/package.json"
 
-# Remover backend/ vazio da raiz
-rm -rf "$BASE/backend"
+# Confirmar que não existe o layout aninhado antigo
+test ! -d "$BASE/mercadex"
 ```
 
 **Commit:**
 ```bash
 git add -A
-git commit -m "chore: remove duplicatas exatas (docs/ e backend/ da raiz)"
+git commit -m "chore: valida estrutura atual e remove apenas duplicatas reais"
 ```
 
 ---
@@ -165,7 +168,7 @@ git commit -m "chore: promove mercadex/ para raiz, elimina nivel desnecessario"
 **Tempo:** 2 horas
 **Risco:** Médio
 
-Os 164 testes existentes usam a API `describe/it/expect` que é compatível com Jest.
+Os 163 testes existentes usam a API `describe/it/expect` que é compatível com Jest.
 A migração não exige reescrita dos testes, apenas troca de configuração.
 
 ```bash
@@ -249,14 +252,14 @@ rm frontend/vitest.setup.ts
 **Verificação:**
 ```bash
 cd frontend
-npm run test          # todos os 164 testes devem passar
+  npm run test          # todos os 163 testes devem passar
 npm run test:coverage # cobertura >= 80%
 ```
 
 **Commit:**
 ```bash
 git add -A
-git commit -m "chore: migra Vitest para Jest 30, mantem 164 testes passando"
+git commit -m "chore: migra Vitest para Jest 30, mantem 163 testes passando"
 ```
 
 ---
@@ -280,15 +283,15 @@ npx tsc --noEmit
 ### 1.6.2 — React 19
 
 ```bash
-npm install react@^19.2.6 react-dom@^19.2.6
+npm install react@^19.1.1 react-dom@^19.1.1
 npm run build
 npm run test
 ```
 
-### 1.6.3 — Next.js 16
+### 1.6.3 — Next.js 16.2
 
 ```bash
-npm install next@^16.2.6 eslint-config-next@^16.2.6
+npm install next@^16.2.0 eslint-config-next@^15.5.2
 npx @next/codemod@latest upgrade latest
 npm run build
 npm run test
@@ -297,7 +300,7 @@ npm run test
 ### 1.6.4 — ESLint
 
 ```bash
-npm install --save-dev eslint@^10.3.0
+npm install --save-dev eslint@^9.35.0
 npm run lint
 # Corrigir warnings se houver
 ```
@@ -305,7 +308,7 @@ npm run lint
 ### 1.6.5 — Playwright
 
 ```bash
-npm install --save-dev @playwright/test@^1.60.0
+npm install --save-dev @playwright/test@^1.55.0
 npx playwright install --with-deps chromium
 ```
 
@@ -318,7 +321,7 @@ npm install
 **Commit:**
 ```bash
 git add package.json package-lock.json
-git commit -m "chore: atualiza dependencias frontend (Next 16, React 19, ESLint 10)"
+git commit -m "chore: atualiza dependencias frontend (Next 16.2, React 19, ESLint 9)"
 ```
 
 ---
@@ -328,32 +331,8 @@ git commit -m "chore: atualiza dependencias frontend (Next 16, React 19, ESLint 
 **Tempo:** 2 horas
 **Risco:** Baixo
 
-Configura o backend com Node.js + TypeScript + Prisma. O banco de dados PostgreSQL
-deve ser instalado localmente (sem Docker).
-
-### Instalação local do PostgreSQL
-
-**Linux (Ubuntu/Debian):**
-```bash
-sudo apt update
-sudo apt install postgresql postgresql-contrib
-sudo systemctl start postgresql
-sudo systemctl enable postgresql
-
-# Criar usuário e banco
-sudo -u postgres psql -c "CREATE USER mercadex WITH PASSWORD 'mercadex_dev';"
-sudo -u postgres psql -c "CREATE DATABASE mercadex OWNER mercadex;"
-sudo -u postgres psql -c "CREATE DATABASE mercadex_test OWNER mercadex;"
-```
-
-**macOS (Homebrew):**
-```bash
-brew install postgresql@16
-brew services start postgresql@16
-createuser -s mercadex
-createdb mercadex -U mercadex
-createdb mercadex_test -U mercadex
-```
+Configura o backend com Node.js + TypeScript + Prisma usando **Neon Postgres**.
+Não há necessidade de instalar PostgreSQL localmente.
 
 ### Inicializar o backend
 
@@ -370,12 +349,13 @@ Criar `backend/package.json` completo:
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "nodemon src/server.ts",
+    "dev": "nodemon --exec ts-node src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "test": "jest",
     "test:coverage": "jest --coverage",
     "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
     "db:generate": "prisma generate",
     "db:seed": "ts-node prisma/seed.ts"
   }
@@ -386,22 +366,22 @@ Instalar dependências:
 
 ```bash
 npm install \
-  express@^4.21.0 \
-  @prisma/client@^6.0.0 \
+  express@^5.1.0 \
+  @prisma/client@6.19.3 \
   bcryptjs@^2.4.3 \
   jsonwebtoken@^9.0.2 \
-  zod@^3.24.0 \
+  zod@^4.1.5 \
   cors@^2.8.5 \
-  helmet@^8.0.0 \
-  express-rate-limit@^7.5.0
+  helmet@^8.1.0 \
+  express-rate-limit@^8.0.0
 
 npm install --save-dev \
-  typescript@^5.5.4 \
+  typescript@^5.8.3 \
   ts-node@^10.9.2 \
   nodemon@^3.1.0 \
-  prisma@^6.0.0 \
-  @types/express@^5.0.0 \
-  @types/node@^20.14.15 \
+  prisma@6.19.3 \
+  @types/express@^5.0.3 \
+  @types/node@^24.3.1 \
   @types/bcryptjs@^2.4.6 \
   @types/jsonwebtoken@^9.0.7 \
   @types/cors@^2.8.17 \
@@ -441,8 +421,8 @@ Criar `backend/tsconfig.json`:
 Criar `backend/.env.example`:
 
 ```bash
-# Banco de dados (PostgreSQL local)
-DATABASE_URL="postgresql://mercadex:mercadex_dev@localhost:5432/mercadex"
+# Banco de dados (Neon Postgres)
+DATABASE_URL="postgresql://USER:PASSWORD@ep-your-project-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 
 # JWT
 JWT_SECRET="troque-por-uma-string-aleatoria-longa"
@@ -513,14 +493,14 @@ git commit -m "chore: setup inicial do backend (Node.js + TypeScript + Prisma)"
 
 Antes de abrir o PR:
 
-- [ ] Tarefa 1.1 concluída e commitada
-- [ ] Tarefa 1.2 concluída e commitada
-- [ ] Tarefa 1.3 concluída e commitada
-- [ ] Tarefa 1.4 concluída e commitada
-- [ ] Tarefa 1.5 concluída — `npm run test` passando (164 testes)
-- [ ] Tarefa 1.6 concluída — `npm run build` passando
-- [ ] Tarefa 1.7 concluída — backend sobe sem erros
-- [ ] Nenhum `.env` ou secret commitado
-- [ ] PR aberto para `develop` com descrição das mudanças
+- [x] Tarefa 1.1 concluída e commitada
+- [x] Tarefa 1.2 concluída e commitada
+- [x] Tarefa 1.3 concluída e commitada
+- [x] Tarefa 1.4 concluída e commitada
+- [x] Tarefa 1.5 concluída — `npm run test` passando (163 testes)
+- [x] Tarefa 1.6 concluída — `npm run build` passando
+- [x] Tarefa 1.7 concluída — backend sobe sem erros e aponta para Neon
+- [x] Nenhum `.env` ou secret commitado
+- [x] PR aberto para `develop` com descrição das mudanças
 
 **Título do PR:** `chore: limpeza do repositorio, migracao Jest e setup do backend`

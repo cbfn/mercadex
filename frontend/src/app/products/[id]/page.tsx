@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { use, useMemo, useState } from "react";
 import { ArrowLeft, ShieldCheck, ShoppingBag, Star, Truck } from "lucide-react";
 import { CartDrawer } from "@/features/cart/components/cart-drawer";
 import { useCart } from "@/features/cart/model/cart-context";
@@ -13,20 +13,21 @@ import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 
 interface ProductPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default function ProductPage({ params }: ProductPageProps) {
   const { quantity, openCart, addToCart } = useCart();
   const [qty, setQty] = useState(1);
+  const { id } = use(params);
 
   const product = useMemo(() => {
-    const id = Number(params.id);
-    if (Number.isNaN(id)) return null;
-    return PRODUCTS.find((item) => item.id === id) ?? null;
-  }, [params.id]);
+    const productId = Number(id);
+    if (Number.isNaN(productId)) return null;
+    return PRODUCTS.find((item) => item.id === productId) ?? null;
+  }, [id]);
 
   if (!product) {
     return (

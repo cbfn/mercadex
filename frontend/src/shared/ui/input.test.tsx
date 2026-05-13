@@ -1,7 +1,6 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
 import { Input } from "@/shared/ui/input";
 
 describe("Input", () => {
@@ -29,7 +28,7 @@ describe("Input", () => {
 
   it("fires onChange", async () => {
     const user = userEvent.setup();
-    const onChange = vi.fn();
+    const onChange = jest.fn();
     render(<Input aria-label="name" onChange={onChange} />);
 
     await user.type(screen.getByRole("textbox"), "a");
