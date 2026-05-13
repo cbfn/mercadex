@@ -8,12 +8,13 @@
 
 > Trabalhar sempre dentro de `backend/src/modules/`.
 > Cada módulo segue o padrão: controller → service → repository → dto → routes → test.
+> Regra de documentação: novos módulos, funções públicas, contratos de API e utilitários compartilhados devem ser documentados com JSDoc.
 
 ---
 
 ## Contexto
 
-O backend usa Express + TypeScript + Prisma + PostgreSQL local (sem Docker).
+O backend usa Express + TypeScript + Prisma + Neon db.
 A arquitetura segue DDD light: cada módulo é independente e se comunica
 apenas via interfaces bem definidas.
 
@@ -564,12 +565,12 @@ git commit -m "test: testes de integracao para auth e produtos (cobertura >= 80%
 
 ## Checklist Final da Trilha 2
 
-- [ ] Schema Prisma criado e migration executada
-- [ ] Módulo auth funcionando (register, login, refresh, logout)
-- [ ] Módulo produtos funcionando (CRUD + categorias + filtros)
-- [ ] Testes passando com cobertura >= 80%
-- [ ] `npx tsc --noEmit` sem erros
-- [ ] Nenhum `.env` commitado
-- [ ] PR aberto para `develop`
+- [x] Schema Prisma criado e migration executada
+- [x] Módulo auth funcionando (register, login, refresh, logout)
+- [x] Módulo produtos funcionando (CRUD + categorias + filtros)
+- [x] Testes passando com cobertura >= 80%
+- [x] `npx tsc --noEmit` sem erros
+- [x] Nenhum `.env` commitado
+- [x] PR aberto para `develop`
 
 **Título do PR:** `feat: backend auth e produtos (JWT, CRUD, testes)`
