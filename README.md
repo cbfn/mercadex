@@ -31,6 +31,7 @@
 - 🟡 Autenticação com JWT e refresh tokens (iniciado)
 - 🟡 Persistência em Neon Postgres + Prisma 7.8.0 (iniciado)
 - 🟡 Módulo de produtos com rotas e testes (iniciado)
+- ✅ Documentação interativa da API via Swagger UI (`/api-docs`)
 - ⬜ Módulos de carrinho, usuários e pedidos (planejado)
 - 🔄 Integração com gateway de pagamento para PIX (MVP) e futuramente Cartão de Crédito e Boleto
 - 🔄 Sistema de pedidos e tracking
@@ -285,6 +286,8 @@ feature/nome-curto (seu trabalho)
 - **[docs/DIAGRAMAS.md](./docs/DIAGRAMAS.md)** - Fluxogramas de negócio
 - **[docs/USER_STORIES.md](./docs/USER_STORIES.md)** - Histórias de usuário
 - **[docs/BACKLOG.md](./docs/BACKLOG.md)** - Roadmap e prioridades
+- **[docs/BRUNO_COLLECTION.md](./docs/BRUNO_COLLECTION.md)** - Coleção Bruno para testes da API
+- **Swagger UI** — `http://localhost:3001/api-docs` (backend rodando)
 
 ---
 
@@ -298,6 +301,9 @@ feature/nome-curto (seu trabalho)
 
 **P: Posso rodar o backend agora?**
 - R: Parcialmente. Os módulos `auth` e `products` estão implementados e já expõem rotas; `cart`, `users` e `orders` ainda estão em evolução.
+
+**P: Como exploro os endpoints do backend?**
+- R: Com o backend rodando (`npm run dev` na pasta `backend`), acesse `http://localhost:3001/api-docs` para a documentação interativa via Swagger UI. Também está disponível a coleção Bruno em `backend/bruno/`.
 
 **P: Como limpo o carrinho no desenvolvimento?**
 - R: Console do navegador: `localStorage.removeItem("cart")` e recarregue a página.
