@@ -1,0 +1,29 @@
+meta {
+  name: Create Product (Admin)
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/products
+  body: json
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "title": "Mouse Gamer RGB",
+    "description": "Mouse ergonomico para jogos",
+    "price": 199.9,
+    "condition": "EXCELENTE",
+    "categoryId": "{{categoryId}}",
+    "stock": 12,
+    "images": [
+      "https://images.example.com/mouse-rgb-front.jpg"
+    ]
+  }
+}
