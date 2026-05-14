@@ -1,6 +1,6 @@
-import { neonConfig } from '@neondatabase/serverless';
-import { PrismaNeon } from '@prisma/adapter-neon';
 import { PrismaClient } from '@prisma/client';
+import { PrismaNeon } from '@prisma/adapter-neon';
+import { neonConfig } from '@neondatabase/serverless';
 import ws from 'ws';
 
 // Em ambiente Node.js, o driver Neon serverless precisa de WebSocket.
@@ -14,6 +14,7 @@ function createPrismaClient() {
   if (!connectionString) {
     throw new Error('DATABASE_URL não definida nas variáveis de ambiente');
   }
+  // PrismaNeon v7 recebe PoolConfig diretamente (não um Pool instanciado)
   const adapter = new PrismaNeon({ connectionString });
   return new PrismaClient({
     adapter,
