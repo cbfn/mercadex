@@ -4,7 +4,7 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "dev": "node -r ts-node/register src/server.ts",
+    "dev": "node -r dotenv/config -r ts-node/register src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "test": "jest",
@@ -16,6 +16,7 @@
     "db:studio": "prisma studio"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
     "@prisma/adapter-neon": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@types/ws": "^8.18.1",
@@ -26,7 +27,8 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "ws": "^8.20.1",
-    "zod": "^4.1.5"
+    "zod": "^4.1.5",
+    "dotenv": "^17.4.2"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
