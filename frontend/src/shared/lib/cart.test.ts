@@ -1,4 +1,3 @@
-import { describe, expect, it } from "vitest";
 import { addItem, cartQuantity, cartSubtotal, cartTotal, removeItem, updateItemQty } from "@/shared/lib/cart";
 import { PRODUCTS } from "@/shared/mocks/products";
 

@@ -4,17 +4,18 @@
 **Branch:** `feature/frontend-auth-dashboard`
 **Base:** `develop` (após merge da Trilha 1)
 **Estimativa:** 4–5 dias
-**Pré-requisito:** Trilha 1 concluída (Next.js 16 + Jest configurados)
+**Pré-requisito:** Trilha 1 concluída (Next.js 16.2 + Jest configurados)
 
 > Esta trilha pode rodar em paralelo com as Trilhas 2 e 3.
 > Usar dados mock para desenvolver o frontend enquanto o backend não está pronto.
 > A integração real acontece na Trilha 5.
+> Regra de documentação: novos módulos, funções públicas, contratos de API e utilitários compartilhados devem ser documentados com JSDoc.
 
 ---
 
 ## Contexto
 
-O frontend usa Next.js 16 com App Router. A estrutura segue Feature-Sliced Design:
+O frontend usa Next.js 16.2 com App Router. A estrutura segue Feature-Sliced Design:
 cada feature tem `components/` e `model/` separados.
 
 O backend ainda não está disponível durante o desenvolvimento desta trilha.

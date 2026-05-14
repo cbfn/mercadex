@@ -1,6 +1,5 @@
 import React from "react";
 import { renderHook, act } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
 import { useCatalogFilters } from "@/features/catalog/model/use-catalog-filters";
 import { PRODUCTS } from "@/shared/mocks/products";
 

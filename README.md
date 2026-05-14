@@ -8,7 +8,9 @@
 
 **Mercadex** é um marketplace de eletrônicos em desenvolvimento, construído como MVP (Produto Mínimo Viável) com arquitetura monolítica modular. O projeto separa claramente frontend e backend, permitindo evolução independente de cada camada.
 
-**Objetivo:** Validar fluxos de compra e UX antes de escalar para produção. A Fase 2 (atual) conta com frontend React/Next.js 14 completo com testes automatizados; a próxima etapa é a implementação do backend com persistência de dados.
+**Objetivo:** Validar fluxos de compra e UX antes de escalar para produção. A Fase 2 foi concluida com frontend React/Next.js 16.2 e testes automatizados; a Fase 3 esta em andamento com consolidacao do backend e persistencia de dados.
+
+**Padrão de documentação:** novos módulos, funções públicas, contratos de API e utilitários compartilhados devem usar JSDoc.
 
 ---
 
@@ -20,14 +22,16 @@
 - ✅ **Carrinho Interativo:** Adicionar, alterar quantidades, remover itens com atualização em tempo real
 - ✅ **Checkout Multi-Etapa:** Entrega → Pagamento (PIX) → Confirmação
 - ✅ **Persistência de Carrinho:** Estado restaurado do `localStorage` após navegação (sem SSR mismatch)
-- ✅ **Testes Automatizados:** 164 testes unitários com cobertura ≥ 80% (Vitest + React Testing Library)
+- ✅ **Testes Automatizados:** 163 testes unitários com cobertura ≥ 80% (Jest + React Testing Library)
 - ✅ **CI Integrado:** GitHub Actions valida lint, type-check e testes a cada push
 - ✅ **Design Responsivo:** Layout fluido para mobile, tablet e desktop (Tailwind CSS + tokens do design system)
 
-### Backend (Próxima Etapa - Fase 3)
+### Backend (Fase 3 - Em andamento)
 - 🔄 API REST em Node.js + TypeScript + Express.js
-- 🔄 Autenticação com JWT e refresh tokens
-- 🔄 Persistência em PostgreSQL + TypeORM/Prisma
+- 🟡 Autenticação com JWT e refresh tokens (iniciado)
+- 🟡 Persistência em Neon Postgres + Prisma 7.8.0 (iniciado)
+- 🟡 Módulo de produtos com rotas e testes (iniciado)
+- ⬜ Módulos de carrinho, usuários e pedidos (planejado)
 - 🔄 Integração com gateway de pagamento para PIX (MVP) e futuramente Cartão de Crédito e Boleto
 - 🔄 Sistema de pedidos e tracking
 - 🔄 Cache com Redis e jobs assíncronos (Bull)
@@ -39,23 +43,23 @@
 ### Frontend (Fase 2 - Atual)
 | Tecnologia | Versão | Uso |
 |-----------|--------|-----|
-| **Next.js** | 14 (App Router) | Meta-framework React, SSR, file-based routing |
-| **React** | 18 | Componentes UI reativos |
+| **Next.js** | 16.2 (App Router) | Meta-framework React, SSR, file-based routing |
+| **React** | 19 | Componentes UI reativos |
 | **TypeScript** | strict | Type safety, reduz bugs em produção |
 | **Tailwind CSS** | globals.css + tailwind.config.ts | Estilos utilitários + tokens semânticos |
 | **UI shadcn-style** | src/shared/ui | Componentes reutilizáveis com padrão visual único |
-| **Vitest** | 2 | Testes unitários (22 suítes, 164 testes) |
+| **Jest** | 30 | Testes unitários (21 suítes, 163 testes) |
 | **React Testing Library** | 16 | Testes de componentes orientados a comportamento |
 | **Playwright** | — | Testes E2E (configurado, fluxos críticos) |
 | **lucide-react** | — | Ícones SVG |
 
-### Backend (Planejado)
+### Backend (Fase 3 - Atual)
 ```
 Node.js 20+ (runtime)
 ├── TypeScript (type safety)
 ├── Express.js (API REST)
-├── PostgreSQL 15+ (persistência)
-├── TypeORM/Prisma (ORM)
+├── Neon Postgres (persistência)
+├── Prisma 7.8.0 (ORM)
 ├── JWT (autenticação)
 ├── Zod (validação de inputs)
 └── Redis (cache/async jobs via Bull)
@@ -70,9 +74,9 @@ mercadex/
 ├── README.md
 ├── CLAUDE.md                        # Guia para Claude Code
 │
-├── frontend/                        # Next.js 14 (App Router) + TypeScript
+├── frontend/                        # Next.js 16.2 (App Router) + TypeScript
 │   ├── next.config.mjs
-│   ├── vitest.config.ts             # Vitest + coverage-v8 (threshold 80%)
+│   ├── jest.config.js               # Jest + coverage threshold 80%
 │   ├── playwright.config.ts         # Testes E2E
 │   └── src/
 │       ├── app/
@@ -83,7 +87,7 @@ mercadex/
 │       ├── features/                # Feature-Sliced Design
 │       │   ├── cart/
 │       │   │   ├── components/cart-drawer.tsx   # Drawer + fluxo de checkout
-│       │   │   └── model/cart-context.tsx       # useReducer + Context + localStorage
+│       │   │   └── model/cart-context.tsx       # Zustand + persist middleware (localStorage)
 │       │   ├── catalog/
 │       │   │   └── model/use-catalog-filters.ts # Hook de filtragem/ordenação
 │       │   ├── product-detail/
@@ -97,9 +101,9 @@ mercadex/
 │           └── ui/                  # Primitivos UI próprios (Button, Card, Drawer,
 │                                    #   Input, Modal, Select, Badge, Tabs)
 │
-├── backend/                         # Estrutura preparada (sem implementação)
+├── backend/                         # Node.js + Express (Fase 3 em andamento)
 │   └── src/
-│       ├── modules/                 # auth, users, products, cart, orders
+│       ├── modules/                 # auth e products implementados; cart/users/orders em andamento
 │       ├── shared/                  # middleware, errors, utils
 │       └── config/
 │
@@ -120,7 +124,7 @@ mercadex/
 - **Node.js 20+** e **npm**
 - **Git**
 
-### Frontend (Next.js 14)
+### Frontend (Next.js 16.2)
 
 ```bash
 # 1. Clone o repositório
@@ -143,7 +147,7 @@ npm run build && npm start
 ```bash
 cd frontend
 
-# Unitários (Vitest + React Testing Library)
+# Unitários (Jest + React Testing Library)
 npm run test            # execução única
 npm run test:watch      # modo watch
 
@@ -166,23 +170,26 @@ npm run test:e2e:ui     # com interface visual
 3. **Carrinho:** Adicione itens, ajuste quantidades — estado persiste no `localStorage`
 4. **Checkout:** Preencha entrega, realize o pagamento via PIX, veja confirmação
 
-### Gerenciamento de Estado (CartContext)
+### Gerenciamento de Estado (Cart Store)
 
 ```typescript
-// Estado gerenciado via useReducer + React Context
+// Estado gerenciado via Zustand + persist middleware
 // frontend/src/features/cart/model/cart-context.tsx
-type CartState = {
-  items: CartItem[];
-  isOpen: boolean;
-  step: "cart" | "delivery" | "payment" | "confirmation";
-  selectedProductId: string | null;
-};
-
-// localStorage restaurado em useEffect após montagem (evita SSR hydration mismatch)
-useEffect(() => {
-  const saved = localStorage.getItem("cart");
-  if (saved) dispatch({ type: "RESTORE", payload: JSON.parse(saved) });
-}, []);
+export const useCart = create<CartStore>()(
+  persist(
+    (set, get) => ({
+      items: [],
+      addToCart: (product, qty = 1) => {
+        const items = addItem(get().items, product, qty);
+        set(withDerived(items));
+      }
+    }),
+    {
+      name: "mercadex:cart-state",
+      storage: createJSONStorage(() => localStorage)
+    }
+  )
+);
 ```
 
 ---
@@ -236,7 +243,7 @@ it("adds item to cart when button is clicked", async () => {
 | `npm run dev` | Servidor de desenvolvimento (Next.js) |
 | `npm run build` | Build de produção |
 | `npm run lint` | ESLint com zero warnings |
-| `npm run test` | Testes unitários (Vitest) |
+| `npm run test` | Testes unitários (Jest) |
 | `npm run test:coverage` | Cobertura (threshold 80%) |
 | `npm run test:e2e` | Testes E2E (Playwright) |
 
@@ -290,7 +297,7 @@ feature/nome-curto (seu trabalho)
 - R: Componentes que usam `useCart` precisam ser renderizados dentro de `CartProvider`. Use o wrapper nas chamadas de `render()`.
 
 **P: Posso rodar o backend agora?**
-- R: Não. O backend ainda não foi implementado (estrutura de pastas preparada). Veja [docs/ADR.md](./docs/ADR.md) para o plano de implementação.
+- R: Parcialmente. Os módulos `auth` e `products` estão implementados e já expõem rotas; `cart`, `users` e `orders` ainda estão em evolução.
 
 **P: Como limpo o carrinho no desenvolvimento?**
 - R: Console do navegador: `localStorage.removeItem("cart")` e recarregue a página.
@@ -305,8 +312,8 @@ feature/nome-curto (seu trabalho)
 | Fase | Status | Foco | Conclusão |
 |------|--------|------|-----------|
 | **1** | ✅ Concluído | Prototipagem frontend (HTML/CSS/JS Vanilla) | Abr 2026 |
-| **2** | ✅ Concluído | Frontend Next.js 14 + testes (Vitest + Playwright) | Mai 2026 |
-| **3** | 🔄 Em andamento | Backend API REST (Node.js + TypeScript + PostgreSQL) | Jun-Jul 2026 |
+| **2** | ✅ Concluído | Frontend Next.js 16.2 + testes (Jest + Playwright) | Mai 2026 |
+| **3** | 🔄 Em andamento | Backend API REST (Node.js + TypeScript + Neon Postgres + Prisma) | Jun-Jul 2026 |
 | **4** | 📋 Planejado | Integração frontend ↔ backend, autenticação, pagamentos | Ago 2026 |
 
 ---
@@ -333,4 +340,4 @@ Encontrou um bug ou tem uma sugestão?
 
 ---
 
-**Última atualização:** Maio 2026 | Mercadex MVP Phase 2 — Frontend Next.js 14
+**Última atualização:** Maio 2026 | Mercadex MVP Phase 2 — Frontend Next.js 16.2

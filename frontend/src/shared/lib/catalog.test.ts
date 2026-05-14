@@ -1,4 +1,3 @@
-import { describe, expect, it } from "vitest";
 import { filterProducts } from "@/shared/lib/catalog";
 import { PRODUCTS } from "@/shared/mocks/products";
 

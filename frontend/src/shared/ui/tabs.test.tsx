@@ -1,13 +1,12 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
 import { TabButton } from "@/shared/ui/tabs";
 
 describe("TabButton", () => {
   it("renders children text", () => {
     render(
-      <TabButton active={false} onClick={vi.fn()}>
+      <TabButton active={false} onClick={jest.fn()}>
         PIX
       </TabButton>
     );
@@ -16,7 +15,7 @@ describe("TabButton", () => {
 
   it("applies active class when active", () => {
     const { container } = render(
-      <TabButton active onClick={vi.fn()}>
+      <TabButton active onClick={jest.fn()}>
         Tab
       </TabButton>
     );
@@ -25,7 +24,7 @@ describe("TabButton", () => {
 
   it("does not apply active class when inactive", () => {
     const { container } = render(
-      <TabButton active={false} onClick={vi.fn()}>
+      <TabButton active={false} onClick={jest.fn()}>
         Tab
       </TabButton>
     );
@@ -34,7 +33,7 @@ describe("TabButton", () => {
 
   it("always has base tabButton class", () => {
     const { container } = render(
-      <TabButton active={false} onClick={vi.fn()}>
+      <TabButton active={false} onClick={jest.fn()}>
         Tab
       </TabButton>
     );
@@ -43,7 +42,7 @@ describe("TabButton", () => {
 
   it("calls onClick when clicked", async () => {
     const user = userEvent.setup();
-    const handleClick = vi.fn();
+    const handleClick = jest.fn();
     render(
       <TabButton active={false} onClick={handleClick}>
         Tab
@@ -51,6 +50,6 @@ describe("TabButton", () => {
     );
 
     await user.click(screen.getByText("Tab"));
-    expect(handleClick).toHaveBeenCalledOnce();
+    expect(handleClick).toHaveBeenCalledTimes(1);
   });
 });

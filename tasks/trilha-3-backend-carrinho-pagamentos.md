@@ -9,6 +9,7 @@
 > Esta trilha pode rodar em paralelo com a Trilha 2 e Trilha 4.
 > Depende apenas do schema Prisma (Tarefa 2.1 da Trilha 2).
 > Se a Trilha 2 ainda não mergeou, copie o schema.prisma localmente.
+> Regra de documentação: novos módulos, funções públicas, contratos de API e utilitários compartilhados devem ser documentados com JSDoc.
 
 ---
 

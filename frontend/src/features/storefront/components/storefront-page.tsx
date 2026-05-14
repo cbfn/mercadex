@@ -44,44 +44,6 @@ export function StorefrontPage() {
             {quantity}
           </Button>
         </div>
-
-        <section className="container my-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-1 gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Categorias">
-            {CATEGORIES.map((item) => {
-              const active = item.label === category;
-              return (
-                <button
-                  key={item.label}
-                  onClick={() => setCategory(item.label)}
-                  aria-pressed={active}
-                  data-testid={`category-${item.label}`}
-                  className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
-                    active
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-white text-foreground hover:bg-muted"
-                  }`}
-                >
-                  {item.label}
-                </button>
-              );
-            })}
-          </div>
-
-          <Select
-            aria-label="Ordenacao"
-            value={sortBy}
-            onChange={(event) => setSortBy(event.target.value as typeof sortBy)}
-            data-testid="sort-select"
-            className="w-full max-w-[220px]"
-          >
-            <option value="relevancia">Mais relevantes</option>
-            <option value="menor">Menor preco</option>
-            <option value="maior">Maior preco</option>
-            <option value="vendidos">Mais vendidos</option>
-          </Select>
-        </div>
-      </section>
       </header>
 
       <section className="container mt-8 grid gap-6 lg:grid-cols-[1.3fr_1fr]">
@@ -123,7 +85,43 @@ export function StorefrontPage() {
         </div>
       </section>
 
-      
+      <section className="container mt-8 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-1 gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Categorias">
+            {CATEGORIES.map((item) => {
+              const active = item.label === category;
+              return (
+                <button
+                  key={item.label}
+                  onClick={() => setCategory(item.label)}
+                  aria-pressed={active}
+                  data-testid={`category-${item.label}`}
+                  className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                    active
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-white text-foreground hover:bg-muted"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <Select
+            aria-label="Ordenacao"
+            value={sortBy}
+            onChange={(event) => setSortBy(event.target.value as typeof sortBy)}
+            data-testid="sort-select"
+            className="w-full max-w-[220px]"
+          >
+            <option value="relevancia">Mais relevantes</option>
+            <option value="menor">Menor preco</option>
+            <option value="maior">Maior preco</option>
+            <option value="vendidos">Mais vendidos</option>
+          </Select>
+        </div>
+      </section>
 
       <section className="container mt-4">
         {!filteredProducts.length ? (

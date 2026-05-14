@@ -1,13 +1,12 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
 import { Modal } from "@/shared/ui/modal";
 
 describe("Modal", () => {
   it("renders children when open", () => {
     render(
-      <Modal open title="Details" onClose={vi.fn()}>
+      <Modal open title="Details" onClose={jest.fn()}>
         <p>Modal body</p>
       </Modal>
     );
@@ -16,7 +15,7 @@ describe("Modal", () => {
 
   it("renders nothing when closed", () => {
     const { container } = render(
-      <Modal open={false} title="Details" onClose={vi.fn()}>
+      <Modal open={false} title="Details" onClose={jest.fn()}>
         <p>Hidden</p>
       </Modal>
     );
@@ -25,7 +24,7 @@ describe("Modal", () => {
 
   it("renders title in header", () => {
     render(
-      <Modal open title="My Title" onClose={vi.fn()}>
+      <Modal open title="My Title" onClose={jest.fn()}>
         content
       </Modal>
     );
@@ -34,7 +33,7 @@ describe("Modal", () => {
 
   it("has role=dialog and aria-modal=true", () => {
     render(
-      <Modal open title="Test" onClose={vi.fn()}>
+      <Modal open title="Test" onClose={jest.fn()}>
         content
       </Modal>
     );
@@ -44,7 +43,7 @@ describe("Modal", () => {
 
   it("has aria-label matching title", () => {
     render(
-      <Modal open title="Product Details" onClose={vi.fn()}>
+      <Modal open title="Product Details" onClose={jest.fn()}>
         content
       </Modal>
     );
@@ -53,7 +52,7 @@ describe("Modal", () => {
 
   it("calls onClose when close button is clicked", async () => {
     const user = userEvent.setup();
-    const onClose = vi.fn();
+    const onClose = jest.fn();
     render(
       <Modal open title="Test" onClose={onClose}>
         content
@@ -61,6 +60,6 @@ describe("Modal", () => {
     );
 
     await user.click(screen.getByLabelText("Fechar modal"));
-    expect(onClose).toHaveBeenCalledOnce();
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

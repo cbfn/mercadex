@@ -1,7 +1,6 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
 import { Button } from "@/shared/ui/button";
 
 describe("Button", () => {
@@ -34,11 +33,11 @@ describe("Button", () => {
 
   it("calls onClick handler", async () => {
     const user = userEvent.setup();
-    const handleClick = vi.fn();
+    const handleClick = jest.fn();
     render(<Button onClick={handleClick}>Click</Button>);
 
     await user.click(screen.getByRole("button"));
-    expect(handleClick).toHaveBeenCalledOnce();
+    expect(handleClick).toHaveBeenCalledTimes(1);
   });
 
   it("can be disabled", () => {
