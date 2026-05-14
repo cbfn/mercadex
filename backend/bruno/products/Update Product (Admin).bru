@@ -1,0 +1,27 @@
+meta {
+  name: Update Product (Admin)
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/api/products/:productId
+  body: json
+}
+
+headers {
+  content-type: application/json
+  Authorization: Bearer {{accessToken}}
+}
+
+params:path {
+  productId: {{productId}}
+}
+
+body:json {
+  {
+    "title": "Mouse Gamer RGB Pro",
+    "price": 229.9,
+    "stock": 10
+  }
+}

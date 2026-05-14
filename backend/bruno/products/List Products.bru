@@ -1,0 +1,22 @@
+meta {
+  name: List Products
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/products
+  body: none
+  auth: none
+}
+
+params:query {
+  search:
+  category:
+  minPrice:
+  maxPrice:
+  condition:
+  sort: newest
+  page: 1
+  limit: 20
+}

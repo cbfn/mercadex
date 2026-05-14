@@ -1,0 +1,18 @@
+meta {
+  name: Delete Product (Admin)
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/api/products/:productId
+  body: none
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+params:path {
+  productId: {{productId}}
+}
