@@ -54,3 +54,13 @@ No ambiente `local`, preencha quando necessario:
 - Endpoints admin (`POST/PUT/DELETE` de products e `POST` de categories) exigem usuario com role admin.
 - Esta colecao inclui somente endpoints implementados atualmente no backend.
 - Recomendado revisar IDs de teste (`categoryId`, `productId`) antes de executar requests com path params.
+
+## Alternativa: Swagger UI
+
+O backend tambem expoe documentacao interativa via Swagger UI. Com o servidor rodando, acesse:
+
+```
+http://localhost:3001/api-docs
+```
+
+O Swagger UI permite explorar e testar todos os endpoints diretamente no navegador, incluindo autenticacao via Bearer token.
