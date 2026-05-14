@@ -8,7 +8,7 @@
 
 **Mercadex** é um marketplace de eletrônicos em desenvolvimento, construído como MVP (Produto Mínimo Viável) com arquitetura monolítica modular. O projeto separa claramente frontend e backend, permitindo evolução independente de cada camada.
 
-**Objetivo:** Validar fluxos de compra e UX antes de escalar para produção. A Fase 2 (atual) conta com frontend React/Next.js 16.2 completo com testes automatizados; a próxima etapa é a consolidação do backend com persistência de dados.
+**Objetivo:** Validar fluxos de compra e UX antes de escalar para produção. A Fase 2 foi concluida com frontend React/Next.js 16.2 e testes automatizados; a Fase 3 esta em andamento com consolidacao do backend e persistencia de dados.
 
 **Padrão de documentação:** novos módulos, funções públicas, contratos de API e utilitários compartilhados devem usar JSDoc.
 
@@ -26,10 +26,12 @@
 - ✅ **CI Integrado:** GitHub Actions valida lint, type-check e testes a cada push
 - ✅ **Design Responsivo:** Layout fluido para mobile, tablet e desktop (Tailwind CSS + tokens do design system)
 
-### Backend (Próxima Etapa - Fase 3)
+### Backend (Fase 3 - Em andamento)
 - 🔄 API REST em Node.js + TypeScript + Express.js
-- 🔄 Autenticação com JWT e refresh tokens
-- 🔄 Persistência em Neon Postgres + Prisma 6.19.3
+- 🟡 Autenticação com JWT e refresh tokens (iniciado)
+- 🟡 Persistência em Neon Postgres + Prisma 7.8.0 (iniciado)
+- 🟡 Módulo de produtos com rotas e testes (iniciado)
+- ⬜ Módulos de carrinho, usuários e pedidos (planejado)
 - 🔄 Integração com gateway de pagamento para PIX (MVP) e futuramente Cartão de Crédito e Boleto
 - 🔄 Sistema de pedidos e tracking
 - 🔄 Cache com Redis e jobs assíncronos (Bull)
@@ -51,13 +53,13 @@
 | **Playwright** | — | Testes E2E (configurado, fluxos críticos) |
 | **lucide-react** | — | Ícones SVG |
 
-### Backend (Planejado)
+### Backend (Fase 3 - Atual)
 ```
 Node.js 20+ (runtime)
 ├── TypeScript (type safety)
 ├── Express.js (API REST)
 ├── Neon Postgres (persistência)
-├── Prisma 6.19.3 (ORM)
+├── Prisma 7.8.0 (ORM)
 ├── JWT (autenticação)
 ├── Zod (validação de inputs)
 └── Redis (cache/async jobs via Bull)
@@ -85,7 +87,7 @@ mercadex/
 │       ├── features/                # Feature-Sliced Design
 │       │   ├── cart/
 │       │   │   ├── components/cart-drawer.tsx   # Drawer + fluxo de checkout
-│       │   │   └── model/cart-context.tsx       # useReducer + Context + localStorage
+│       │   │   └── model/cart-context.tsx       # Zustand + persist middleware (localStorage)
 │       │   ├── catalog/
 │       │   │   └── model/use-catalog-filters.ts # Hook de filtragem/ordenação
 │       │   ├── product-detail/
@@ -99,9 +101,9 @@ mercadex/
 │           └── ui/                  # Primitivos UI próprios (Button, Card, Drawer,
 │                                    #   Input, Modal, Select, Badge, Tabs)
 │
-├── backend/                         # Estrutura preparada (sem implementação)
+├── backend/                         # Node.js + Express (Fase 3 em andamento)
 │   └── src/
-│       ├── modules/                 # auth, users, products, cart, orders
+│       ├── modules/                 # auth e products implementados; cart/users/orders em andamento
 │       ├── shared/                  # middleware, errors, utils
 │       └── config/
 │
@@ -168,23 +170,26 @@ npm run test:e2e:ui     # com interface visual
 3. **Carrinho:** Adicione itens, ajuste quantidades — estado persiste no `localStorage`
 4. **Checkout:** Preencha entrega, realize o pagamento via PIX, veja confirmação
 
-### Gerenciamento de Estado (CartContext)
+### Gerenciamento de Estado (Cart Store)
 
 ```typescript
-// Estado gerenciado via useReducer + React Context
+// Estado gerenciado via Zustand + persist middleware
 // frontend/src/features/cart/model/cart-context.tsx
-type CartState = {
-  items: CartItem[];
-  isOpen: boolean;
-  step: "cart" | "delivery" | "payment" | "confirmation";
-  selectedProductId: string | null;
-};
-
-// localStorage restaurado em useEffect após montagem (evita SSR hydration mismatch)
-useEffect(() => {
-  const saved = localStorage.getItem("cart");
-  if (saved) dispatch({ type: "RESTORE", payload: JSON.parse(saved) });
-}, []);
+export const useCart = create<CartStore>()(
+  persist(
+    (set, get) => ({
+      items: [],
+      addToCart: (product, qty = 1) => {
+        const items = addItem(get().items, product, qty);
+        set(withDerived(items));
+      }
+    }),
+    {
+      name: "mercadex:cart-state",
+      storage: createJSONStorage(() => localStorage)
+    }
+  )
+);
 ```
 
 ---
@@ -292,7 +297,7 @@ feature/nome-curto (seu trabalho)
 - R: Componentes que usam `useCart` precisam ser renderizados dentro de `CartProvider`. Use o wrapper nas chamadas de `render()`.
 
 **P: Posso rodar o backend agora?**
-- R: Não. O backend ainda não foi implementado (estrutura de pastas preparada). Veja [docs/ADR.md](./docs/ADR.md) para o plano de implementação.
+- R: Parcialmente. Os módulos `auth` e `products` estão implementados e já expõem rotas; `cart`, `users` e `orders` ainda estão em evolução.
 
 **P: Como limpo o carrinho no desenvolvimento?**
 - R: Console do navegador: `localStorage.removeItem("cart")` e recarregue a página.
