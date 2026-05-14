@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Status atual (Fase 3 - Backend em andamento):**
 - Frontend: Next.js 16.2 (App Router) + TypeScript + Tailwind CSS + componentes shadcn-style (`frontend/`)
 - Backend: Node.js + TypeScript + Express com auth, produtos e Prisma/Neon iniciados
-- Banco de dados: Neon Postgres com Prisma 6.19.3
+- Banco de dados: Neon Postgres com Prisma 7.8.0
 - CI: GitHub Actions (`.github/workflows/ci.yml`) com cobertura mínima de 80%
 
 Ver `docs/ADR.md` para decisões arquiteturais completas.
@@ -31,7 +31,7 @@ Ver `docs/DESIGN_SYSTEM.md` para padrões visuais, tipografia e UX writing do fr
 - Node.js 20+ com TypeScript
 - Express.js para API REST
 - Neon Postgres
-- Prisma 6.19.3
+- Prisma 7.8.0
 - JWT para autenticação
 - Redis para cache e async jobs (Bull)
 
@@ -49,8 +49,9 @@ Ver `docs/DESIGN_SYSTEM.md` para padrões visuais, tipografia e UX writing do fr
 cd frontend
 npm install
 npm run dev      # http://localhost:3000
-npm run test     # Vitest (watch)
-npm run test:coverage  # Vitest com relatório de cobertura (threshold 80%)
+npm run test     # Jest (execução única)
+npm run test:watch  # Jest (watch)
+npm run test:coverage  # Jest com relatório de cobertura (threshold 80%)
 npm run build    # Build de produção Next.js
 ```
 
@@ -81,8 +82,8 @@ frontend/
 │       └── ui/                # Componentes UI primitivos (button, card, drawer, input, modal, select, badge, tabs)
 ├── assets/
 │   └── logo-mercadex.png
-├── vitest.config.ts
-└── vitest.setup.ts
+├── jest.config.js
+└── jest.setup.ts
 ```
 
 **Padrões de estado:**
@@ -96,7 +97,7 @@ frontend/
 
 **Escolhas principais:**
 - TypeScript em ambos frontend/backend (type safety, reduz bugs)
-- Vanilla JS no frontend (MVP rápido) → React/Next.js depois
+- Frontend evoluiu de protótipo HTML/CSS/JS (Fase 1) para React/Next.js (Fase 2)
 - Express.js para API (minimalista, maduro)
 - PostgreSQL (ACID, JSON nativo, escalável)
 
@@ -105,7 +106,7 @@ Ver `docs/ADR.md` para contexto completo de cada decisão, riscos, e mitigaçõe
 ## File Locations
 
 - **Documentação:** `docs/` (ADR.md com decisões, DIAGRAMAS.md)
-- **Frontend:** `frontend/` (HTML/CSS/JS estático)
+- **Frontend:** `frontend/` (Next.js 16.2 + TypeScript)
 - **Backend:** `backend/src/` (módulos: auth, users, products, cart, orders; shared: middleware, utils, errors)
 - **Testes backend:** `backend/tests/`
 

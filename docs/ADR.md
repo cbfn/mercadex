@@ -102,7 +102,7 @@ mercadex/
     "framework": "Express.js",
     "auth": "JWT (jsonwebtoken)",
     "database": "PostgreSQL 15+",
-    "orm": "TypeORM/Prisma",
+    "orm": "Prisma 7.8.0",
     "validation": "Zod",
     "logging": "Winston/Pino",
     "testing": "Jest + Supertest",
@@ -112,13 +112,13 @@ mercadex/
 }
 ```
 
-### Frontend: React 18 + Next.js 14 (Migrado — Fase 2 concluída)
+### Frontend: React 19 + Next.js 16.2 (Migrado — Fase 2 concluída)
 
 **Fase 1: Prototipação Rápida (Concluída)**
 O frontend foi inicialmente desenvolvido como protótipo estático com HTML5, Vanilla JavaScript e CSS3. Permitiu validação rápida de UX e fluxos.
 
 **Fase 2: Arquitetura Definitiva (Implementada em 2026-05-11)**
-Migração concluída para Next.js 14 com App Router. O protótipo estático foi removido e substituído pela aplicação React em `frontend/src/`.
+Migração concluída para Next.js 16.2 com App Router. O protótipo estático foi removido e substituído pela aplicação React em `frontend/src/`.
 
 **Por que React? (Fase 2)**
 - Melhor UX (reatividade)
@@ -134,18 +134,18 @@ Migração concluída para Next.js 14 com App Router. O protótipo estático foi
 ```json
 {
   "frontend": {
-    "framework": "React 18",
-    "meta-framework": "Next.js 14 (App Router)",
+    "framework": "React 19",
+    "meta-framework": "Next.js 16.2 (App Router)",
     "language": "TypeScript (strict)",
-    "styling": "CSS customizado (globals.css) — sem Tailwind nem Shadcn/ui no MVP",
-    "ui-components": "Componentes próprios em shared/ui/ (Button, Card, Drawer, Modal, Input, Select, Badge, Tabs)",
-    "state": "useReducer + React Context (CartContext)",
+    "styling": "Tailwind CSS + tokens globais em src/app/globals.css",
+    "ui-components": "Componentes em shared/ui/ no padrão shadcn-style",
+    "state": "Zustand com persist middleware (localStorage)",
     "forms": "HTML nativo com validação required",
     "validation": "TypeScript types",
-    "testing": "Vitest 2 + React Testing Library",
-    "coverage": "@vitest/coverage-v8 (threshold: 80% lines/functions/branches/statements)",
+    "testing": "Jest 30 + React Testing Library",
+    "coverage": "Jest coverage (threshold: 80% lines/functions/branches/statements)",
     "ci": "GitHub Actions (.github/workflows/ci.yml)",
-    "e2e": "Playwright (planejado)"
+    "e2e": "Playwright (configurado para fluxos criticos)"
   }
 }
 ```
@@ -314,7 +314,7 @@ Branch: main (produção)
 - ✅ HTTPS obrigatório
 - ✅ CORS configurado (whitelist de domínios)
 - ✅ Rate limiting por IP/usuário
-- ✅ SQL injection prevention (TypeORM/Prisma)
+- ✅ SQL injection prevention (Prisma com queries parametrizadas)
 - ✅ XSS prevention (React escape automático)
 - ✅ CSRF tokens
 - ✅ Password hashing (bcrypt)
