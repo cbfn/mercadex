@@ -404,7 +404,6 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JWT_SECRET: ci_test_secret_nao_usar_em_producao
-          JWT_REFRESH_SECRET: ci_test_refresh_secret_nao_usar_em_producao
           NODE_ENV: test
 ```
 
