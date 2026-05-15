@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import authRoutes from './modules/auth/auth.routes';
 import { categoriesRouter, productsRouter } from './modules/products/products.routes';
+import { swaggerUiMiddleware } from './shared/swagger/swagger';
 
 const app = express();
 const port = Number(process.env.PORT || 3001);
@@ -15,6 +16,7 @@ app.use(
   }),
 );
 app.use(express.json());
+app.use('/api-docs', ...swaggerUiMiddleware);
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productsRouter);
 app.use('/api/categories', categoriesRouter);

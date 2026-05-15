@@ -1,9 +1,12 @@
-import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { CartProvider, resetCartStore, useCart } from "@/features/cart/model/cart-context";
 import { ProductModal } from "@/features/product-detail/components/product-modal";
 import { PRODUCTS } from "@/shared/mocks/products";
+
+jest.mock("@/features/auth/model/auth-context", () => ({
+  useAuth: () => ({ user: null, isLoading: false, login: jest.fn(), logout: jest.fn(), register: jest.fn() }),
+}));
 
 function ModalSetup({ productId }: { productId: number }) {
   const cart = useCart();

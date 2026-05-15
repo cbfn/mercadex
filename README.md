@@ -37,6 +37,7 @@
 - ⬜ Checkout PIX estático fake — chave estática + QR code + `PENDING_PIX` (planejado)
 - ⬜ Features de IA: resumo de reviews + chat stateless por produto (planejado)
 - ⬜ Admin via Prisma Studio (sem dashboard no frontend)
+- ✅ Documentação interativa da API via Swagger UI (`/api-docs`)
 
 ---
 
@@ -287,6 +288,8 @@ feature/nome-curto (seu trabalho)
 - **[docs/DIAGRAMAS.md](./docs/DIAGRAMAS.md)** - Fluxogramas de negócio
 - **[docs/USER_STORIES.md](./docs/USER_STORIES.md)** - Histórias de usuário
 - **[docs/BACKLOG.md](./docs/BACKLOG.md)** - Roadmap e prioridades
+- **[docs/BRUNO_COLLECTION.md](./docs/BRUNO_COLLECTION.md)** - Coleção Bruno para testes da API
+- **Swagger UI** — `http://localhost:3001/api-docs` (backend rodando)
 
 ---
 
@@ -300,6 +303,9 @@ feature/nome-curto (seu trabalho)
 
 **P: Posso rodar o backend agora?**
 - R: Parcialmente. Os módulos `auth` e `products` estão implementados e já expõem rotas; `cart`, `users` e `orders` ainda estão em evolução.
+
+**P: Como exploro os endpoints do backend?**
+- R: Com o backend rodando (`npm run dev` na pasta `backend`), acesse `http://localhost:3001/api-docs` para a documentação interativa via Swagger UI. Também está disponível a coleção Bruno em `backend/bruno/`.
 
 **P: Como limpo o carrinho no desenvolvimento?**
 - R: Console do navegador: `localStorage.removeItem("cart")` e recarregue a página.
