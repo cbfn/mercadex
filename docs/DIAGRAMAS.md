@@ -2,24 +2,25 @@
 
 ## 1. Diagrama de Entidade-Relacionamento (ER)
 
-Neste diagrama ER, além das entidades `Usuário`, `Produto` e `Pedido`, estão as entidades de suporte fundamentais para um e-commerce: `Categoria` (para organizar os produtos), `ItemPedido` (para quebrar o relacionamento N:M entre Pedidos e Produtos, guardando o valor histórico na hora da compra), `Carrinho` e `ItemCarrinho`.
+Neste diagrama ER estão as entidades ativas do MVP Lean. O `Carrinho` é gerenciado 100% via `localStorage` no frontend e **não possui tabela no banco** (ver ADR-007). A entidade `REVIEW` é nova neste pivot e sustenta as features de IA (Resumo + Chat).
 
 
 ```mermaid
 erDiagram
     USUARIO {
-        int id PK
+        uuid id PK
         string nome
         string email
         string senha_hash
-        string cpf
+        string role "CUSTOMER | ADMIN"
         datetime criado_em
     }
     
     PRODUTO {
-        int id PK
-        int categoria_id FK
-        string nome
+        uuid id PK
+        uuid categoria_id FK
+        uuid vendedor_id FK
+        string titulo
         string descricao
         decimal preco
         int estoque_atual
@@ -27,52 +28,52 @@ erDiagram
     }
     
     CATEGORIA {
-        int id PK
+        uuid id PK
         string nome
         string descricao
     }
     
     PEDIDO {
-        int id PK
-        int usuario_id FK
-        datetime data_pedido
-        string status "Pendente, Pago, Enviado, Cancelado"
+        uuid id PK
+        uuid usuario_id FK
+        datetime criado_em
+        string status "PENDING_PIX | PAGO | ENVIADO | ENTREGUE | CANCELADO"
         decimal valor_total
+        json endereco_entrega
     }
     
     ITEM_PEDIDO {
-        int id PK
-        int pedido_id FK
-        int produto_id FK
+        uuid id PK
+        uuid pedido_id FK
+        uuid produto_id FK
         int quantidade
         decimal preco_unitario "Preço no momento da compra"
     }
 
-    CARRINHO {
-        int id PK
-        int usuario_id FK "Pode ser null para usuários não logados"
-        string sessao_id "Para vincular navegação anônima"
-        datetime atualizado_em
-    }
-
-    ITEM_CARRINHO {
-        int id PK
-        int carrinho_id FK
-        int produto_id FK
-        int quantidade
+    REVIEW {
+        uuid id PK
+        uuid usuario_id FK
+        uuid produto_id FK
+        string titulo
+        string corpo
+        int rating "1 a 5"
+        datetime criado_em
     }
 
     %% Relacionamentos
     USUARIO ||--o{ PEDIDO : "realiza"
-    USUARIO ||--|| CARRINHO : "possui"
+    USUARIO ||--o{ REVIEW : "escreve"
     CATEGORIA ||--|{ PRODUTO : "classifica"
     
     PEDIDO ||--|{ ITEM_PEDIDO : "composto_por"
     PRODUTO ||--o{ ITEM_PEDIDO : "listado_como"
     
-    CARRINHO ||--o{ ITEM_CARRINHO : "contém"
-    PRODUTO ||--o{ ITEM_CARRINHO : "adicionado_como"
+    PRODUTO ||--o{ REVIEW : "recebe"
 ```
+
+> **@legacy — Carrinho no banco:** Os models `Cart` e `CartItem` foram desativados (MVP Lean).
+> O array de itens é enviado diretamente do frontend para `POST /api/orders`.
+> Ver schema.prisma para os models comentados.
 
 ## 2. Diagrama de Fluxo de Navegação (Busca ao Carrinho)
 
@@ -105,15 +106,69 @@ flowchart TD
     K -- Sim --> M[Usuário seleciona variação/quantidade]
     M --> N[Clica no botão 'Adicionar ao Carrinho']
     
-    N --> O[Sistema valida estoque atual e sessão]
-    O --> P{Validação com sucesso?}
+    N --> O[Zustand atualiza localStorage]
+    O --> P[Atualiza ícone contador do cabeçalho]
+    P --> Q[Abre Modal/Sidebar de 'Produto adicionado com sucesso']
     
-    P -- Não --> Q[Exibe mensagem de erro e opções de ajuste]
-    Q --> M
-    
-    P -- Sim --> R[Registra item na entidade ITEM_CARRINHO]
-    R --> S[Atualiza ícone contador do cabeçalho]
-    S --> T[Abre Modal/Sidebar de 'Produto adicionado com sucesso']
-    
-    T --> U([Fim - Escolhe ir para o Checkout ou Continuar Comprando])
+    Q --> R([Fim - Escolhe ir para o Checkout ou Continuar Comprando])
+```
+
+## 3. Diagrama de Fluxo de Checkout (PIX Estático)
+
+Fluxo simplificado do MVP Lean: carrinho do `localStorage` → endereço de entrega → PIX estático → pedido criado com `PENDING_PIX`.
+
+```mermaid
+flowchart TD
+    A([Usuário clica em Finalizar Compra]) --> B[Etapa 1: Preencher Endereço]
+    B --> C{Campos obrigatórios preenchidos?}
+    C -- Não --> D[Exibir erros de validação]
+    D --> B
+    C -- Sim --> E[Etapa 2: Resumo + PIX]
+    E --> F[Exibir itens do carrinho + total]
+    F --> G[Exibir chave PIX estática e QR Code fixo]
+    G --> H[Botão 'Copiar Chave PIX']
+    H --> I[Usuário clica em 'Confirmar Pedido']
+    I --> J[POST /api/orders com array de itens + endereço]
+    J --> K{API retorna sucesso?}
+    K -- Não --> L[Exibir erro e permitir nova tentativa]
+    K -- Sim --> M[Etapa 3: Confirmação]
+    M --> N[Exibir número do pedido e status PENDING_PIX]
+    N --> O[Limpar carrinho do localStorage]
+    O --> P([Fim - Voltar ao Catálogo])
+```
+
+## 4. Diagrama de Fluxo de Reviews e IA
+
+Fluxo das features de inteligência: review de produto, resumo IA e chat stateless.
+
+```mermaid
+flowchart TD
+    subgraph Review
+        A([Usuário logado na página do produto]) --> B[Clica em Escrever Avaliação]
+        B --> C[Preenche título, descrição e nota 1-5]
+        C --> D[POST /api/products/:id/reviews]
+        D --> E[Review salvo e exibido na lista]
+    end
+
+    subgraph Resumo_IA
+        F([Qualquer visitante na página do produto]) --> G[Clica em Ver Insight da IA]
+        G --> H[GET /api/products/:id/ai-summary]
+        H --> I{Reviews existem?}
+        I -- Não --> J[Exibir 'Ainda sem avaliações para resumir']
+        I -- Sim --> K[Backend envia reviews para LLM]
+        K --> L[LLM retorna resumo de 3 frases]
+        L --> M[Exibir resumo na UI]
+    end
+
+    subgraph Chat_Produto
+        N([Visitante clica em Tirar Dúvida]) --> O[Abre drawer de chat]
+        O --> P[Usuário digita pergunta]
+        P --> Q[POST /api/products/:id/chat com mensagem]
+        Q --> R[Backend carrega specs + reviews + chama LLM]
+        R --> S[LLM responde baseado no contexto do produto]
+        S --> T[Exibir resposta no chat React-only]
+        T --> U{Mais perguntas?}
+        U -- Sim --> P
+        U -- Não --> V([Fechar chat - histórico descartado])
+    end
 ```
