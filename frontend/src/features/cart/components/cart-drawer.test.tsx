@@ -1,14 +1,18 @@
-import React from "react";
+import { useEffect } from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { CartProvider, resetCartStore, useCart } from "@/features/cart/model/cart-context";
 import { CartDrawer } from "@/features/cart/components/cart-drawer";
 import { PRODUCTS } from "@/shared/mocks/products";
 
+jest.mock("@/features/auth/model/auth-context", () => ({
+  useAuth: () => ({ user: null, isLoading: false, login: jest.fn(), logout: jest.fn(), register: jest.fn() }),
+}));
+
 function CartSetup({ autoAdd = false }: { autoAdd?: boolean }) {
   const cart = useCart();
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (autoAdd) {
       cart.addToCart(PRODUCTS[0], 1);
       cart.openCart();

@@ -1,8 +1,13 @@
-import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { CartProvider, resetCartStore, useCart } from "@/features/cart/model/cart-context";
 import { PRODUCTS } from "@/shared/mocks/products";
+
+// CartProvider agora usa useAuth para sincronizar com o backend.
+// Nos testes unitários do store, mockamos o contexto de auth sem sessão ativa.
+jest.mock("@/features/auth/model/auth-context", () => ({
+  useAuth: () => ({ user: null, isLoading: false, login: jest.fn(), logout: jest.fn(), register: jest.fn() }),
+}));
 
 function TestHarness() {
   const cart = useCart();
