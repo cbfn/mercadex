@@ -16,87 +16,86 @@ set -euo pipefail
 # ---------------------------
 
 gh issue create \
-  --title "[BACK] - Trilha 3.1: Modulo de Carrinho" \
+  --title "[BACK] - Trilha 3.1: Modulo de Pedidos (PENDING_PIX)" \
   --label backend \
-  --assignee cbfn \
   --body-file - <<'EOF'
 ## Resumo
-Implementar o modulo de carrinho persistido no backend com operacoes de listar, adicionar, atualizar quantidade, remover item e limpar carrinho.
+Implementar o modulo de pedidos recebendo itens do frontend (localStorage), validando estoque e criando pedido com status PENDING_PIX.
 
 ## Escopo
-- Criar camada de DTO, repository, service, controller e routes em backend/src/modules/cart.
-- Expor endpoints autenticados de carrinho.
-- Garantir calculo de total no retorno do carrinho.
+- Criar DTO, service, controller e routes em backend/src/modules/orders.
+- Implementar POST /api/orders com itens + shippingAddress enviados pelo frontend.
+- Validar produto ativo, estoque e calcular total antes de persistir.
+- Implementar GET /api/orders e GET /api/orders/:id com ownership por usuario autenticado.
 
 ## Criterios de aceite
-- Endpoints /api/cart e /api/cart/items funcionando com autenticacao.
-- Persistencia em banco validada para operacoes CRUD do carrinho.
-- Fluxo de limpeza do carrinho retornando estado vazio.
+- Pedido criado com status PENDING_PIX quando payload e estoque forem validos.
+- Erros de produto inexistente/inativo e estoque insuficiente retornam falha consistente.
+- Listagem e detalhe de pedidos funcionam apenas para o usuario dono do pedido.
 
 ## Referencia
 - tasks/trilha-3-backend-carrinho-pagamentos.md (Tarefa 3.1)
 EOF
 
 gh issue create \
-  --title "[BACK] - Trilha 3.2: Modulo de Pedidos" \
+  --title "[BACK] - Trilha 3.2: Modulo de Reviews" \
   --label backend \
-  --assignee lpradopires \
   --body-file - <<'EOF'
 ## Resumo
-Implementar o modulo de pedidos no backend, criando pedido a partir do carrinho com validacao de estoque e transacao.
+Implementar o modulo de reviews de produtos com listagem publica, criacao autenticada e remocao da propria review.
 
 ## Escopo
-- Criar DTO, repository, service, controller e routes em backend/src/modules/orders.
-- Implementar criacao de pedido com decremento de estoque e limpeza do carrinho.
-- Implementar listagem e detalhe de pedidos por usuario.
+- Criar DTO, service, controller e routes em backend/src/modules/reviews.
+- Implementar GET /api/products/:id/reviews sem autenticacao.
+- Implementar POST /api/products/:id/reviews com autenticacao e regra de 1 review por usuario/produto.
+- Implementar DELETE /api/reviews/:id para remover apenas review do proprio usuario.
 
 ## Criterios de aceite
-- POST /api/orders cria pedido com itens do carrinho e endereco de entrega.
-- GET /api/orders e GET /api/orders/:id retornam dados consistentes.
-- Falhas de carrinho vazio/estoque insuficiente tratadas corretamente.
+- Listagem de reviews retorna dados do autor e ordenacao correta.
+- Criacao de review bloqueia duplicidade por usuario/produto.
+- Exclusao de review sem ownership retorna erro de permissao.
 
 ## Referencia
 - tasks/trilha-3-backend-carrinho-pagamentos.md (Tarefa 3.2)
 EOF
 
 gh issue create \
-  --title "[BACK] - Trilha 3.3: Integracao Stripe no Backend" \
+  --title "[BACK] - Trilha 3.3: AI Services (Resumo e Chat)" \
   --label backend \
-  --assignee henriqueferraz \
   --body-file - <<'EOF'
 ## Resumo
-Integrar Stripe no backend para iniciar pagamento de pedidos e registrar status de transacao.
+Implementar servicos de IA para resumo de reviews e chat stateless por produto.
 
 ## Escopo
-- Criar servico de pagamento Stripe para PaymentIntent.
-- Expor endpoint para iniciar pagamento de pedido.
-- Tratar webhook/eventos para atualizar status do pedido/pagamento.
+- Criar backend/src/modules/ai com service, dto, controller e routes.
+- Implementar GET /api/products/:id/ai-summary com resumo baseado em reviews.
+- Implementar POST /api/products/:id/chat com resposta baseada em specs + reviews.
+- Configurar contrato de provider via LLM_PROVIDER_API_KEY e LLM_PROVIDER_MODEL.
 
 ## Criterios de aceite
-- Fluxo de criacao de PaymentIntent funcional com chaves de teste.
-- Atualizacao de status de pagamento refletida no pedido.
-- Validacoes e erros de pagamento padronizados na API.
+- Endpoint de resumo retorna texto quando houver reviews e trata ausencia de base.
+- Endpoint de chat responde para produto valido e trata produto inexistente.
+- Implementacao permanece stateless (sem persistencia de historico).
 
 ## Referencia
 - tasks/trilha-3-backend-carrinho-pagamentos.md (Tarefa 3.3)
 EOF
 
 gh issue create \
-  --title "[BACK] - Trilha 3.4: Testes Unitarios Backend (Carrinho/Pedidos/Stripe)" \
+  --title "[BACK] - Trilha 3.4: Testes Unitarios (Orders/Reviews/AI)" \
   --label backend \
-  --assignee henriqueferraz \
   --body-file - <<'EOF'
 ## Resumo
-Cobrir os modulos de carrinho, pedidos e integracao Stripe com testes unitarios/integracao no backend.
+Cobrir os modulos de orders, reviews e ai com testes unitarios no backend seguindo padrao AAA.
 
 ## Escopo
 - Criar/atualizar suites de testes dos modulos da Trilha 3.
-- Cobrir cenarios de sucesso, validacao e erro.
-- Garantir padrao AAA e nomes descritivos de testes.
+- Cobrir cenarios de sucesso, validacao e erro para pedidos, reviews e IA.
+- Garantir padrao AAA e nomes de testes em frases completas.
 
 ## Criterios de aceite
 - Testes da Trilha 3 executando com sucesso no Jest.
-- Casos criticos (carrinho vazio, estoque insuficiente, erro de pagamento) cobertos.
+- Casos criticos (estoque insuficiente, review duplicada, produto sem review para resumo, produto inexistente no chat) cobertos.
 - Sem regressao nas suites existentes.
 
 ## Referencia
@@ -108,21 +107,21 @@ EOF
 # ---------------------------
 
 gh issue create \
-  --title "[FRONT] - Trilha 4.1: API Client com JWT e Refresh" \
+  --title "[FRONT] - Trilha 4.1: API Client com JWT em localStorage" \
   --label frontend \
-  --assignee mateus-bernart \
   --body-file - <<'EOF'
 ## Resumo
-Criar cliente HTTP centralizado no frontend com suporte a access token, refresh automatico e tratamento padrao de erros.
+Criar cliente HTTP centralizado no frontend com JWT unico em localStorage e tratamento padrao de erros.
 
 ## Escopo
 - Implementar shared/lib/api-client.ts.
-- Gerenciar access token em memoria.
-- Implementar retry apos refresh token via cookie HTTP-only.
+- Armazenar token em localStorage (setToken/getToken).
+- Enviar Authorization Bearer para rotas autenticadas.
+- Atualizar shared/lib/api/auth.ts para login/register/logout sem refresh token.
 
 ## Criterios de aceite
 - Requisicoes autenticadas enviam Authorization quando aplicavel.
-- Fluxo 401 tenta refresh e repete requisicao automaticamente.
+- Nao existe fluxo de refresh token ou cookie de sessao.
 - Erros retornam ApiError com status e payload.
 
 ## Referencia
@@ -132,7 +131,6 @@ EOF
 gh issue create \
   --title "[FRONT] - Trilha 4.2: Contexto de Autenticacao" \
   --label frontend \
-  --assignee mateus-bernart \
   --body-file - <<'EOF'
 ## Resumo
 Implementar contexto de autenticacao para sessao do usuario com login, logout, registro e restauracao de sessao.
@@ -140,10 +138,11 @@ Implementar contexto de autenticacao para sessao do usuario com login, logout, r
 ## Escopo
 - Criar features/auth/model/auth-context.tsx.
 - Expor AuthProvider e hook useAuth.
+- Restaurar sessao via localStorage em useEffect (SSR-safe).
 - Integrar AuthProvider ao layout da aplicacao.
 
 ## Criterios de aceite
-- Sessao inicial tenta recuperar usuario via endpoint me().
+- Sessao inicial restaura token/usuario via localStorage.
 - Acoes de login/logout/register atualizam estado de autenticacao.
 - Rotas/componentes conseguem consumir estado do usuario com seguranca.
 
@@ -154,7 +153,6 @@ EOF
 gh issue create \
   --title "[FRONT] - Trilha 4.3: Paginas de Login e Registro" \
   --label frontend \
-  --assignee mateus-bernart \
   --body-file - <<'EOF'
 ## Resumo
 Criar telas de autenticacao (login e cadastro) com validacao de formularios e integracao com o contexto de auth.
@@ -174,183 +172,200 @@ Criar telas de autenticacao (login e cadastro) com validacao de formularios e in
 EOF
 
 gh issue create \
-  --title "[FRONT] - Trilha 4.4: Middleware de Protecao de Rotas" \
+  --title "[FRONT] - Trilha 4.4: Middleware de Roteamento Simplificado" \
   --label frontend \
-  --assignee EndryoBittencourt \
   --body-file - <<'EOF'
 ## Resumo
-Adicionar middleware/protecao de rotas no frontend para restringir acesso a paginas autenticadas e administrativas.
+Implementar middleware simplificado para roteamento geral, mantendo protecao de autenticacao no AuthContext (client-side).
 
 ## Escopo
-- Implementar regras de acesso por autenticacao e perfil.
-- Redirecionar usuario nao autenticado para login.
-- Redirecionar usuario sem permissao para pagina adequada.
+- Garantir middleware sem dependencia de localStorage/cookies de refresh.
+- Manter matcher para excluir assets estaticos.
+- Documentar que protecao de rotas autenticadas fica no cliente.
 
 ## Criterios de aceite
-- Rotas protegidas exigem sessao valida.
-- Rotas admin bloqueiam usuarios sem role ADMIN.
-- Fluxo de redirecionamento nao gera loop.
+- Middleware executa sem loops e sem erros de autenticacao no servidor.
+- Fluxo de autenticacao continua funcional via AuthProvider no cliente.
 
 ## Referencia
 - tasks/trilha-4-frontend-auth-dashboard.md (Tarefa 4.4)
 EOF
 
 gh issue create \
-  --title "[FRONT] - Trilha 4.5: Dashboard Administrativo" \
+  --title "[FRONT] - Trilha 4.5: Pagina de Checkout PIX" \
   --label frontend \
-  --assignee EndryoBittencourt \
   --body-file - <<'EOF'
 ## Resumo
-Implementar dashboard administrativo para gestao de produtos com listagem, filtros e acoes principais.
+Implementar pagina de checkout com endereco, exibicao de chave PIX estatica + QR code e confirmacao de pedido.
 
 ## Escopo
-- Criar interface do dashboard admin.
-- Integrar listagem e estados de carregamento/erro.
-- Preparar acoes de criacao/edicao/remocao de itens.
+- Criar app/checkout/page.tsx e componentes de checkout.
+- Exibir dados do carrinho local (Zustand) e total da compra.
+- Implementar fluxo de confirmacao via POST /api/orders.
+- Implementar copia de chave PIX e feedback visual.
 
 ## Criterios de aceite
-- Dashboard renderiza lista de produtos com usabilidade adequada.
-- Acoes administrativas basicas ficam acessiveis e funcionais.
-- Experiencia responsiva e consistente com design system.
+- Fluxo endereco -> PIX -> confirmacao funciona sem Stripe.
+- Pedido criado com sucesso limpa carrinho e redireciona para detalhe do pedido.
+- Erros de criacao de pedido sao exibidos ao usuario.
 
 ## Referencia
 - tasks/trilha-4-frontend-auth-dashboard.md (Tarefa 4.5)
 EOF
 
 gh issue create \
-  --title "[FRONT] - Trilha 4.6: Formulario de Produto (Criacao e Edicao)" \
+  --title "[FRONT] - Trilha 4.6: Review UI" \
   --label frontend \
-  --assignee EndryoBittencourt \
   --body-file - <<'EOF'
 ## Resumo
-Criar formulario de produto para fluxo administrativo de criacao e edicao com validacoes e experiencia consistente.
+Implementar interface de reviews no detalhe do produto com formulario autenticado e listagem de avaliacoes.
 
 ## Escopo
-- Implementar formulario com campos essenciais de produto.
-- Adicionar validacoes e mensagens de erro amigaveis.
-- Integrar fluxo de submit com camada de dados definida na trilha.
+- Criar review-form.tsx com titulo, corpo e rating (1-5).
+- Bloquear envio para usuario nao autenticado.
+- Criar review-list.tsx com media de nota e lista de reviews.
 
 ## Criterios de aceite
-- Cadastro e edicao de produto funcionam ponta a ponta no frontend.
-- Validacoes impedem envio de dados invalidos.
-- Estados de loading/sucesso/erro cobertos.
+- Usuario autenticado consegue enviar review e ver feedback de erro/sucesso.
+- Usuario sem login recebe orientacao para autenticar.
+- Listagem exibe media e dados basicos das avaliacoes.
 
 ## Referencia
 - tasks/trilha-4-frontend-auth-dashboard.md (Tarefa 4.6)
 EOF
 
+gh issue create \
+  --title "[FRONT] - Trilha 4.7: AI Features UI (Resumo + Chat)" \
+  --label frontend \
+  --body-file - <<'EOF'
+## Resumo
+Implementar interface de features de IA no detalhe do produto: botao de resumo e drawer de chat stateless.
+
+## Escopo
+- Criar ai-summary-button.tsx para GET /api/products/:id/ai-summary.
+- Criar product-chat-drawer.tsx para POST /api/products/:id/chat.
+- Manter historico de chat apenas em estado React (sem persistencia).
+- Tratar estados de loading e erro nas duas experiencias.
+
+## Criterios de aceite
+- Resumo de IA e exibido quando a API responde com sucesso.
+- Chat responde mensagens e exibe fallback em caso de erro.
+- Fechar o drawer descarta historico local da conversa.
+
+## Referencia
+- tasks/trilha-4-frontend-auth-dashboard.md (Tarefa 4.7)
+EOF
+
 # ---------------------------
-# Trilha 5 (Convergencia) - 1 issue por frente
+# Trilha 5 (Convergencia)
 # ---------------------------
 
 gh issue create \
-  --title "[BACK] - Trilha 5: Qualidade Back (JSDoc e Cobertura)" \
-  --label backend \
-  --assignee cbfn \
+  --title "[FRONT] - Trilha 5.1: Integracao Frontend-Backend (Produtos/Reviews/Chat)" \
+  --label frontend \
   --body-file - <<'EOF'
 ## Resumo
-Consolidar qualidade do backend com documentacao JSDoc, cobertura de testes e robustez de contratos da API.
+Substituir mocks do frontend por integracao real com API para produtos, reviews, chat IA e fluxo de pedidos.
 
 ## Escopo
-- Aplicar/validar JSDoc em modulos e utilitarios compartilhados.
-- Revisar cobertura de testes do backend com meta minima de 80%.
-- Garantir padronizacao de erros e respostas da API.
+- Implementar productsApi em shared/lib/api/products.ts.
+- Implementar reviewsApi em shared/lib/api/reviews.ts.
+- Implementar chatApi em shared/lib/api/chat.ts.
+- Manter CartContext 100% localStorage (sem sync com backend).
 
 ## Criterios de aceite
-- Backend documentado nas areas criticas com JSDoc.
-- Threshold de cobertura do backend atendido.
+- Catalogo e detalhe de produto usam dados reais da API de produtos.
+- Fluxo de reviews e chat usa endpoints reais.
+- Checkout segue criando pedido via POST /api/orders com itens do store local.
+
+## Referencia
+- tasks/trilha-5-integracao-qualidade.md (Tarefa 5.1)
+EOF
+
+gh issue create \
+  --title "[FULL] - Trilha 5.3: JSDoc em Todos os Arquivos" \
+  --label backend \
+  --body-file - <<'EOF'
+## Resumo
+Aplicar JSDoc em arquivos TypeScript/TSX prioritarios no frontend e backend.
+
+## Escopo
+- Documentar utilitarios em shared/lib.
+- Documentar hooks/contexts em features/*/model.
+- Documentar componentes em features/*/components e shared/ui.
+- Documentar modulos backend (controllers/services/repositories).
+
+## Criterios de aceite
+- JSDoc adicionado nas areas prioritarias da trilha.
+- Contratos de entrada/saida e parametros principais documentados.
+- Sem regressao funcional apos documentacao.
+
+## Referencia
+- tasks/trilha-5-integracao-qualidade.md (Tarefa 5.3)
+EOF
+
+gh issue create \
+  --title "[FULL] - Trilha 5.4: Cobertura de Testes >= 80%" \
+  --label backend \
+  --body-file - <<'EOF'
+## Resumo
+Garantir cobertura de testes minima de 80% com suites para auth context, reviews, resumo IA e chat.
+
+## Escopo
+- Criar/atualizar testes em features/auth/model.
+- Criar/atualizar testes em features/product-detail/components.
+- Validar cobertura com npm run test:coverage no frontend.
+- Garantir manutencao do threshold minimo no backend.
+
+## Criterios de aceite
+- Relatorio de cobertura >= 80% em lines/functions/branches/statements.
+- Testes de cenarios principais e de erro para novas features passam.
 - Sem regressao em suites existentes.
 
 ## Referencia
-- tasks/trilha-5-integracao-qualidade.md (frente: Qualidade Back)
+- tasks/trilha-5-integracao-qualidade.md (Tarefa 5.4)
 EOF
 
 gh issue create \
-  --title "[FRONT] - Trilha 5: Integracao Stripe FE" \
-  --label frontend \
-  --assignee lpradopires \
-  --body-file - <<'EOF'
-## Resumo
-Integrar o fluxo de pagamento Stripe no frontend para concluir checkout com confirmacao de pagamento.
-
-## Escopo
-- Integrar @stripe/stripe-js e @stripe/react-stripe-js.
-- Implementar formulario de pagamento com PaymentElement.
-- Tratar sucesso/erro de confirmacao de pagamento.
-
-## Criterios de aceite
-- Checkout frontend consegue iniciar e confirmar pagamento com Stripe teste.
-- Erros de pagamento sao exibidos com clareza ao usuario.
-- Fluxo de sucesso encaminha para confirmacao do pedido.
-
-## Referencia
-- tasks/trilha-5-integracao-qualidade.md (frente: Integracao Stripe FE)
-EOF
-
-gh issue create \
-  --title "[BACK] - Trilha 5: Infra e CI/CD" \
+  --title "[BACK] - Trilha 5.5: CI/CD Atualizado (Frontend + Backend)" \
   --label backend \
-  --assignee henriqueferraz \
   --body-file - <<'EOF'
 ## Resumo
-Fortalecer esteira de infraestrutura e CI/CD para validacao automatica de qualidade no repositorio.
+Atualizar pipeline CI para validar frontend e backend com type-check, testes, cobertura e build.
 
 ## Escopo
-- Revisar e atualizar workflow de CI para lint, type-check e testes.
-- Garantir execucao previsivel para frontend e backend.
-- Ajustar gates de qualidade e relatorios de cobertura.
+- Atualizar .github/workflows/ci.yml com job frontend completo.
+- Garantir job backend com type-check, migrations e testes.
+- Publicar artefato Playwright em caso de falha E2E.
 
 ## Criterios de aceite
-- Pipeline executa com sucesso em PR para develop.
-- Etapas criticas de validacao ficam obrigatorias.
-- Falhas de qualidade bloqueiam merge automaticamente.
+- Pipeline executa para push/PR em main e develop.
+- Jobs frontend e backend executam com sucesso em ambiente limpo.
+- Falha em validacao bloqueia merge da PR.
 
 ## Referencia
-- tasks/trilha-5-integracao-qualidade.md (frente: Infra/CI-CD)
+- tasks/trilha-5-integracao-qualidade.md (Tarefa 5.5)
 EOF
 
 gh issue create \
-  --title "[FRONT] - Trilha 5: Integracao API (Frontend-Backend)" \
+  --title "[FULL] - Trilha 5.6: Variaveis de Ambiente Documentadas" \
   --label frontend \
-  --assignee mateus-bernart \
   --body-file - <<'EOF'
 ## Resumo
-Substituir mocks no frontend por integracao real com API backend para produtos, carrinho e fluxos administrativos.
+Documentar variaveis de ambiente necessarias para frontend e backend no .env.example.
 
 ## Escopo
-- Implementar clientes de API de produtos e carrinho.
-- Atualizar hooks/admin para consumo de API real.
-- Sincronizar estado do carrinho com backend quando autenticado.
+- Incluir NEXT_PUBLIC_API_URL e NEXT_PUBLIC_PIX_KEY.
+- Incluir DATABASE_URL, JWT_SECRET, JWT_EXPIRES_IN, LLM_PROVIDER_API_KEY e LLM_PROVIDER_MODEL.
+- Revisar docs para remover referencias a Stripe e refresh token.
 
 ## Criterios de aceite
-- Catalogo e dashboard usam dados reais da API.
-- Fluxos de carrinho funcionam com backend para usuario logado.
-- Mocks removidos dos fluxos integrados da trilha.
+- .env.example cobre todas as variaveis essenciais do MVP Lean.
+- Documentacao coerente com ADR-007 a ADR-010.
+- Nenhuma secret real commitada no repositorio.
 
 ## Referencia
-- tasks/trilha-5-integracao-qualidade.md (frente: Integracao API)
-EOF
-
-gh issue create \
-  --title "[FRONT] - Trilha 5: Polimento UX e Fluxos Finais" \
-  --label frontend \
-  --assignee EndryoBittencourt \
-  --body-file - <<'EOF'
-## Resumo
-Refinar experiencia de usuario nos fluxos finais de autenticacao, dashboard, carrinho e checkout apos integracao.
-
-## Escopo
-- Revisar microcopys, estados vazios, erros e carregamento.
-- Ajustar acessibilidade e consistencia visual conforme design system.
-- Validar responsividade e navegacao dos fluxos principais.
-
-## Criterios de aceite
-- Fluxos principais apresentam UX consistente e clara.
-- Estados de erro/sucesso/carga cobertos visualmente.
-- Ajustes respeitam docs/DESIGN_SYSTEM.md.
-
-## Referencia
-- tasks/trilha-5-integracao-qualidade.md (frente: Polimento UX)
+- tasks/trilha-5-integracao-qualidade.md (Tarefa 5.6)
 EOF
 
 echo "Concluido: comandos de criacao de issues executados com sucesso."

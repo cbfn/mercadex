@@ -187,36 +187,45 @@ CREATE TABLE products (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- Carrinho
-CREATE TABLE cart_items (
-  id UUID PRIMARY KEY,
-  user_id UUID REFERENCES users(id),
-  product_id UUID REFERENCES products(id),
-  quantity INT DEFAULT 1,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-
 -- Pedidos
 CREATE TABLE orders (
   id UUID PRIMARY KEY,
   buyer_id UUID REFERENCES users(id),
-  seller_id UUID REFERENCES users(id),
-  product_id UUID REFERENCES products(id),
-  quantity INT,
   total_price DECIMAL(10,2),
-  status ENUM('pendente', 'pago', 'enviado', 'entregue', 'cancelado'),
+  status ENUM('pending_pix', 'pago', 'enviado', 'entregue', 'cancelado') DEFAULT 'pending_pix',
   shipping_address JSONB,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Reviews (Fase 3 MVP Lean)
+CREATE TABLE reviews (
+  id UUID PRIMARY KEY,
+  user_id UUID REFERENCES users(id),
+  product_id UUID REFERENCES products(id),
+  title VARCHAR(255),
+  body TEXT,
+  rating INT CHECK (rating BETWEEN 1 AND 5),
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE (user_id, product_id)
+);
+
+-- @legacy: cart_items movido para schema.prisma comentado. Retomar em sprint futura.
 ```
 
-### Autenticação: JWT + Refresh Tokens
+### Autenticação: JWT Único (7 dias)
 
-- Access token: curta duração (15 min)
-- Refresh token: longa duração (7 dias)
-- Armazenado em HTTP-only cookie
-- CSRF protection habilitada
+**Decisão MVP Lean (ADR-004):** Em vez do par access token (15 min) + refresh token, o MVP usa um único JWT com expiração de 7 dias, armazenado em `localStorage`.
+
+- Token único: 7 dias de validade
+- Armazenado em `localStorage` no frontend
+- Header `Authorization: Bearer <token>` em todas as requisições autenticadas
+- Token inválido antes do prazo → usuário refaz login
+- Sem endpoint `/api/auth/refresh`
+- Risco aceito: tokens não podem ser revogados antes da expiração; mitigação futura via blacklist Redis
+
+> **Nota:** A implementação original com refresh token em HTTP-only cookie foi movida para `backend/src/legacy/`. Retomar em sprint futura.
 
 ### Cache: Redis
 
@@ -379,6 +388,127 @@ TypeScript-first, schemas mais enxutos, melhor performance em runtime validation
 
 ---
 
+---
+
+## 7. Decisão: Carrinho 100% Client-Side (localStorage)
+
+**Status:** Aprovado (Pivot MVP Lean — 2026-05-15)
+
+### Contexto
+
+A implementação original previa persistência do carrinho no banco de dados (`Cart` e `CartItem`). Para reduzir a complexidade da Fase 3, decidimos eliminar esse modelo.
+
+### Decisão
+
+O carrinho é gerenciado **exclusivamente via `localStorage`** no frontend (Zustand + persist middleware). O backend **não expõe endpoints de cart**. No momento do checkout, o frontend envia o array de itens diretamente para `POST /api/orders`.
+
+### Consequências
+
+**Positivas:**
+- ✅ Elimina 5 endpoints REST de carrinho
+- ✅ Remove dependência de sessão para adicionar itens
+- ✅ Frontend já tem a infra pronta (Zustand + localStorage)
+
+**Negativas:**
+- ⚠️ Carrinho não persiste entre dispositivos
+- ⚠️ Análise de abandono de carrinho fica indisponível
+
+**Mitigação:** Models `Cart`/`CartItem` permanecem comentados no `schema.prisma` para retomada futura.
+
+---
+
+## 8. Decisão: PIX Estático Fake (sem gateway de pagamento)
+
+**Status:** Aprovado (Pivot MVP Lean — 2026-05-15)
+
+### Contexto
+
+A integração com Stripe (SDK + webhook + PaymentIntent) adiciona complexidade operacional e de testes significativa ao MVP. O objetivo do MVP Lean é validar o fluxo de compra, não processar pagamentos reais.
+
+### Decisão
+
+O fluxo de pagamento exibe uma **chave PIX estática (Copia e Cola) e um QR Code fixo**. O pedido é criado imediatamente com status `PENDING_PIX`. Confirmação de pagamento é feita manualmente via Prisma Studio.
+
+Stripe SDK movido para `backend/src/legacy/`.
+
+### Consequências
+
+**Positivas:**
+- ✅ Elimina dependência de conta Stripe, webhook e TLS em desenvolvimento
+- ✅ Fluxo de UX completo testável sem infraestrutura de pagamento
+- ✅ Reduz escopo em ~1,5 dia de desenvolvimento
+
+**Negativas:**
+- ⚠️ Sem confirmação automática de pagamento
+- ⚠️ Status `PENDING_PIX` requer atualização manual
+
+**Mitigação:** Integração Stripe documentada e preservada em `/legacy` para retomada em sprint futura.
+
+---
+
+## 9. Decisão: Admin via Prisma Studio (sem frontend administrativo)
+
+**Status:** Aprovado (Pivot MVP Lean — 2026-05-15)
+
+### Contexto
+
+Um dashboard administrativo frontend (listagem de pedidos, edição de produtos, atualização de status) representa 1+ dia de desenvolvimento sem impacto direto na experiência do comprador.
+
+### Decisão
+
+Toda gestão administrativa no MVP é realizada via **Prisma Studio** (`npx prisma studio`): visualização de pedidos, atualização de status, edição de produtos e categorias. Sem rotas `/admin` no frontend.
+
+### Consequências
+
+**Positivas:**
+- ✅ Remove ~8 componentes React de admin
+- ✅ Prisma Studio já está disponível sem desenvolvimento adicional
+
+**Negativas:**
+- ⚠️ Acesso admin requer acesso ao servidor/banco de dados
+- ⚠️ Não escalável para equipe de operações sem acesso técnico
+
+---
+
+## 10. Decisão: Features de IA (Reviews, Resumo e Chat de Produto)
+
+**Status:** Aprovado (Pivot MVP Lean — 2026-05-15)
+
+### Contexto
+
+Para compensar a redução de escopo e adicionar diferencial competitivo, o MVP Lean inclui 3 features de IA baseadas em reviews de produtos.
+
+### Decisão
+
+Implementar os seguintes contratos de API (JSDoc obrigatório em todos):
+
+| Endpoint | Descrição | Auth |
+|---|---|---|
+| `GET /api/products/:id/reviews` | Listar reviews de um produto | Não |
+| `POST /api/products/:id/reviews` | Criar review (1 por usuário/produto) | Sim |
+| `DELETE /api/reviews/:id` | Deletar próprio review | Sim |
+| `GET /api/products/:id/ai-summary` | Resumo IA de 3 frases das reviews | Não |
+| `POST /api/products/:id/chat` | Chat stateless com IA sobre o produto | Não |
+
+**AI Summary:** Backend busca reviews do produto, envia para LLM com prompt estruturado, retorna resumo de 3 frases sobre pontos positivos e negativos.
+
+**Product Chat:** Endpoint stateless — recebe `{ message }`, carrega specs + reviews do produto, chama LLM, retorna resposta. **Histórico de chat reside apenas no estado React (sem persistência no banco).**
+
+**LLM Provider:** A definir na implementação (OpenAI, Anthropic ou outro). Configurado via variável de ambiente `LLM_PROVIDER_API_KEY`.
+
+### Consequências
+
+**Positivas:**
+- ✅ Diferencial competitivo real no MVP
+- ✅ Social proof via reviews aumenta conversão
+- ✅ Chat reduz dúvidas pré-compra
+
+**Negativas:**
+- ⚠️ Custo variável de API LLM por requisição
+- ⚠️ Latência de resposta do LLM (mitigar com loading state no frontend)
+
+---
+
 ## Conclusão
 
 Esta arquitetura oferece:
@@ -388,4 +518,4 @@ Esta arquitetura oferece:
 - 👥 **Manutenibilidade:** Código limpo e testável
 - 💰 **Custo-benefício:** Infraestrutura barata inicialmente
 
-Estamos prontos para começar! 🚀
+**Pivot MVP Lean (2026-05-15):** Stripe, Cart DB e Admin Dashboard movidos para `/legacy`. Reviews + IA adicionados como diferenciais.

@@ -64,64 +64,116 @@ As 5 User Stories abaixo cobrem os momentos críticos do fluxo de compra, priori
 
 ---
 
-## 4. Selecionar Método de Pagamento e Confirmar com PIX
+## 4. Selecionar Método de Pagamento e Confirmar com PIX Estático
 
-**Como** cliente, **quero** escolher PIX como método de pagamento, visualizar o QR code e confirmar que o pagamento foi processado, **para que** eu complete minha compra de forma segura e imediata.
+**Como** cliente, **quero** visualizar a chave PIX e o QR Code após revisar meu pedido, **para que** eu possa realizar o pagamento e ter meu pedido registrado imediatamente.
 
 ### Critérios de Aceitação
-- [ ] Exibir opção de método de pagamento (PIX como padrão)
-- [ ] Ao selecionar PIX, exibir:
-  - QR code escaneável
-  - Código PIX para cópia e cola (fallback)
-  - Instruções claras: "Escaneie com seu app bancário ou copie o código"
-  - Timer de expiração (10 minutos)
-- [ ] Verificar confirmação de pagamento via webhook (não fazer polling do cliente)
-- [ ] Se pagamento confirmado: exibir mensagem de sucesso e avançar para confirmação
-- [ ] Se timeout (10 min): exibir opção de gerar novo QR code ou trocar método
-- [ ] Se pagamento falhar: exibir erro específico e permitir tentar novamente
+- [ ] Exibir chave PIX estática (Copia e Cola) com botão "Copiar"
+- [ ] Exibir QR Code fixo na mesma tela
+- [ ] Exibir instruções: "Escaneie com seu app bancário ou copie a chave"
+- [ ] Botão "Confirmar Pedido" cria o pedido via `POST /api/orders` com status `PENDING_PIX`
+- [ ] Após confirmação, redirecionar para página de confirmação com número do pedido
+- [ ] Limpar carrinho do `localStorage` após criação do pedido
 
 ### Notas
-- PIX é o método de maior confiança e velocidade de confirmação
-- Impacto: Reduz taxa de abandono no pagamento em ~20%
+- PIX estático (MVP Lean): sem webhook, sem timer de expiração, sem gateway de pagamento
+- Status inicial do pedido: `PENDING_PIX`. Confirmação manual via Prisma Studio
+- Integração Stripe preservada em `/legacy` para retomada em sprint futura
+- Impacto: valida fluxo completo de checkout sem dependência de infraestrutura de pagamento
 
 ---
 
 ## 5. Receber Confirmação do Pedido e Acessar Informações de Rastreamento
 
-**Como** cliente, **quero** receber uma confirmação imediata após pagamento com número do pedido, resumo da compra e próximos passos, **para que** eu tenha certeza de que meu pedido foi criado com sucesso e saiba quando e onde acompanhar meu produto.
+**Como** cliente, **quero** receber uma confirmação imediata após finalizar o pedido com número do pedido, resumo da compra e próximos passos, **para que** eu tenha certeza de que meu pedido foi criado com sucesso e saiba quando e onde acompanhar meu produto.
 
 ### Critérios de Aceitação
 - [ ] Exibir página de confirmação com:
   - Número do pedido (ex: "ORD-2026-001234")
-  - Status do pedido ("Pagamento confirmado")
-  - Resumo da compra (itens, endereço de entrega, total pago)
+  - Status do pedido ("Aguardando pagamento PIX")
+  - Resumo da compra (itens, endereço de entrega, total)
   - Data estimada de entrega
-  - Email de confirmação será enviado (com link para rastreamento)
 - [ ] Exibir opções:
   - "Voltar ao Catálogo" (continuar comprando)
-  - "Ver Meus Pedidos" (histórico de compras)
-- [ ] Enviar email de confirmação com:
-  - Dados do pedido
-  - Link para rastrear pedido (futura funcionalidade)
-  - Informações de contato de suporte
-- [ ] Permitir compartilhar confirmação (copiar número, email)
+  - "Ver Meus Pedidos" (histórico de compras — futuro)
+- [ ] Enviar email de confirmação com dados do pedido e contato de suporte
+- [ ] Permitir compartilhar confirmação (copiar número)
 
 ### Notas
 - Confirmação clara reduz emails de suporte ("Meu pedido foi criado?")
-- Email é essencial para dar tranquilidade ao cliente
 - Impacto: Reduz dúvidas pós-compra em ~40%
+
+---
+
+## 6. Avaliar Produto (Review)
+
+**Como** cliente logado, **quero** publicar uma avaliação de um produto com nota, título e descrição, **para que** outros compradores tenham informações reais sobre o produto antes de comprar.
+
+### Critérios de Aceitação
+- [ ] Botão "Escrever Avaliação" visível apenas para usuários logados
+- [ ] Formulário com: nota 1-5 (stars), título (obrigatório), descrição (obrigatória)
+- [ ] Apenas um review por usuário por produto
+- [ ] Review publicado aparece imediatamente na lista do produto
+- [ ] Usuário pode deletar o próprio review
+- [ ] Usuários não logados veem as reviews mas não podem postar
+
+### Notas
+- Reviews alimentam as features de IA (US-7 e US-8)
+- Unicidade `(userId, productId)` garantida no banco
+
+---
+
+## 7. Ver Resumo de IA das Avaliações (Insight da IA)
+
+**Como** visitante na página de um produto, **quero** ver um resumo conciso das avaliações gerado por IA, **para que** eu entenda rapidamente os pontos positivos e negativos sem precisar ler cada review individualmente.
+
+### Critérios de Aceitação
+- [ ] Botão "Ver Insight da IA" visível na página do produto (não requer login)
+- [ ] Ao clicar, exibir estado de loading enquanto aguarda resposta
+- [ ] Exibir resumo de 3 frases sobre pontos positivos e negativos
+- [ ] Se não houver reviews: exibir "Ainda sem avaliações suficientes para gerar resumo"
+- [ ] Se a API de IA falhar: exibir mensagem de erro amigável com opção de tentar novamente
+
+### Notas
+- Endpoint: `GET /api/products/:id/ai-summary`
+- Backend busca reviews, envia para LLM, retorna resumo. JSDoc obrigatório no service.
+
+---
+
+## 8. Tirar Dúvida sobre Produto com IA (Chat de Produto)
+
+**Como** visitante, **quero** fazer perguntas sobre as especificações de um produto e receber respostas baseadas nas informações reais do produto e das avaliações, **para que** eu tome uma decisão de compra mais informada.
+
+### Critérios de Aceitação
+- [ ] Botão "Tirar Dúvida" abre um chat na página do produto (não requer login)
+- [ ] Campo de texto para digitar pergunta e botão "Enviar"
+- [ ] Exibir estado de loading enquanto aguarda resposta da IA
+- [ ] Resposta exibida no chat com base nas specs do produto e reviews existentes
+- [ ] Histórico de conversa mantido apenas no estado React (sem persistência no banco)
+- [ ] Ao fechar o chat, o histórico é descartado
+- [ ] Se a API de IA falhar: exibir erro amigável
+
+### Notas
+- Endpoint: `POST /api/products/:id/chat` com `{ message: string }`
+- Backend stateless: não persiste histórico de conversa
+- JSDoc obrigatório no controller e no service de IA
 
 ---
 
 ## Mapa de Priorização (MoSCoW)
 
-| User Story | Must Have | Should Have | Could Have | Won't Have |
-|-----------|-----------|-----------|-----------|-----------|
+| User Story | Must Have | Should Have | Could Have | Won't Have (MVP) |
+|-----------|-----------|-----------|-----------|------------------|
 | 1. Revisar Carrinho | ✅ | | | |
 | 2. Validar Endereço | ✅ | | | |
 | 3. Resumo do Pedido | ✅ | | | |
-| 4. Pagamento PIX | ✅ | | Cartão/Débito | Boleto |
+| 4. Pagamento PIX Estático | ✅ | | PIX real/Stripe | |
 | 5. Confirmação | ✅ | | | |
+| 6. Review de Produto | ✅ | | | |
+| 7. Resumo IA (Insight) | ✅ | | | |
+| 8. Chat de Produto IA | ✅ | | | |
+| Dashboard Admin | | | | ❌ Prisma Studio |
 
 ---
 
@@ -133,14 +185,18 @@ As 5 User Stories abaixo cobrem os momentos críticos do fluxo de compra, priori
 - User Story 3: Resumo do Pedido
 
 ### Sprint 2 (MVP Completo)
-- User Story 4: Pagamento PIX
+- User Story 4: Pagamento PIX Estático
 - User Story 5: Confirmação
+- User Story 6: Reviews
+- User Story 7: Resumo IA
+- User Story 8: Chat de Produto IA
 
 ### Futuro (Fase 2)
 - Cupons de desconto (incrementar US #3)
-- Cartão de crédito/débito (estender US #4)
+- PIX real via gateway / Stripe (estender US #4 — código em `/legacy`)
 - Dashboard de pedidos (estender US #5)
 - Rastreamento em tempo real (estender US #5)
+- Carrinho persistido no banco (código em `schema.prisma` comentado)
 
 ---
 
