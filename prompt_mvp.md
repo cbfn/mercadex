@@ -1,0 +1,1 @@
+Leia o arquivo #file:prompt__reestruturacao_planejamento.md e planeje suas mudanças. Também atualize os documentos em #file:docs (inclusive os diagramas) o #file:CLAUDE.md e o #file:README.md para que todos falem a mesma lingua.

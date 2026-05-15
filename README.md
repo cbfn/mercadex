@@ -1,14 +1,16 @@
 # Mercadex — Marketplace de Eletrônicos
 
-[![Status](https://img.shields.io/badge/status-MVP%20Phase%202-blue)]()
+[![Status](https://img.shields.io/badge/status-MVP%20Lean%20Phase%203-blue)]()
 [![License](https://img.shields.io/badge/license-MIT-green)]()
 [![Frontend CI](https://github.com/cbfn/mercadex/actions/workflows/ci.yml/badge.svg)](https://github.com/cbfn/mercadex/actions/workflows/ci.yml)
 
 ## 📋 Sobre o Projeto
 
-**Mercadex** é um marketplace de eletrônicos em desenvolvimento, construído como MVP (Produto Mínimo Viável) com arquitetura monolítica modular. O projeto separa claramente frontend e backend, permitindo evolução independente de cada camada.
+**Mercadex** é um marketplace de eletrônicos em MVP Lean, construido como protótipo rápido com arquitetura monolítica modular. O projeto separa claramente frontend e backend, permitindo evolução independente de cada camada.
 
-**Objetivo:** Validar fluxos de compra e UX antes de escalar para produção. A Fase 2 foi concluida com frontend React/Next.js 16.2 e testes automatizados; a Fase 3 esta em andamento com consolidacao do backend e persistencia de dados.
+**Objetivo:** Validar fluxos de compra e UX antes de escalar para produção. A Fase 2 foi concluída com frontend React/Next.js 16.2 e testes automatizados; a Fase 3 está em andamento com consolidação do backend, reviews e features de IA.
+
+**MVP Lean:** JWT único 7d (sem refresh), carrinho 100% localStorage, checkout PIX estático fake, admin via Prisma Studio, features de IA (reviews, resumo, chat).
 
 **Padrão de documentação:** novos módulos, funções públicas, contratos de API e utilitários compartilhados devem usar JSDoc.
 
@@ -28,13 +30,13 @@
 
 ### Backend (Fase 3 - Em andamento)
 - 🔄 API REST em Node.js + TypeScript + Express.js
-- 🟡 Autenticação com JWT e refresh tokens (iniciado)
+- 🟡 Autenticação com JWT único 7 dias em `localStorage` (sem refresh token, iniciado)
 - 🟡 Persistência em Neon Postgres + Prisma 7.8.0 (iniciado)
 - 🟡 Módulo de produtos com rotas e testes (iniciado)
-- ⬜ Módulos de carrinho, usuários e pedidos (planejado)
-- 🔄 Integração com gateway de pagamento para PIX (MVP) e futuramente Cartão de Crédito e Boleto
-- 🔄 Sistema de pedidos e tracking
-- 🔄 Cache com Redis e jobs assíncronos (Bull)
+- ⬜ Módulos de reviews e pedidos (planejado)
+- ⬜ Checkout PIX estático fake — chave estática + QR code + `PENDING_PIX` (planejado)
+- ⬜ Features de IA: resumo de reviews + chat stateless por produto (planejado)
+- ⬜ Admin via Prisma Studio (sem dashboard no frontend)
 
 ---
 
@@ -60,9 +62,9 @@ Node.js 20+ (runtime)
 ├── Express.js (API REST)
 ├── Neon Postgres (persistência)
 ├── Prisma 7.8.0 (ORM)
-├── JWT (autenticação)
-├── Zod (validação de inputs)
-└── Redis (cache/async jobs via Bull)
+├── JWT único 7d em localStorage (autenticação)
+├── LLM Provider (features de IA — via LLM_PROVIDER_API_KEY)
+└── Zod (validação de inputs)
 ```
 
 ---

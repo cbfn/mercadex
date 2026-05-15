@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Mercadex** é um marketplace de eletrônicos em MVP, com arquitetura monolítica modular separando frontend e backend. O projeto é um e-commerce com funcionalidades de catálogo, carrinho de compras, e checkout.
+**Mercadex** é um marketplace de eletrônicos em MVP Lean, com arquitetura monolítica modular separando frontend e backend. O projeto é um e-commerce com catálogo, carrinho, checkout PIX estático, reviews e features de IA.
 
 **Status atual (Fase 3 - Backend em andamento):**
 - Frontend: Next.js 16.2 (App Router) + TypeScript + Tailwind CSS + componentes shadcn-style (`frontend/`)
@@ -12,7 +12,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Banco de dados: Neon Postgres com Prisma 7.8.0
 - CI: GitHub Actions (`.github/workflows/ci.yml`) com cobertura mínima de 80%
 
-Ver `docs/ADR.md` para decisões arquiteturais completas.
+**MVP Lean (pivô ativo):**
+- JWT único com expiração de 7 dias armazenado em `localStorage` (sem refresh token)
+- Carrinho 100% client-side via Zustand + `localStorage` (sem Cart/CartItem no banco)
+- Checkout: PIX estático fake — chave estática + QR code + `POST /api/orders` com status `PENDING_PIX`
+- Admin via Prisma Studio (sem frontend administrativo)
+- Features de IA: reviews, resumo IA, chat stateless por produto
+
+Ver `docs/ADR.md` para decisões arquiteturais completas (ADR-007 a ADR-010 para o pivot).
 Ver `docs/DESIGN_SYSTEM.md` para padrões visuais, tipografia e UX writing do frontend.
 
 ## Tech Stack
@@ -32,8 +39,8 @@ Ver `docs/DESIGN_SYSTEM.md` para padrões visuais, tipografia e UX writing do fr
 - Express.js para API REST
 - Neon Postgres
 - Prisma 7.8.0
-- JWT para autenticação
-- Redis para cache e async jobs (Bull)
+- JWT único com expiração de 7 dias (sem refresh token)
+- LLM Provider via `LLM_PROVIDER_API_KEY` + `LLM_PROVIDER_MODEL` (para features de IA)
 
 ## Coding Standards
 
@@ -93,13 +100,15 @@ frontend/
 
 ## Architecture Decisions
 
-**Monolítica Modular:** Frontend separado do Backend permite deploy independente. Backend estruturado em módulos por domínio (auth, users, products, cart, orders).
+**Monolítica Modular:** Frontend separado do Backend permite deploy independente. Backend estruturado em módulos por domínio (auth, users, products, orders, reviews, ai).
 
 **Escolhas principais:**
 - TypeScript em ambos frontend/backend (type safety, reduz bugs)
 - Frontend evoluiu de protótipo HTML/CSS/JS (Fase 1) para React/Next.js (Fase 2)
 - Express.js para API (minimalista, maduro)
 - PostgreSQL (ACID, JSON nativo, escalável)
+- Cart/CartItem: comentados como `@legacy` no schema Prisma (ADR-007)
+- Stripe: movido para `backend/src/legacy/` (ADR-008)
 
 Ver `docs/ADR.md` para contexto completo de cada decisão, riscos, e mitigações.
 
@@ -107,23 +116,35 @@ Ver `docs/ADR.md` para contexto completo de cada decisão, riscos, e mitigaçõe
 
 - **Documentação:** `docs/` (ADR.md com decisões, DIAGRAMAS.md)
 - **Frontend:** `frontend/` (Next.js 16.2 + TypeScript)
-- **Backend:** `backend/src/` (módulos: auth, users, products, cart, orders; shared: middleware, utils, errors)
+- **Backend:** `backend/src/` (módulos: auth, users, products, orders, reviews, ai; shared: middleware, utils, errors)
+- **Backend @legacy:** `backend/src/legacy/` (cart, stripe — não deletar)
 - **Testes backend:** `backend/tests/`
 
 ## Key Patterns
 
 ### Frontend React/Next.js
-- **State management:** Zustand em `features/cart/model/cart-context.tsx`
+- **State management:** Zustand em `features/cart/model/cart-context.tsx` (cart 100% localStorage)
+- **Auth token:** JWT armazenado em `localStorage` via `shared/lib/api-client.ts`; restaurado no `useEffect` após montagem (SSR-safe)
 - **Hydration safety:** estado persistido no store com integração de `localStorage`
 - **Feature-Sliced Design:** `features/<nome>/components/` e `features/<nome>/model/` por domínio
 - **UI primitivos:** Componentes em `shared/ui/` com padrão shadcn-style + Tailwind
 - **Design source of truth:** seguir `docs/DESIGN_SYSTEM.md` para qualquer tarefa visual
 - **Testes:** Cada componente/hook tem arquivo `.test.tsx` ou `.test.ts` co-localizado
 
-### Backend (Planned)
+### Backend
 - **Módulos DDD light:** Cada módulo com controllers → services → repositories → entities
 - **Error handling:** Custom exceptions (não throw strings)
 - **API responses:** Formato padrão com `success`, `data`, `error` fields (ver ADR seção 5)
+- **Endpoints ativos:**
+  - `POST /api/auth/login` — retorna `{ token, user }`
+  - `POST /api/auth/register`
+  - `GET /api/products`, `GET /api/products/:id`
+  - `POST /api/orders` — recebe array de itens do frontend (localStorage)
+  - `GET /api/orders`, `GET /api/orders/:id`
+  - `GET /api/products/:id/reviews`, `POST /api/products/:id/reviews`
+  - `DELETE /api/reviews/:id`
+  - `GET /api/products/:id/ai-summary`
+  - `POST /api/products/:id/chat`
 
 ## Important Notes
 
@@ -131,7 +152,7 @@ Ver `docs/ADR.md` para contexto completo de cada decisão, riscos, e mitigaçõe
 
 2. **Cobertura mínima:** Jest enforça 80% para lines/functions/branches/statements.
 
-3. **Security:** JWT + refresh tokens no backend, HTTPS obrigatório, CORS whitelist, rate limiting (ver ADR seção 6).
+3. **Security:** JWT único 7d no backend, HTTPS obrigatório, CORS whitelist, rate limiting (ver ADR seção 6).
 
 4. **Deployment:** Frontend Next.js pronto para deploy em Vercel. Backend em evolução, com Prisma e Neon já alinhados.
 
@@ -140,6 +161,10 @@ Ver `docs/ADR.md` para contexto completo de cada decisão, riscos, e mitigaçõe
 6. **Frontend `node_modules` na raiz:** O `node_modules/` da raiz não deve ser rastreado pelo git (`.gitignore` adicionado). Dependências do frontend ficam em `frontend/node_modules/`.
 
 7. **Documentação:** novos módulos, funções públicas, contratos de API e utilitários compartilhados devem usar JSDoc.
+
+8. **Schema Prisma:** `Cart` e `CartItem` comentados como `// @legacy Cart`. `Review` adicionado. `OrderStatus` inclui `PENDING_PIX`. Campos Stripe comentados como `// @legacy Stripe`.
+
+9. **Admin:** Gestão de produtos e pedidos via `npx prisma studio` (porta 5555). Sem rota `/admin` no frontend.
 
 ## Development Flow
 
