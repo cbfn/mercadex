@@ -59,14 +59,21 @@ function formatPct(metric) {
   return `${icon} **${pct}%**`;
 }
 
+const METRIC_DESCRIPTIONS = {
+  Statements: 'Cada instrução executável do código (atribuições, chamadas, retornos)',
+  Branches:   'Caminhos de condicionais: `if/else`, `switch`, `? :`, `&&`, `||`',
+  Functions:  'Funções e métodos que foram chamados ao menos uma vez',
+  Lines:      'Linhas físicas de código que contêm ao menos uma instrução executada',
+};
+
 function coverageRow(label, metric) {
+  const description = METRIC_DESCRIPTIONS[label] ?? '';
   if (!metric || metric.pct == null) {
-    return `| ${label} | \`N/A\` | 80% | — |`;
+    return `| ${label} | ${description} | \`N/A\` | 80% | — |`;
   }
   const pct = Number(metric.pct.toFixed(2));
-  const delta = ''; // delta vs. anterior seria necessário armazenar histórico
   const ok = pct >= THRESHOLD ? '✅' : '❌';
-  return `| ${label} | ${ok} ${pct}% | 80% | ${metric.covered}/${metric.total} |`;
+  return `| ${label} | ${description} | ${ok} ${pct}% | 80% | ${metric.covered}/${metric.total} |`;
 }
 
 // ---------------------------------------------------------------------------
@@ -134,8 +141,8 @@ ${statusBadge}
 
 ${total.lines ? `> Execução: [#${runId}](${runUrl})` : '> Dados de cobertura indisponíveis (possível falha anterior à geração do relatório).'}
 
-| Métrica | Resultado | Threshold | Coberto/Total |
-|---------|-----------|-----------|---------------|
+| Métrica | O que mede | Resultado | Threshold | Coberto/Total |
+|---------|------------|-----------|-----------|---------------|
 ${coverageRow('Statements', total.statements)}
 ${coverageRow('Branches', total.branches)}
 ${coverageRow('Functions', total.functions)}
