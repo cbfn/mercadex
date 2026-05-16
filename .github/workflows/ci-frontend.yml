@@ -9,7 +9,7 @@ on:
       - '.github/workflows/ci-frontend.yml'
       - '.github/scripts/**'
   pull_request:
-    branches: [develop]
+    branches: [main,develop]
     paths:
       - 'frontend/**'
       - '!frontend/RELATORIO_TESTES.md'

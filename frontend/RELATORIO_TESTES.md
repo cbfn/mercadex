@@ -1,5 +1,5 @@
 # Relatório de Testes — Mercadex Frontend
-
+ 
 **Data de execução:** 2026-05-16
 **Projeto:** mercadex-frontend (Next.js 16.2 + React 19 + TypeScript)
 
