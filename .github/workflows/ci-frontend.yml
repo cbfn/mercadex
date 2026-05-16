@@ -24,6 +24,9 @@ permissions:
   contents: write
   pull-requests: write
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   ci-frontend:
     name: ci-frontend
@@ -62,6 +65,18 @@ jobs:
         working-directory: frontend
         run: npm run test:coverage
         continue-on-error: true
+
+      - name: Publicar resumo de cobertura no GitHub Actions
+        if: always()
+        run: |
+          mkdir -p .github/scripts/output
+          node .github/scripts/generate-comment.js \
+            --summary=frontend/coverage/coverage-summary.json \
+            --project=frontend \
+            --outcome=${{ steps.tests.outcome }} \
+            --run-id=${{ github.run_id }} \
+            --output=.github/scripts/output/summary-frontend.md
+          cat .github/scripts/output/summary-frontend.md >> $GITHUB_STEP_SUMMARY
 
       - name: Detectar funções sem cobertura adicionadas no PR
         id: uncovered
