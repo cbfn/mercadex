@@ -79,12 +79,12 @@ function buildEntry(summary, project, outcome, runUrl, timestamp) {
 - **Total de testes (statements):** ${totalTests}
 - **Status:** ${statusIcon(outcome)}
 
-| Métrica     | Cobertura | Threshold |
-|-------------|-----------|-----------|
-| Statements  | ${formatPct(total.statements)} | 80% |
-| Branches    | ${formatPct(total.branches)} | 80% |
-| Functions   | ${formatPct(total.functions)} | 80% |
-| Lines       | ${formatPct(total.lines)} | 80% |
+| Métrica     | O que mede | Cobertura | Threshold |
+|-------------|------------|-----------|-----------|
+| Statements  | Cada instrução executável do código | ${formatPct(total.statements)} | 80% |
+| Branches    | Caminhos de condicionais (if/else, switch, ternário) | ${formatPct(total.branches)} | 80% |
+| Functions   | Funções e métodos chamados ao menos uma vez | ${formatPct(total.functions)} | 80% |
+| Lines       | Linhas físicas com ao menos uma instrução executada | ${formatPct(total.lines)} | 80% |
 
 > _Entrada gerada automaticamente pelo CI. Para análise detalhada, veja o artefato \`coverage-report-${project}\`._
 <!-- ci-auto-entry-end: ${project} -->
