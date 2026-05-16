@@ -9,6 +9,14 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
+  collectCoverageFrom: [
+    'src/**/*.ts',
+    '!src/**/*.test.ts',
+    '!src/test-setup.ts',
+    '!src/generated/**',
+    '!src/**/*.d.ts',
+  ],
+  coverageReporters: ['text', 'json-summary', 'json', 'html', 'lcov'],
   coverageThreshold: {
     global: {
       lines: 80,

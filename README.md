@@ -24,7 +24,7 @@
 - ✅ **Carrinho Interativo:** Adicionar, alterar quantidades, remover itens com atualização em tempo real
 - ✅ **Checkout Multi-Etapa:** Entrega → Pagamento (PIX) → Confirmação
 - ✅ **Persistência de Carrinho:** Estado restaurado do `localStorage` após navegação (sem SSR mismatch)
-- ✅ **Testes Automatizados:** 163 testes unitários com cobertura ≥ 80% (Jest + React Testing Library)
+- ✅ **Testes Automatizados:** 273 testes unitários com cobertura ≥ 99% (Jest + React Testing Library)
 - ✅ **CI Integrado:** GitHub Actions valida lint, type-check e testes a cada push
 - ✅ **Design Responsivo:** Layout fluido para mobile, tablet e desktop (Tailwind CSS + tokens do design system)
 
@@ -51,7 +51,7 @@
 | **TypeScript** | strict | Type safety, reduz bugs em produção |
 | **Tailwind CSS** | globals.css + tailwind.config.ts | Estilos utilitários + tokens semânticos |
 | **UI shadcn-style** | src/shared/ui | Componentes reutilizáveis com padrão visual único |
-| **Jest** | 30 | Testes unitários (21 suítes, 163 testes) |
+| **Jest** | 30 | Testes unitários (31 suítes, 273 testes) |
 | **React Testing Library** | 16 | Testes de componentes orientados a comportamento |
 | **Playwright** | — | Testes E2E (configurado, fluxos críticos) |
 | **lucide-react** | — | Ícones SVG |
@@ -145,22 +145,93 @@ npm run dev
 npm run build && npm start
 ```
 
-### Testes
+### Backend (Node.js + Express)
+
+> Pré-requisito: arquivo `.env` com `DATABASE_URL` (Neon Postgres) e `JWT_SECRET`.
+
+```bash
+cd backend
+
+# 1. Instale as dependências
+npm install
+
+# 2. Aplique as migrations do banco
+npx prisma migrate deploy
+
+# 3. Inicie o servidor de desenvolvimento
+npm run dev
+# API disponível em: http://localhost:3001
+# Swagger UI em:     http://localhost:3001/api-docs
+```
+
+---
+
+## 🧪 Testes
+
+O projeto mantém suítes de testes independentes para frontend e backend, ambas com threshold mínimo de **80% de cobertura** validado no CI.
+
+### Frontend — Jest + React Testing Library
 
 ```bash
 cd frontend
 
-# Unitários (Jest + React Testing Library)
-npm run test            # execução única
-npm run test:watch      # modo watch
+# Executa todos os testes uma vez
+npm test
 
-# Cobertura (threshold: 80% em lines/functions/branches/statements)
+# Modo watch (ideal para desenvolvimento)
+npm run test:watch
+
+# Gera relatório de cobertura com threshold 80%
 npm run test:coverage
 
-# E2E (Playwright)
+# Testes E2E com Playwright
 npm run test:e2e
-npm run test:e2e:ui     # com interface visual
+npm run test:e2e:ui     # com interface visual Playwright
 ```
+
+**Cobertura atual (273 testes · 31 suítes):**
+
+| Métrica     | Resultado |
+|-------------|-----------|
+| Statements  | 99.10%    |
+| Branches    | 95.62%    |
+| Funções     | 98.60%    |
+| Linhas      | 99.25%    |
+
+O que é testado:
+- Lógica de carrinho (`cart.ts`, `cart-context.tsx`) — add, remove, update, derivados
+- Catálogo (`catalog.ts`, `use-catalog-filters.ts`) — filtro, busca, ordenação, desconto
+- Autenticação (`auth-context.tsx`, `login-form`, `register-form`) — fluxo completo + erros
+- Cliente HTTP (`api-client.ts`) — token em memória, refresh 401, ApiError
+- Módulos de API (`api/auth`, `api/products`, `api/cart`) — todos os endpoints mockados
+- Hook admin (`use-products-admin.ts`) — CRUD com otimismo local
+- Componentes UI — Button, Card, Drawer, Input, Modal, Select, Badge
+- Etapas do checkout — entrega, pagamento PIX, confirmação de pedido
+- Sincronização do carrinho com backend quando usuário autentica
+
+📄 **Relatório detalhado:** [`frontend/RELATORIO_TESTES.md`](./frontend/RELATORIO_TESTES.md)
+
+---
+
+### Backend — Jest + Supertest
+
+```bash
+cd backend
+
+# Executa todos os testes uma vez
+npm test
+
+# Gera relatório de cobertura
+npm run test:coverage
+```
+
+O que é testado:
+- Módulo `auth` — registro, login, validação de JWT
+- Módulo `products` — listagem, detalhe, criação, atualização
+- Middleware de autenticação e tratamento de erros
+- Servidor Express — rotas e respostas padrão
+
+📄 **Relatório detalhado:** [`backend/RELATORIO_TESTES.md`](./backend/RELATORIO_TESTES.md)
 
 ---
 
@@ -241,14 +312,27 @@ it("adds item to cart when button is clicked", async () => {
 
 ### Scripts disponíveis
 
+**Frontend (`cd frontend`):**
+
 | Comando | Descrição |
 |---------|-----------|
-| `npm run dev` | Servidor de desenvolvimento (Next.js) |
+| `npm run dev` | Servidor de desenvolvimento Next.js (porta 3000) |
 | `npm run build` | Build de produção |
 | `npm run lint` | ESLint com zero warnings |
-| `npm run test` | Testes unitários (Jest) |
-| `npm run test:coverage` | Cobertura (threshold 80%) |
+| `npm test` | Testes unitários — execução única |
+| `npm run test:watch` | Testes em modo watch |
+| `npm run test:coverage` | Cobertura com threshold 80% |
 | `npm run test:e2e` | Testes E2E (Playwright) |
+
+**Backend (`cd backend`):**
+
+| Comando | Descrição |
+|---------|-----------|
+| `npm run dev` | Servidor de desenvolvimento Express (porta 3001) |
+| `npm run build` | Compilação TypeScript |
+| `npm test` | Testes unitários — execução única |
+| `npm run test:coverage` | Cobertura com threshold 80% |
+| `npx prisma studio` | Interface visual do banco (porta 5555) |
 
 ---
 
@@ -289,6 +373,8 @@ feature/nome-curto (seu trabalho)
 - **[docs/USER_STORIES.md](./docs/USER_STORIES.md)** - Histórias de usuário
 - **[docs/BACKLOG.md](./docs/BACKLOG.md)** - Roadmap e prioridades
 - **[docs/BRUNO_COLLECTION.md](./docs/BRUNO_COLLECTION.md)** - Coleção Bruno para testes da API
+- **[frontend/RELATORIO_TESTES.md](./frontend/RELATORIO_TESTES.md)** - Relatório de cobertura do frontend (273 testes)
+- **[backend/RELATORIO_TESTES.md](./backend/RELATORIO_TESTES.md)** - Relatório de cobertura do backend
 - **Swagger UI** — `http://localhost:3001/api-docs` (backend rodando)
 
 ---
@@ -348,4 +434,4 @@ Encontrou um bug ou tem uma sugestão?
 
 ---
 
-**Última atualização:** Maio 2026 | Mercadex MVP Phase 2 — Frontend Next.js 16.2
+**Última atualização:** Maio 2026 | Mercadex MVP Phase 3 — Backend Node.js + Neon Postgres + Testes 99%

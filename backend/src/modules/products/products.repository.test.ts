@@ -191,6 +191,48 @@ describe('productsRepository', () => {
     );
   });
 
+  it('findMany com apenas minPrice (sem maxPrice)', async () => {
+    mockPrisma.product.findMany.mockResolvedValue([]);
+    mockPrisma.product.count.mockResolvedValue(0);
+    mockPrisma.$transaction.mockResolvedValue([[], 0]);
+
+    await productsRepository.findMany({
+      minPrice: 100,
+      sort: 'newest',
+      page: 1,
+      limit: 20,
+    } as never);
+
+    expect(mockPrisma.product.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          price: { gte: 100 },
+        }),
+      }),
+    );
+  });
+
+  it('findMany com apenas maxPrice (sem minPrice)', async () => {
+    mockPrisma.product.findMany.mockResolvedValue([]);
+    mockPrisma.product.count.mockResolvedValue(0);
+    mockPrisma.$transaction.mockResolvedValue([[], 0]);
+
+    await productsRepository.findMany({
+      maxPrice: 1000,
+      sort: 'newest',
+      page: 1,
+      limit: 20,
+    } as never);
+
+    expect(mockPrisma.product.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          price: { lte: 1000 },
+        }),
+      }),
+    );
+  });
+
   it('updateProduct preserva campos opcionais quando presentes', async () => {
     mockPrisma.product.update.mockResolvedValue({ id: '1' });
 

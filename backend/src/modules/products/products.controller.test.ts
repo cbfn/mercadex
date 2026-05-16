@@ -182,6 +182,29 @@ describe('productsController', () => {
     expect(res.status).toHaveBeenCalledWith(409);
   });
 
+  it('getById retorna produto com sucesso', async () => {
+    const req = { params: { id: 'product-1' } } as unknown as Request;
+    const res = createRes();
+    (productsService.getById as jest.Mock).mockResolvedValueOnce({ id: 'product-1', price: 10 });
+
+    await productsController.getById(req, res);
+
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: { id: 'product-1', price: 10 },
+    });
+  });
+
+  it('getById retorna 500 para Error desconhecido passando pela chain de if', async () => {
+    const req = { params: { id: 'product-1' } } as unknown as Request;
+    const res = createRes();
+    (productsService.getById as jest.Mock).mockRejectedValueOnce(new Error('SOME_RANDOM_ERROR'));
+
+    await productsController.getById(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+  });
+
   it('createCategory rejeita payload invalido', async () => {
     const req = { body: { name: 'a' } } as unknown as Request;
     const res = createRes();
