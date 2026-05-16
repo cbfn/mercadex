@@ -1,5 +1,6 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useProductsAdmin } from '@/features/admin/model/use-products-admin';
+import type { ApiProduct } from '@/shared/lib/api/products';
 
 const mockList = jest.fn();
 const mockCreate = jest.fn();
@@ -22,7 +23,7 @@ beforeEach(() => {
   mockDelete.mockReset();
 });
 
-const mockApiProduct = {
+const mockApiProduct: ApiProduct = {
   id: 'prod-1',
   title: 'iPhone 15',
   description: 'Great phone',
