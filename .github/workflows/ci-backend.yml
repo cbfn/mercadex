@@ -24,6 +24,9 @@ permissions:
   contents: write
   pull-requests: write
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   ci-backend:
     name: ci-backend
@@ -48,18 +51,24 @@ jobs:
       - name: Criar .env para testes CI
         working-directory: backend
         run: |
-          cat > .env << 'EOF'
-          DATABASE_URL=postgresql://ci_user:ci_pass@localhost:5432/mercadex_ci
-          JWT_SECRET=ci-only-secret-placeholder-not-used-in-prod-32ch
-          NODE_ENV=test
-          PORT=3001
-          LLM_PROVIDER_API_KEY=placeholder-not-called-in-unit-tests
-          LLM_PROVIDER_MODEL=placeholder
-          EOF
+          {
+            echo "DATABASE_URL=postgresql://ci_user:ci_pass@localhost:5432/mercadex_ci"
+            echo "JWT_SECRET=ci-only-secret-placeholder-not-used-in-prod-32ch"
+            echo "NODE_ENV=test"
+            echo "PORT=3001"
+            echo "LLM_PROVIDER_API_KEY=placeholder-not-called-in-unit-tests"
+            echo "LLM_PROVIDER_MODEL=placeholder"
+          } > .env
 
       - name: Instalar dependências
         working-directory: backend
         run: npm ci
+
+      # Necessário antes do tsc: o Prisma Client é gerado em node_modules/@prisma/client
+      # e seus tipos não existem até que `prisma generate` seja executado.
+      - name: Gerar Prisma Client
+        working-directory: backend
+        run: npx prisma generate
 
       - name: Type check
         working-directory: backend
