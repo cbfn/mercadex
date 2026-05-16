@@ -2,14 +2,14 @@ name: CI — Frontend
 
 on:
   push:
-    branches: [main, develop]
+    branches: [develop]
     paths:
       - 'frontend/**'
       - '!frontend/RELATORIO_TESTES.md'
       - '.github/workflows/ci-frontend.yml'
       - '.github/scripts/**'
   pull_request:
-    branches: [main, develop]
+    branches: [develop]
     paths:
       - 'frontend/**'
       - '!frontend/RELATORIO_TESTES.md'
@@ -183,7 +183,7 @@ jobs:
     name: E2E — Frontend (Playwright)
     runs-on: ubuntu-latest
     needs: ci-frontend
-    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/develop'
 
     steps:
       - name: Checkout
