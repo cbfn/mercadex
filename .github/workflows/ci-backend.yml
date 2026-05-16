@@ -1,0 +1,174 @@
+name: CI — Backend
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+      - '!backend/RELATORIO_TESTES.md'
+      - '.github/workflows/ci-backend.yml'
+      - '.github/scripts/**'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+      - '!backend/RELATORIO_TESTES.md'
+      - '.github/workflows/ci-backend.yml'
+      - '.github/scripts/**'
+
+concurrency:
+  group: ci-backend-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  ci-backend:
+    name: ci-backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      # Cria .env mínimo para satisfazer dotenv/config nos testes unitários.
+      # Testes mocam o banco — nenhuma conexão real é feita em CI.
+      - name: Criar .env para testes CI
+        working-directory: backend
+        run: |
+          cat > .env << 'EOF'
+          DATABASE_URL=postgresql://ci_user:ci_pass@localhost:5432/mercadex_ci
+          JWT_SECRET=ci-only-secret-placeholder-not-used-in-prod-32ch
+          NODE_ENV=test
+          PORT=3001
+          LLM_PROVIDER_API_KEY=placeholder-not-called-in-unit-tests
+          LLM_PROVIDER_MODEL=placeholder
+          EOF
+
+      - name: Instalar dependências
+        working-directory: backend
+        run: npm ci
+
+      - name: Type check
+        working-directory: backend
+        run: npx tsc --noEmit
+
+      # continue-on-error: true para gerar artefatos e comentário mesmo quando
+      # o threshold de 80% não for atingido — a falha é re-emitida no último step.
+      - name: Testes com cobertura
+        id: tests
+        working-directory: backend
+        run: npm run test:coverage
+        continue-on-error: true
+
+      - name: Detectar funções sem cobertura adicionadas no PR
+        id: uncovered
+        if: github.event_name == 'pull_request'
+        run: |
+          mkdir -p .github/scripts/output
+          node .github/scripts/detect-uncovered.js \
+            --coverage=backend/coverage/coverage-final.json \
+            --base=${{ github.base_ref }} \
+            --project=backend \
+            --output=.github/scripts/output/uncovered-backend.json
+        continue-on-error: true
+
+      - name: Gerar corpo do comentário de PR
+        if: github.event_name == 'pull_request'
+        run: |
+          mkdir -p .github/scripts/output
+          node .github/scripts/generate-comment.js \
+            --summary=backend/coverage/coverage-summary.json \
+            --uncovered=.github/scripts/output/uncovered-backend.json \
+            --project=backend \
+            --outcome=${{ steps.tests.outcome }} \
+            --run-id=${{ github.run_id }} \
+            --output=.github/scripts/output/comment-backend.md
+
+      - name: Criar ou atualizar comentário no PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const commentPath = `${process.env.GITHUB_WORKSPACE}/.github/scripts/output/comment-backend.md`;
+            if (!fs.existsSync(commentPath)) {
+              core.warning('Arquivo de comentário não encontrado — pulando.');
+              return;
+            }
+            const body = fs.readFileSync(commentPath, 'utf8');
+            const marker = '<!-- ci-backend-coverage -->';
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+            });
+            const existing = comments.find(
+              c => c.user.login === 'github-actions[bot]' && c.body.includes(marker)
+            );
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+              core.info(`Comentário atualizado: ${existing.html_url}`);
+            } else {
+              const { data: created } = await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body,
+              });
+              core.info(`Comentário criado: ${created.html_url}`);
+            }
+
+      - name: Upload artefato de cobertura HTML
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report-backend
+          path: backend/coverage/lcov-report/
+          retention-days: 14
+
+      - name: Atualizar RELATORIO_TESTES.md
+        if: always()
+        run: |
+          node .github/scripts/update-report.js \
+            --summary=backend/coverage/coverage-summary.json \
+            --report=backend/RELATORIO_TESTES.md \
+            --project=backend \
+            --outcome=${{ steps.tests.outcome }} \
+            --run-url=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+      - name: Commitar relatório de cobertura atualizado
+        if: github.event_name == 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add backend/RELATORIO_TESTES.md
+          if ! git diff --staged --quiet; then
+            git commit -m "ci(backend): atualiza relatório de cobertura [skip ci]"
+            git push
+          fi
+
+      # Re-emite a falha após gerar todos os artefatos e comentários.
+      - name: Falhar se cobertura abaixo do threshold (80%)
+        if: steps.tests.outcome == 'failure'
+        run: |
+          echo "::error title=Cobertura insuficiente — Backend::❌ Cobertura abaixo do threshold mínimo de 80%. Veja o comentário no PR e o artefato de cobertura para detalhes."
+          exit 1
