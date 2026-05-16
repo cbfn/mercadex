@@ -10,4 +10,4 @@ export interface CartItem {
 }
 
 export type CheckoutStep = 0 | 1 | 2 | 3;
-export type PaymentTab = "pix";
+export type PaymentTab = "pix" | "credit";
