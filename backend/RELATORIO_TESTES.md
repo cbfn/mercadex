@@ -1,6 +1,6 @@
 # Relatório de Cobertura de Testes — Backend Mercadex
 
-**Data:** 2026-05-16  
+**Data:** 2026-05-16   
 **Executor:** Claude Code (claude-sonnet-4-6)
 
 ---
