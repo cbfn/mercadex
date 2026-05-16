@@ -223,6 +223,81 @@ describe('productsService', () => {
     ).rejects.toThrow('CATEGORY_ALREADY_EXISTS');
   });
 
+  it('lista produtos com itens reais e converte preco numerico', async () => {
+    mockedRepo.findMany.mockResolvedValue({
+      items: [
+        {
+          id: 'product-1',
+          price: 199.9,
+          seller: { id: 's1', name: 'Seller', email: 'seller@test.com', avatarUrl: null },
+        },
+      ],
+      total: 1,
+    } as never);
+
+    const result = await productsService.list({ sort: 'newest', page: 1, limit: 20 } as never);
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].price).toBe(199.9);
+    expect(result.pagination.totalPages).toBe(1);
+  });
+
+  it('lista produtos com multiplas paginas', async () => {
+    mockedRepo.findMany.mockResolvedValue({ items: [], total: 25 } as never);
+
+    const result = await productsService.list({ sort: 'newest', page: 1, limit: 10 } as never);
+
+    expect(result.pagination.totalPages).toBe(3);
+  });
+
+  it('getById converte preco do tipo Decimal (objeto com toNumber)', async () => {
+    mockedRepo.findById.mockResolvedValue({
+      id: 'product-1',
+      price: { toNumber: () => 99.9 },
+      seller: { id: 'seller-1', name: 'Seller', email: 'seller@test.com', avatarUrl: null },
+    } as never);
+
+    const result = await productsService.getById('product-1');
+
+    expect(result?.price).toBe(99.9);
+  });
+
+  it('lista produtos converte preco do tipo Decimal', async () => {
+    mockedRepo.findMany.mockResolvedValue({
+      items: [
+        {
+          id: 'product-1',
+          price: { toNumber: () => 49.9 },
+          seller: { id: 's1', name: 'Seller', email: 'seller@test.com', avatarUrl: null },
+        },
+      ],
+      total: 1,
+    } as never);
+
+    const result = await productsService.list({ sort: 'newest', page: 1, limit: 20 } as never);
+
+    expect(result.items[0].price).toBe(49.9);
+  });
+
+  it('create retorna null quando repositorio retorna null inesperadamente', async () => {
+    mockedRepo.findCategoryById.mockResolvedValue({ id: 'category-1' } as never);
+    mockedRepo.createProduct.mockResolvedValue(null as never);
+
+    const result = await productsService.create(
+      {
+        title: 'Notebook',
+        price: 10,
+        condition: 'NOVO',
+        categoryId: 'category-1',
+        stock: 1,
+        images: [],
+      } as never,
+      { id: 'admin-1', role: 'ADMIN' },
+    );
+
+    expect(result).toBeNull();
+  });
+
   it('createCategory cria categoria para admin', async () => {
     mockedRepo.findCategoryByName.mockResolvedValue(null);
     mockedRepo.createCategory.mockResolvedValue({ id: 'category-1', name: 'Notebooks' } as never);
