@@ -17,7 +17,7 @@ import { useEffect, useRef } from "react";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { addItem, cartQuantity, cartSubtotal, cartTotal, removeItem, updateItemQty } from "@/shared/lib/cart";
-import type { CartItem, CheckoutStep, PaymentTab } from "@/shared/types/cart";
+import type { CartItem } from "@/shared/types/cart";
 import type { Product } from "@/shared/types/catalog";
 import { useAuth } from "@/features/auth/model/auth-context";
 import { cartApi, type ApiCartItem } from "@/shared/lib/api/cart";
@@ -29,8 +29,6 @@ import { cartApi, type ApiCartItem } from "@/shared/lib/api/cart";
 interface CartState {
   items: CartItem[];
   isOpen: boolean;
-  checkoutStep: CheckoutStep;
-  paymentTab: PaymentTab;
   selectedProductId: number | null;
   quantity: number;
   subtotal: number;
@@ -43,8 +41,6 @@ interface CartActions {
   updateQty: (id: number, delta: number) => void;
   openCart: () => void;
   closeCart: () => void;
-  setStep: (step: CheckoutStep) => void;
-  setTab: (tab: PaymentTab) => void;
   openProduct: (id: number) => void;
   closeProduct: () => void;
   finishOrder: () => void;
@@ -59,8 +55,6 @@ const STORAGE_KEY = "mercadex:cart-state";
 const initialState: CartState = {
   items: [],
   isOpen: false,
-  checkoutStep: 0,
-  paymentTab: "pix",
   selectedProductId: null,
   quantity: 0,
   subtotal: 0,
@@ -92,13 +86,11 @@ export const useCart = create<CartStore>()(
         const items = updateItemQty(get().items, id, delta);
         set(withDerived(items));
       },
-      openCart: () => set({ isOpen: true, checkoutStep: 0 }),
+      openCart: () => set({ isOpen: true }),
       closeCart: () => set({ isOpen: false }),
-      setStep: (step) => set({ checkoutStep: step }),
-      setTab: (tab) => set({ paymentTab: tab }),
       openProduct: (id) => set({ selectedProductId: id }),
       closeProduct: () => set({ selectedProductId: null }),
-      finishOrder: () => set({ ...withDerived([]), isOpen: false, checkoutStep: 0, paymentTab: "pix" }),
+      finishOrder: () => set({ ...withDerived([]), isOpen: false }),
       setItemsFromApi: (items) => set(withDerived(items))
     }),
     {
@@ -107,8 +99,6 @@ export const useCart = create<CartStore>()(
       partialize: (state) => ({
         items: state.items,
         isOpen: state.isOpen,
-        checkoutStep: state.checkoutStep,
-        paymentTab: state.paymentTab,
         selectedProductId: state.selectedProductId
       }),
       merge: (persistedState, currentState) => {
@@ -138,6 +128,7 @@ export const useCart = create<CartStore>()(
 function mapApiItemToLocal(apiItem: ApiCartItem, index: number): CartItem {
   return {
     id: index,
+    backendProductId: apiItem.productId,
     title: apiItem.product.title,
     price: apiItem.product.price,
     image: apiItem.product.images[0] ?? "",

@@ -11,6 +11,7 @@ export function addItem(items: CartItem[], product: Product, qty: number): CartI
       ...items,
       {
         id: product.id,
+        backendProductId: product.backendProductId,
         title: product.title,
         price: product.price,
         image: product.image,
