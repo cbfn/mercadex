@@ -3,8 +3,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { use, useMemo, useState } from "react";
-import { ArrowLeft, ShieldCheck, ShoppingBag, Star, Truck } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { ArrowLeft, MessageSquare, ShieldCheck, ShoppingBag, Star, Truck } from "lucide-react";
 import { CartDrawer } from "@/features/cart/components/cart-drawer";
+import { ReviewsDrawer } from "@/features/product-detail/components/reviews-drawer";
 import { useCart } from "@/features/cart/model/cart-context";
 import { PRODUCTS } from "@/shared/mocks/products";
 import { formatBRL } from "@/shared/lib/currency";
@@ -22,6 +24,8 @@ export default function ProductPage({ params }: ProductPageProps) {
   const { quantity, openCart, addToCart } = useCart();
   const [qty, setQty] = useState(1);
   const { id } = use(params);
+  const searchParams = useSearchParams();
+  const [reviewsOpen, setReviewsOpen] = useState(searchParams.get('reviews') === 'open');
 
   const product = useMemo(() => {
     const productId = Number(id);
@@ -137,8 +141,27 @@ export default function ProductPage({ params }: ProductPageProps) {
               ))}
             </ul>
           </div>
+
+          <div className="border-t border-border pt-4">
+            <Button
+              variant="secondary"
+              className="w-full"
+              onClick={() => setReviewsOpen(true)}
+              data-testid="open-reviews-button"
+            >
+              <MessageSquare size={16} />
+              Ver avaliações
+            </Button>
+          </div>
         </div>
       </section>
+
+      <ReviewsDrawer
+        open={reviewsOpen}
+        onClose={() => setReviewsOpen(false)}
+        productId={String(product.id)}
+        productTitle={product.title}
+      />
 
       <CartDrawer />
     </main>
