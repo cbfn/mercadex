@@ -47,6 +47,9 @@ RUN npm ci --omit=dev
 # Copia artefatos do build do Next.js
 COPY --from=builder /app/.next ./.next
 
+# Copia configuração do Next.js (necessário para runtime)
+COPY next.config.mjs ./
+
 # Exposição da porta
 EXPOSE ${PORT}
 
