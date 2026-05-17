@@ -18,6 +18,7 @@
 > _Entrada gerada automaticamente pelo CI. Para análise detalhada, veja o artefato `coverage-report-frontend`._
 <!-- ci-auto-entry-end: frontend -->
 
+ 
 **Data de execução:** 2026-05-16
 **Projeto:** mercadex-frontend (Next.js 16.2 + React 19 + TypeScript)
 
