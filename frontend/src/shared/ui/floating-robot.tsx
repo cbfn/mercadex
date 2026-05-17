@@ -134,7 +134,7 @@ export function FloatingRobot() {
               <Sparkles className="h-4 w-4 text-slate-500" aria-hidden="true" />
               Resposta
             </div>
-            <div aria-label="Resposta do assistente" className="min-h-0 flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/70 p-4 text-sm leading-6 text-slate-800 shadow-inner">
+            <div aria-label="Resposta do assistente" className="min-h-0 flex-1 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50/70 p-4 text-sm leading-6 text-slate-800 shadow-inner">
               <div className="flex h-full flex-col">
                 <p className="shrink-0 font-semibold text-slate-900">{loading ? "Buscando produtos..." : result?.summary ?? DEFAULT_ASSISTANT_MESSAGE}</p>
 
