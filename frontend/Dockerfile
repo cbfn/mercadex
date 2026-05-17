@@ -17,10 +17,9 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 # Copia código-fonte e configs
-COPY tsconfig.json next.config.ts ./
+COPY tsconfig.json ./
+COPY next.config.mjs ./
 COPY src ./src
-COPY public ./public
-COPY .eslintrc.json ./
 
 # Build do Next.js com a variável de ambiente padrão
 ARG NEXT_PUBLIC_API_URL=http://localhost:3001
