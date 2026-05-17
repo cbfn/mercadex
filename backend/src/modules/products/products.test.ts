@@ -23,6 +23,11 @@ jest.mock('./products.service', () => ({
   },
 }));
 
+jest.mock('../orders/orders.routes', () => {
+  const express = require('express') as typeof import('express');
+  return { ordersRouter: express.Router() };
+});
+
 import app from '../../server';
 import { productsService } from './products.service';
 

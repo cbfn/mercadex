@@ -17,6 +17,11 @@ jest.mock('./auth.middleware', () => ({
   requireAdmin: (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 
+jest.mock('../orders/orders.routes', () => {
+  const express = require('express') as typeof import('express');
+  return { ordersRouter: express.Router() };
+});
+
 import app from '../../server';
 import { authService } from './auth.service';
 

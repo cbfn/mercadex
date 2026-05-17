@@ -1,4 +1,23 @@
 # Relatório de Testes — Mercadex Frontend
+
+---
+<!-- ci-auto-entry-start: frontend -->
+## Frontend — 2026-05-16 23:24:53 UTC — [ver execução](https://github.com/cbfn/mercadex/actions/runs/25975701307)
+
+- **Cobertura (lines):** 99.25%
+- **Total de testes (statements):** 448
+- **Status:** ✅ sucesso
+
+| Métrica     | O que mede | Cobertura | Threshold |
+|-------------|------------|-----------|-----------|
+| Statements  | Cada instrução executável do código | 99.1% | 80% |
+| Branches    | Caminhos de condicionais (if/else, switch, ternário) | 95.62% | 80% |
+| Functions   | Funções e métodos chamados ao menos uma vez | 98.6% | 80% |
+| Lines       | Linhas físicas com ao menos uma instrução executada | 99.25% | 80% |
+
+> _Entrada gerada automaticamente pelo CI. Para análise detalhada, veja o artefato `coverage-report-frontend`._
+<!-- ci-auto-entry-end: frontend -->
+
  
 **Data de execução:** 2026-05-16
 **Projeto:** mercadex-frontend (Next.js 16.2 + React 19 + TypeScript)
@@ -154,3 +173,4 @@ npm run test:watch
 - `localStorage` limpo via `afterEach` configurado em `jest.setup.ts`
 - Formulários com `required` validados via `fireEvent.submit` (contorna validação HTML5 do jsdom)
 - CartProvider sync testado com variável de módulo que o mock de `useAuth` lê via closure
+
