@@ -2,18 +2,18 @@
 
 ---
 <!-- ci-auto-entry-start: backend -->
-## Backend — 2026-05-17 14:31:05 UTC — [ver execução](https://github.com/cbfn/mercadex/actions/runs/25993603277)
+## Backend — 2026-05-17 15:52:52 UTC — [ver execução](https://github.com/cbfn/mercadex/actions/runs/25995522738)
 
-- **Cobertura (lines):** 97.65%
-- **Total de testes (statements):** 298
+- **Cobertura (lines):** 97.06%
+- **Total de testes (statements):** 379
 - **Status:** ✅ sucesso
 
 | Métrica     | O que mede | Cobertura | Threshold |
 |-------------|------------|-----------|-----------|
-| Statements  | Cada instrução executável do código | 97.65% | 80% |
-| Branches    | Caminhos de condicionais (if/else, switch, ternário) | 91.2% | 80% |
-| Functions   | Funções e métodos chamados ao menos uma vez | 96.66% | 80% |
-| Lines       | Linhas físicas com ao menos uma instrução executada | 97.65% | 80% |
+| Statements  | Cada instrução executável do código | 97.09% | 80% |
+| Branches    | Caminhos de condicionais (if/else, switch, ternário) | 90.06% | 80% |
+| Functions   | Funções e métodos chamados ao menos uma vez | 97.36% | 80% |
+| Lines       | Linhas físicas com ao menos uma instrução executada | 97.06% | 80% |
 
 > _Entrada gerada automaticamente pelo CI. Para análise detalhada, veja o artefato `coverage-report-backend`._
 <!-- ci-auto-entry-end: backend -->
@@ -170,4 +170,5 @@ All files  | 97.65% Stmts | 89.60% Branch | 96.66% Funcs | 97.65% Lines
 ✅ **80% de cobertura em functions atingida** (96.66%)  
 ✅ **80% de cobertura em lines atingida** (97.65%)  
 ✅ **92 testes passando sem falhas**
+
 
