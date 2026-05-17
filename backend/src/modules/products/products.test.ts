@@ -1,15 +1,7 @@
-import request from 'supertest';
+import type { Request, Response } from 'express';
 
 process.env.NODE_ENV = 'test';
 process.env.JWT_SECRET = 'test-secret';
-
-jest.mock('../auth/auth.middleware', () => ({
-  authenticate: (req: any, _res: unknown, next: () => void) => {
-    req.user = { id: 'admin-1', role: 'ADMIN' };
-    next();
-  },
-  requireAdmin: (_req: unknown, _res: unknown, next: () => void) => next(),
-}));
 
 jest.mock('./products.service', () => ({
   productsService: {
@@ -23,20 +15,18 @@ jest.mock('./products.service', () => ({
   },
 }));
 
-jest.mock('../orders/orders.routes', () => {
-  const express = require('express') as typeof import('express');
-  return { ordersRouter: express.Router() };
-});
+const { productsController } = require('./products.controller') as typeof import('./products.controller');
+const { productsService } = require('./products.service') as typeof import('./products.service');
 
-jest.mock('../reviews/reviews.routes', () => {
-  const express = require('express') as typeof import('express');
-  return { reviewsRouter: express.Router() };
-});
-
-import app from '../../server';
-import { productsService } from './products.service';
-
-const mockedProductsService = productsService as jest.Mocked<typeof productsService>;
+function createRes() {
+  return {
+    status: jest.fn().mockReturnThis(),
+    json: jest.fn().mockReturnThis(),
+  } as unknown as Response & {
+    status: jest.Mock;
+    json: jest.Mock;
+  };
+}
 
 function buildProduct(overrides: Record<string, unknown> = {}): any {
   return {
@@ -55,61 +45,74 @@ function buildProduct(overrides: Record<string, unknown> = {}): any {
     categoryId: '33333333-3333-4333-8333-333333333333',
     createdAt: new Date(),
     updatedAt: new Date(),
-    seller: { id: '22222222-2222-2222-2222-222222222222', name: 'Seller', email: 'seller@test.com', avatarUrl: null },
-    category: { id: '33333333-3333-3333-3333-333333333333', name: 'Notebooks', description: null },
+    seller: {
+      id: '22222222-2222-2222-2222-222222222222',
+      name: 'Seller',
+      email: 'seller@test.com',
+      avatarUrl: null,
+    },
+    category: {
+      id: '33333333-3333-3333-3333-333333333333',
+      name: 'Notebooks',
+      description: null,
+    },
     ...overrides,
   };
 }
 
-describe('Products routes', () => {
+describe('Products controller', () => {
   beforeEach(() => {
-    mockedProductsService.list.mockReset();
-    mockedProductsService.getById.mockReset();
-    mockedProductsService.create.mockReset();
-    mockedProductsService.update.mockReset();
-    mockedProductsService.remove.mockReset();
-    mockedProductsService.listCategories.mockReset();
-    mockedProductsService.createCategory.mockReset();
-    process.env.NODE_ENV = 'test';
-    process.env.JWT_SECRET = 'test-secret';
+    jest.resetAllMocks();
   });
 
   it('lista produtos publicados', async () => {
-    mockedProductsService.list.mockResolvedValue({
+    (productsService.list as jest.Mock).mockResolvedValueOnce({
       items: [buildProduct()],
       pagination: { page: 1, limit: 20, total: 1, totalPages: 1 },
-    } as any);
+    });
 
-    const res = await request(app).get('/api/products');
+    const req = { query: {} } as unknown as Request;
+    const res = createRes();
 
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(res.body.data.items).toHaveLength(1);
-    expect(mockedProductsService.list).toHaveBeenCalled();
+    await productsController.list(req, res);
+
+    expect(productsService.list).toHaveBeenCalledWith({ page: 1, limit: 20, sort: 'newest' });
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        data: expect.objectContaining({
+          items: expect.arrayContaining([expect.objectContaining({ id: '11111111-1111-1111-1111-111111111111' })]),
+        }),
+      }),
+    );
   });
 
   it('busca produto por id', async () => {
-    mockedProductsService.getById.mockResolvedValue(buildProduct() as any);
+    (productsService.getById as jest.Mock).mockResolvedValueOnce(buildProduct());
 
-    const res = await request(app).get('/api/products/11111111-1111-1111-1111-111111111111');
+    const req = { params: { id: '11111111-1111-1111-1111-111111111111' } } as unknown as Request;
+    const res = createRes();
 
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(mockedProductsService.getById).toHaveBeenCalledWith(
-      '11111111-1111-1111-1111-111111111111',
+    await productsController.getById(req, res);
+
+    expect(productsService.getById).toHaveBeenCalledWith('11111111-1111-1111-1111-111111111111');
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        data: expect.objectContaining({ id: '11111111-1111-1111-1111-111111111111' }),
+      }),
     );
   });
 
   it('cria produto para admin', async () => {
-    mockedProductsService.create.mockResolvedValue({
+    (productsService.create as jest.Mock).mockResolvedValueOnce({
       ...buildProduct({
         seller: { id: 'admin-1', name: 'Admin', email: 'admin@test.com', avatarUrl: null },
       }),
-    } as any);
+    });
 
-    const res = await request(app)
-      .post('/api/products')
-      .send({
+    const req = {
+      body: {
         title: 'Notebook Gamer',
         description: 'Produto teste',
         price: 3999.9,
@@ -117,15 +120,19 @@ describe('Products routes', () => {
         categoryId: '33333333-3333-4333-8333-333333333333',
         stock: 3,
         images: [],
-      });
+      },
+    } as unknown as Request;
+    const res = createRes();
 
-    expect(res.status).toBe(201);
-    expect(res.body.success).toBe(true);
-    expect(mockedProductsService.create).toHaveBeenCalled();
+    await productsController.create(req, res);
+
+    expect(productsService.create).toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
   });
 
   it('atualiza produto para admin', async () => {
-    mockedProductsService.update.mockResolvedValue({
+    (productsService.update as jest.Mock).mockResolvedValueOnce({
       ...buildProduct({
         title: 'Notebook Gamer 2',
         description: 'Produto teste atualizado',
@@ -133,71 +140,96 @@ describe('Products routes', () => {
         stock: 2,
         seller: { id: 'admin-1', name: 'Admin', email: 'admin@test.com', avatarUrl: null },
       }),
-    } as any);
+    });
 
-    const res = await request(app)
-      .put('/api/products/11111111-1111-1111-1111-111111111111')
-      .send({
+    const req = {
+      user: { id: 'admin-1', role: 'ADMIN' },
+      params: { id: '11111111-1111-1111-1111-111111111111' },
+      body: {
         title: 'Notebook Gamer 2',
         price: 4299.9,
         stock: 2,
-      });
+      },
+    } as unknown as Request;
+    const res = createRes();
 
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(mockedProductsService.update).toHaveBeenCalledWith(
+    await productsController.update(req, res);
+
+    expect(productsService.update).toHaveBeenCalledWith(
       '11111111-1111-1111-1111-111111111111',
       expect.objectContaining({ title: 'Notebook Gamer 2', price: 4299.9, stock: 2 }),
-      expect.any(Object),
+      expect.objectContaining({ id: 'admin-1', role: 'ADMIN' }),
     );
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
   });
 
   it('remove produto para admin', async () => {
-    mockedProductsService.remove.mockResolvedValue({
+    (productsService.remove as jest.Mock).mockResolvedValueOnce({
       ...buildProduct({
         active: false,
         seller: { id: 'admin-1', name: 'Admin', email: 'admin@test.com', avatarUrl: null },
       }),
-    } as any);
+    });
 
-    const res = await request(app).delete('/api/products/11111111-1111-1111-1111-111111111111');
+    const req = {
+      user: { id: 'admin-1', role: 'ADMIN' },
+      params: { id: '11111111-1111-1111-1111-111111111111' },
+    } as unknown as Request;
+    const res = createRes();
 
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(mockedProductsService.remove).toHaveBeenCalledWith(
+    await productsController.remove(req, res);
+
+    expect(productsService.remove).toHaveBeenCalledWith(
       '11111111-1111-1111-1111-111111111111',
-      expect.any(Object),
+      expect.objectContaining({ id: 'admin-1', role: 'ADMIN' }),
     );
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
   });
 
   it('lista categorias publicamente', async () => {
-    mockedProductsService.listCategories.mockResolvedValue([
+    (productsService.listCategories as jest.Mock).mockResolvedValueOnce([
       { id: 'category-1', name: 'Notebooks', description: null },
-    ] as any);
+    ]);
 
-    const res = await request(app).get('/api/categories');
+    const req = {} as Request;
+    const res = createRes();
 
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(res.body.data).toHaveLength(1);
+    await productsController.listCategories(req, res);
+
+    expect(productsService.listCategories).toHaveBeenCalledWith();
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        data: expect.arrayContaining([expect.objectContaining({ id: 'category-1' })]),
+      }),
+    );
   });
 
   it('cria categoria para admin', async () => {
-    mockedProductsService.createCategory.mockResolvedValue({
+    (productsService.createCategory as jest.Mock).mockResolvedValueOnce({
       id: 'category-1',
       name: 'Notebooks',
       description: 'Categoria teste',
-    } as any);
+    });
 
-    const res = await request(app)
-      .post('/api/categories')
-      .send({ name: 'Notebooks', description: 'Categoria teste' });
+    const req = {
+      user: { id: 'admin-1', role: 'ADMIN' },
+      body: { name: 'Notebooks', description: 'Categoria teste' },
+    } as unknown as Request;
+    const res = createRes();
 
-    expect(res.status).toBe(201);
-    expect(res.body.success).toBe(true);
-    expect(mockedProductsService.createCategory).toHaveBeenCalledWith(
+    await productsController.createCategory(req, res);
+
+    expect(productsService.createCategory).toHaveBeenCalledWith(
       { name: 'Notebooks', description: 'Categoria teste' },
-      undefined,
+      expect.objectContaining({ id: 'admin-1', role: 'ADMIN' }),
+    );
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        data: expect.objectContaining({ id: 'category-1' }),
+      }),
     );
   });
 });

@@ -18,8 +18,8 @@ const mockTx = {
   },
 };
 
-jest.mock('@prisma/client', () => ({
-  PrismaClient: jest.fn(() => mockPrisma),
+jest.mock('../../shared/db/prisma', () => ({
+  prisma: mockPrisma,
 }));
 
 import { ordersService } from './orders.service';
