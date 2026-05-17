@@ -17,7 +17,9 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 
 # Instala TODAS as dependências (inclusive devDependencies para tsc)
-RUN npm ci
+# --ignore-scripts: o postinstall tenta "prisma generate" mas o schema
+# ainda não foi copiado; geramos explicitamente depois (linha do npx prisma generate)
+RUN npm ci --ignore-scripts
 
 # Copia código-fonte, schema Prisma e configs
 COPY prisma ./prisma
