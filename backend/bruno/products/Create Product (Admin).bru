@@ -7,6 +7,7 @@ meta {
 post {
   url: {{baseUrl}}/api/products
   body: json
+  auth: none
 }
 
 headers {
@@ -16,14 +17,19 @@ headers {
 
 body:json {
   {
-    "title": "Mouse Gamer RGB",
-    "description": "Mouse ergonomico para jogos",
-    "price": 199.9,
+    "title": "Logitech G502 HERO",
+    "description": "Mouse gamer Logitech G502 HERO com sensor HERO 25K e personalização de peso. Botões programáveis e iluminação RGB para longas sessões de jogo.",
+    "price": 128,
     "condition": "EXCELENTE",
     "categoryId": "{{categoryId}}",
     "stock": 12,
     "images": [
-      "https://images.example.com/mouse-rgb-front.jpg"
+      "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=400&auto=format&fit=crop"
     ]
   }
+}
+
+vars:pre-request {
+  categoryId: 8
+  accessToken: Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxYzFhZWE0Zi1jMmRhLTRlMjEtODI3YS0zNzgwZGMxNGVhODAiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3Nzg5NzQzMzgsImV4cCI6MTc3ODk3NTIzOH0.Z_p5QSMDuRidGLE1hzPIA_U-TukzYm4WxNd6CfLLqJo
 }

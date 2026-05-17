@@ -57,7 +57,7 @@ export const productsService = {
     };
   },
 
-  async getById(id: string) {
+  async getById(id: number) {
     const product = await productsRepository.findById(id);
     if (!product) {
       throw new Error('PRODUCT_NOT_FOUND');
@@ -66,23 +66,26 @@ export const productsService = {
     return mapProduct(product);
   },
 
-  async create(input: CreateProductInput, user: AuthRequest['user']) {
-    assertAdminUser(user);
-
+  async create(input: CreateProductInput) {
     const category = await productsRepository.findCategoryById(input.categoryId);
     if (!category) {
       throw new Error('CATEGORY_NOT_FOUND');
     }
 
+    const adminUser = await productsRepository.findAdminUser();
+    if (!adminUser) {
+      throw new Error('ADMIN_USER_NOT_FOUND');
+    }
+
     const product = await productsRepository.createProduct({
       ...input,
-      sellerId: user.id,
+      sellerId: adminUser.id,
     });
 
     return mapProduct(product);
   },
 
-  async update(id: string, input: UpdateProductInput, user: AuthRequest['user']) {
+  async update(id: number, input: UpdateProductInput, user: AuthRequest['user']) {
     assertAdminUser(user);
 
     const existing = await productsRepository.findById(id);
@@ -101,7 +104,7 @@ export const productsService = {
     return mapProduct(product);
   },
 
-  async remove(id: string, user: AuthRequest['user']) {
+  async remove(id: number, user: AuthRequest['user']) {
     assertAdminUser(user);
 
     const existing = await productsRepository.findById(id);

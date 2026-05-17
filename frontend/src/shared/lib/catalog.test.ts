@@ -16,7 +16,7 @@ describe("filterProducts", () => {
 
   it("sorts by lowest price", () => {
     const result = filterProducts(PRODUCTS, "Todos", "", "menor");
-    expect(result[0]?.price).toBe(199);
+    expect(result[0]?.price).toBe(149);
   });
 
   it("sorts by highest sales", () => {

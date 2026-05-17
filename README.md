@@ -8,7 +8,7 @@
 
 **Mercadex** é um marketplace de eletrônicos em desenvolvimento, construído como MVP (Produto Mínimo Viável) com arquitetura monolítica modular. O projeto separa claramente frontend e backend, permitindo evolução independente de cada camada.
 
-**Objetivo:** Validar fluxos de compra e UX antes de escalar para produção. A Fase 2 foi concluida com frontend React/Next.js 16.2 e testes automatizados; a Fase 3 esta em andamento com consolidacao do backend e persistencia de dados.
+**Objetivo:** Validar fluxos de compra e UX antes de escalar para produção. O frontend da Fase 2 está consolidado e o backend já possui autenticação, catálogo de produtos, busca assistida e persistência com Prisma/Postgres.
 
 **Padrão de documentação:** novos módulos, funções públicas, contratos de API e utilitários compartilhados devem usar JSDoc.
 
@@ -21,20 +21,20 @@
 - ✅ **Modal de Detalhes:** Visualização completa de especificações, preços e avaliações
 - ✅ **Carrinho Interativo:** Adicionar, alterar quantidades, remover itens com atualização em tempo real
 - ✅ **Checkout Multi-Etapa:** Entrega → Pagamento (PIX) → Confirmação
+- ✅ **Assistente Virtual:** Busca produtos por linguagem natural e abre a página do item selecionado
 - ✅ **Persistência de Carrinho:** Estado restaurado do `localStorage` após navegação (sem SSR mismatch)
-- ✅ **Testes Automatizados:** 163 testes unitários com cobertura ≥ 80% (Jest + React Testing Library)
+- ✅ **Testes Automatizados:** 165 testes unitários com cobertura ≥ 80% (Jest + React Testing Library)
 - ✅ **CI Integrado:** GitHub Actions valida lint, type-check e testes a cada push
 - ✅ **Design Responsivo:** Layout fluido para mobile, tablet e desktop (Tailwind CSS + tokens do design system)
 
-### Backend (Fase 3 - Em andamento)
-- 🔄 API REST em Node.js + TypeScript + Express.js
-- 🟡 Autenticação com JWT e refresh tokens (iniciado)
-- 🟡 Persistência em Neon Postgres + Prisma 7.8.0 (iniciado)
-- 🟡 Módulo de produtos com rotas e testes (iniciado)
-- ⬜ Módulos de carrinho, usuários e pedidos (planejado)
-- 🔄 Integração com gateway de pagamento para PIX (MVP) e futuramente Cartão de Crédito e Boleto
-- 🔄 Sistema de pedidos e tracking
-- 🔄 Cache com Redis e jobs assíncronos (Bull)
+### Backend (autenticação e produtos implementados)
+- ✅ API REST em Node.js + TypeScript + Express.js
+- ✅ Autenticação com JWT, refresh tokens e middleware de autorização
+- ✅ Persistência em Neon Postgres + Prisma 7.8.0
+- ✅ Módulo de produtos com CRUD, categorias, busca dedicada e testes
+- ✅ Busca assistida com IA para produtos e perguntas institucionais da loja
+- ⬜ Módulos de carrinho, pedidos e pagamentos ainda em evolução
+- ⬜ Cache com Redis e jobs assíncronos ainda não implementados
 
 ---
 
@@ -48,12 +48,12 @@
 | **TypeScript** | strict | Type safety, reduz bugs em produção |
 | **Tailwind CSS** | globals.css + tailwind.config.ts | Estilos utilitários + tokens semânticos |
 | **UI shadcn-style** | src/shared/ui | Componentes reutilizáveis com padrão visual único |
-| **Jest** | 30 | Testes unitários (21 suítes, 163 testes) |
+| **Jest** | 30 | Testes unitários (22 suítes, 165 testes) |
 | **React Testing Library** | 16 | Testes de componentes orientados a comportamento |
 | **Playwright** | — | Testes E2E (configurado, fluxos críticos) |
 | **lucide-react** | — | Ícones SVG |
 
-### Backend (Fase 3 - Atual)
+### Backend (atual)
 ```
 Node.js 20+ (runtime)
 ├── TypeScript (type safety)
@@ -62,7 +62,7 @@ Node.js 20+ (runtime)
 ├── Prisma 7.8.0 (ORM)
 ├── JWT (autenticação)
 ├── Zod (validação de inputs)
-└── Redis (cache/async jobs via Bull)
+└── OpenAI (interpretação de busca assistida)
 ```
 
 ---
@@ -76,7 +76,7 @@ mercadex/
 │
 ├── frontend/                        # Next.js 16.2 (App Router) + TypeScript
 │   ├── next.config.mjs
-│   ├── jest.config.js               # Jest + coverage threshold 80%
+│   ├── jest.config.cjs              # Jest + coverage threshold 80%
 │   ├── playwright.config.ts         # Testes E2E
 │   └── src/
 │       ├── app/
@@ -101,9 +101,9 @@ mercadex/
 │           └── ui/                  # Primitivos UI próprios (Button, Card, Drawer,
 │                                    #   Input, Modal, Select, Badge, Tabs)
 │
-├── backend/                         # Node.js + Express (Fase 3 em andamento)
+├── backend/                         # Node.js + Express (auth/produtos implementados)
 │   └── src/
-│       ├── modules/                 # auth e products implementados; cart/users/orders em andamento
+│       ├── modules/                 # auth e products prontos; cart/users/orders em andamento
 │       ├── shared/                  # middleware, errors, utils
 │       └── config/
 │
@@ -142,6 +142,29 @@ npm run dev
 npm run build && npm start
 ```
 
+### Backend (Express + Prisma)
+
+```bash
+# 1. Entre na pasta do backend
+cd backend
+
+# 2. Instale as dependências
+npm install
+
+# 3. Configure o .env com DATABASE_URL, JWT_SECRET e JWT_REFRESH_SECRET
+
+# 4. Rode o servidor de desenvolvimento
+npm run dev
+
+# 5. Build de produção
+npm run build && npm start
+
+# 6. Executar migrações e seeds
+npm run db:migrate
+npm run db:seed
+npm run db:import:products
+```
+
 ### Testes
 
 ```bash
@@ -157,6 +180,16 @@ npm run test:coverage
 # E2E (Playwright)
 npm run test:e2e
 npm run test:e2e:ui     # com interface visual
+```
+
+### Testes do Backend
+
+```bash
+cd backend
+
+npm run test
+npm run test:coverage
+npm run build
 ```
 
 ---
@@ -297,7 +330,7 @@ feature/nome-curto (seu trabalho)
 - R: Componentes que usam `useCart` precisam ser renderizados dentro de `CartProvider`. Use o wrapper nas chamadas de `render()`.
 
 **P: Posso rodar o backend agora?**
-- R: Parcialmente. Os módulos `auth` e `products` estão implementados e já expõem rotas; `cart`, `users` e `orders` ainda estão em evolução.
+- R: Sim. Os módulos `auth` e `products` estão implementados e testados; `cart`, `users` e `orders` ainda estão em evolução.
 
 **P: Como limpo o carrinho no desenvolvimento?**
 - R: Console do navegador: `localStorage.removeItem("cart")` e recarregue a página.
@@ -314,7 +347,7 @@ feature/nome-curto (seu trabalho)
 | **1** | ✅ Concluído | Prototipagem frontend (HTML/CSS/JS Vanilla) | Abr 2026 |
 | **2** | ✅ Concluído | Frontend Next.js 16.2 + testes (Jest + Playwright) | Mai 2026 |
 | **3** | 🔄 Em andamento | Backend API REST (Node.js + TypeScript + Neon Postgres + Prisma) | Jun-Jul 2026 |
-| **4** | 📋 Planejado | Integração frontend ↔ backend, autenticação, pagamentos | Ago 2026 |
+| **4** | 📋 Planejado | Integração completa frontend ↔ backend, carrinho, pedidos e pagamentos | Ago 2026 |
 
 ---
 
@@ -340,4 +373,4 @@ Encontrou um bug ou tem uma sugestão?
 
 ---
 
-**Última atualização:** Maio 2026 | Mercadex MVP Phase 2 — Frontend Next.js 16.2
+**Última atualização:** Maio 2026 | Mercadex em evolução — frontend consolidado, backend auth/produtos implementados

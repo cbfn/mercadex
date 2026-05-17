@@ -18,12 +18,18 @@ const productInclude = {
   category: true,
 } as const;
 
-function buildCategoryFilter(category: string) {
-  return {
-    is: {
-      OR: [{ id: category }, { name: category }],
-    },
-  };
+function buildCategoryFilter(category: string | number) {
+  if (typeof category === 'number') {
+    return { is: { OR: [{ id: category }, { name: String(category) }] } };
+  }
+
+  // se for string numérica, usa id; caso contrário, filtra apenas por nome
+  if (/^\d+$/.test(category)) {
+    const id = Number(category);
+    return { is: { OR: [{ id }, { name: String(category) }] } };
+  }
+
+  return { is: { name: String(category) } };
 }
 
 function buildProductWhere(filters: ProductFiltersInput) {
@@ -34,20 +40,20 @@ function buildProductWhere(filters: ProductFiltersInput) {
       : {}),
     ...(filters.search
       ? {
-          OR: [
-            { title: { contains: filters.search, mode: 'insensitive' as const } },
-            { description: { contains: filters.search, mode: 'insensitive' as const } },
-          ],
-        }
+        OR: [
+          { title: { contains: filters.search, mode: 'insensitive' as const } },
+          { description: { contains: filters.search, mode: 'insensitive' as const } },
+        ],
+      }
       : {}),
     ...(filters.condition ? { condition: filters.condition } : {}),
     ...(filters.minPrice !== undefined || filters.maxPrice !== undefined
       ? {
-          price: {
-            ...(filters.minPrice !== undefined ? { gte: filters.minPrice } : {}),
-            ...(filters.maxPrice !== undefined ? { lte: filters.maxPrice } : {}),
-          },
-        }
+        price: {
+          ...(filters.minPrice !== undefined ? { gte: filters.minPrice } : {}),
+          ...(filters.maxPrice !== undefined ? { lte: filters.maxPrice } : {}),
+        },
+      }
       : {}),
   };
 }
@@ -81,19 +87,25 @@ export const productsRepository = {
     return { items, total };
   },
 
-  findById(id: string) {
+  findById(id: number) {
     return prisma.product.findFirst({
       where: { id, active: true },
       include: productInclude,
     });
   },
 
-  findCategoryById(id: string) {
+  findCategoryById(id: number) {
     return prisma.category.findUnique({ where: { id } });
   },
 
   findCategoryByName(name: string) {
     return prisma.category.findUnique({ where: { name } });
+  },
+
+  findAdminUser() {
+    return prisma.user.findFirst({
+      where: { role: 'ADMIN' },
+    });
   },
 
   listCategories() {
@@ -106,7 +118,7 @@ export const productsRepository = {
     return prisma.category.create({ data });
   },
 
-  createProduct(data: CreateProductInput & { sellerId: string }) {
+  createProduct(data: CreateProductInput & { sellerId: number }) {
     return prisma.product.create({
       data: {
         ...data,
@@ -118,7 +130,7 @@ export const productsRepository = {
     });
   },
 
-  updateProduct(id: string, data: UpdateProductInput) {
+  updateProduct(id: number, data: UpdateProductInput) {
     return prisma.product.update({
       where: { id },
       data: {
@@ -130,7 +142,7 @@ export const productsRepository = {
     });
   },
 
-  softDelete(id: string) {
+  softDelete(id: number) {
     return prisma.product.update({
       where: { id },
       data: { active: false },

@@ -62,14 +62,7 @@ describe('productsRepository', () => {
         skip: 10,
         take: 10,
         where: expect.objectContaining({
-          category: expect.objectContaining({
-            is: expect.objectContaining({
-              OR: expect.arrayContaining([
-                { id: 'Notebooks' },
-                { name: 'Notebooks' },
-              ]),
-            }),
-          }),
+          category: { is: { name: 'Notebooks' } },
           OR: expect.arrayContaining([
             expect.objectContaining({
               title: expect.objectContaining({ contains: 'mac', mode: 'insensitive' }),
@@ -105,23 +98,21 @@ describe('productsRepository', () => {
 
   it('findById consulta o produto', async () => {
     mockPrisma.product.findFirst.mockResolvedValue(null);
-
-    await productsRepository.findById('product-1');
+    await productsRepository.findById(1);
 
     expect(mockPrisma.product.findFirst).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: 'product-1', active: true },
+        where: { id: 1, active: true },
       }),
     );
   });
 
   it('findCategoryById consulta categoria por id', async () => {
     mockPrisma.category.findUnique.mockResolvedValue(null);
-
-    await productsRepository.findCategoryById('category-1');
+    await productsRepository.findCategoryById(1);
 
     expect(mockPrisma.category.findUnique).toHaveBeenCalledWith({
-      where: { id: 'category-1' },
+      where: { id: 1 },
     });
   });
 
@@ -146,7 +137,7 @@ describe('productsRepository', () => {
   });
 
   it('createCategory cria categoria', async () => {
-    mockPrisma.category.create.mockResolvedValue({ id: '1' });
+    mockPrisma.category.create.mockResolvedValue({ id: 1 });
 
     await productsRepository.createCategory({ name: 'Notebooks' });
 
@@ -156,11 +147,11 @@ describe('productsRepository', () => {
   });
 
   it('createProduct cria produto com include', async () => {
-    mockPrisma.product.create.mockResolvedValue({ id: '1' });
+    mockPrisma.product.create.mockResolvedValue({ id: 1 });
 
     await productsRepository.createProduct({
-      sellerId: 'seller-1',
-      categoryId: 'category-1',
+      sellerId: 2,
+      categoryId: 1,
       title: 'Notebook',
       price: 10,
       condition: 'NOVO',
@@ -173,28 +164,29 @@ describe('productsRepository', () => {
 
   it('updateProduct atualiza produto', async () => {
     mockPrisma.product.update.mockResolvedValue({ id: '1' });
+    mockPrisma.product.update.mockResolvedValue({ id: 1 });
 
-    await productsRepository.updateProduct('product-1', { title: 'Novo nome' } as never);
+    await productsRepository.updateProduct(1, { title: 'Novo nome' } as never);
 
     expect(mockPrisma.product.update).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 'product-1' } }),
+      expect.objectContaining({ where: { id: 1 } }),
     );
   });
 
   it('softDelete desativa produto', async () => {
-    mockPrisma.product.update.mockResolvedValue({ id: '1' });
+    mockPrisma.product.update.mockResolvedValue({ id: 1 });
 
-    await productsRepository.softDelete('product-1');
+    await productsRepository.softDelete(1);
 
     expect(mockPrisma.product.update).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 'product-1' }, data: { active: false } }),
+      expect.objectContaining({ where: { id: 1 }, data: { active: false } }),
     );
   });
 
   it('updateProduct preserva campos opcionais quando presentes', async () => {
-    mockPrisma.product.update.mockResolvedValue({ id: '1' });
+    mockPrisma.product.update.mockResolvedValue({ id: 1 });
 
-    await productsRepository.updateProduct('product-1', {
+    await productsRepository.updateProduct(1, {
       title: 'Novo nome',
       price: 25,
       images: ['https://example.com/foto.jpg'],
@@ -202,7 +194,7 @@ describe('productsRepository', () => {
 
     expect(mockPrisma.product.update).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: 'product-1' },
+        where: { id: 1 },
         data: expect.objectContaining({
           price: 25,
           images: ['https://example.com/foto.jpg'],

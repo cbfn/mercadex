@@ -27,7 +27,7 @@ enum OrderStatus {
 }
 
 model User {
-  id           String   @id @default(uuid())
+  id           Int      @id @default(autoincrement())
   email        String   @unique
   passwordHash String   @map("password_hash")
   name         String?
@@ -44,7 +44,7 @@ model User {
 }
 
 model Category {
-  id          String    @id @default(uuid())
+  id          Int       @id @default(autoincrement())
   name        String    @unique
   description String?
   products    Product[]
@@ -53,9 +53,9 @@ model Category {
 }
 
 model Product {
-  id              String    @id @default(uuid())
-  sellerId        String    @map("seller_id")
-  categoryId      String    @map("category_id")
+  id              Int       @id @default(autoincrement())
+  sellerId        Int       @map("seller_id")
+  categoryId      Int       @map("category_id")
   title           String
   description     String?
   price           Decimal   @db.Decimal(10, 2)
@@ -80,8 +80,8 @@ model Product {
 }
 
 model Cart {
-  id        String   @id @default(uuid())
-  userId    String   @unique @map("user_id")
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique @map("user_id")
   sessionId String?  @map("session_id")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -92,10 +92,10 @@ model Cart {
 }
 
 model CartItem {
-  id        String @id @default(uuid())
-  cartId    String @map("cart_id")
-  productId String @map("product_id")
-  quantity  Int    @default(1)
+  id        Int @id @default(autoincrement())
+  cartId    Int @map("cart_id")
+  productId Int @map("product_id")
+  quantity  Int @default(1)
 
   cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   product Product @relation(fields: [productId], references: [id], onDelete: Restrict, onUpdate: Cascade)
@@ -106,8 +106,8 @@ model CartItem {
 }
 
 model Order {
-  id              String      @id @default(uuid())
-  buyerId         String      @map("buyer_id")
+  id              Int         @id @default(autoincrement())
+  buyerId         Int         @map("buyer_id")
   totalPrice      Decimal     @map("total_price") @db.Decimal(10, 2)
   status          OrderStatus @default(PENDENTE)
   shippingAddress Json        @map("shipping_address")
@@ -123,9 +123,9 @@ model Order {
 }
 
 model OrderItem {
-  id        String  @id @default(uuid())
-  orderId   String  @map("order_id")
-  productId String  @map("product_id")
+  id        Int     @id @default(autoincrement())
+  orderId   Int     @map("order_id")
+  productId Int     @map("product_id")
   quantity  Int
   unitPrice Decimal @map("unit_price") @db.Decimal(10, 2)
 

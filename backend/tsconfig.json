@@ -1,12 +1,13 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "nodenext",
+    "module": "commonjs",
     "lib": [
       "ES2022"
     ],
-    "moduleResolution": "nodenext",
-    "rootDir": "./src",
+    "moduleResolution": "node",
+    "ignoreDeprecations": "6.0",
+    "rootDir": ".",
     "outDir": "./dist",
     "strict": true,
     "esModuleInterop": true,
@@ -27,7 +28,8 @@
     }
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "prisma/**/*"
   ],
   "exclude": [
     "node_modules",

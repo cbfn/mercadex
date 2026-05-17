@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import "dotenv/config";
 import authRoutes from './modules/auth/auth.routes';
 import { categoriesRouter, productsRouter } from './modules/products/products.routes';
 
@@ -24,7 +25,7 @@ app.get('/health', (_req, res) => {
 });
 
 if (process.env.NODE_ENV !== "test") {
-  app.listen(port, () => {
+  app.listen(port, '0.0.0.0', () => {
     console.log(`Backend rodando em http://localhost:${port}`);
   });
 

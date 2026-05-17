@@ -27,7 +27,7 @@ function getJwtRefreshExpiresIn() {
 }
 
 function publicUser(user: {
-  id: string;
+  id: number;
   name: string | null;
   email: string;
   role: string;
@@ -69,13 +69,13 @@ export const authService = {
     }
 
     const accessToken = jwt.sign(
-      { sub: user.id, role: user.role },
+      { sub: String(user.id), role: user.role },
       getJwtSecret() as jwt.Secret,
       { expiresIn: getJwtExpiresIn() },
     );
 
     const refreshToken = jwt.sign(
-      { sub: user.id },
+      { sub: String(user.id) },
       getJwtRefreshSecret() as jwt.Secret,
       { expiresIn: getJwtRefreshExpiresIn() },
     );
@@ -93,7 +93,7 @@ export const authService = {
       getJwtRefreshSecret() as jwt.Secret,
     ) as { sub: string };
 
-    const user = await authRepository.findById(payload.sub);
+    const user = await authRepository.findById(Number(payload.sub));
     if (!user) {
       throw new Error('USER_NOT_FOUND');
     }

@@ -7,8 +7,13 @@ meta {
 post {
   url: {{baseUrl}}/api/auth/logout
   body: none
+  auth: none
 }
 
 headers {
   Authorization: Bearer {{accessToken}}
+}
+
+vars:pre-request {
+  baseUrl: http://localhost:3001
 }

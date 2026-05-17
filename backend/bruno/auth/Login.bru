@@ -5,7 +5,7 @@ meta {
 }
 
 post {
-  url: {{baseUrl}}/api/auth/login
+  url: {{baseUrl}}api/auth/login
   body: json
   auth: none
 }
@@ -21,8 +21,13 @@ body:json {
   }
 }
 
+vars:pre-request {
+  baseUrl: http://localhost:3001
+}
+
 script:post-response {
   if (res.status === 200 && res.body && res.body.data && res.body.data.accessToken) {
     bru.setVar("accessToken", res.body.data.accessToken);
   }
 }
+​

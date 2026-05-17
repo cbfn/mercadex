@@ -11,7 +11,7 @@ export const authRepository = {
       data,
     }),
 
-  findById: (id: string) =>
+  findById: (id: number) =>
     prisma.user.findUnique({
       where: { id },
     }),
