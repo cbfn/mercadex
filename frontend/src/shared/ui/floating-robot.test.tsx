@@ -45,7 +45,7 @@ describe("FloatingRobot", () => {
     await user.click(screen.getByRole("button", { name: "Enviar" }));
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith("http://localhost:3001/api/products/search?q=produtos%20usados");
+      expect(fetchMock).toHaveBeenCalledWith("/api/products/search?q=produtos%20usados");
     });
 
     await waitFor(() => {
@@ -69,5 +69,37 @@ describe("FloatingRobot", () => {
     expect(screen.getByRole("dialog", { name: "Assistente virtual" })).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "Campo de busca do assistente" })).toHaveValue("");
     expect(screen.getByLabelText("Resposta do assistente").textContent).toContain("Oi! Eu sou seu assistente virtual. Pode me perguntar!");
+  });
+
+  it("permite rolagem quando a resposta é texto longo", async () => {
+    const user = userEvent.setup();
+    const fetchMock = jest.fn().mockResolvedValue({
+      json: async () => ({
+        success: true,
+        data: {
+          query: "horario de funcionamento",
+          found: false,
+          total: 0,
+          message:
+            "Claro! Aqui estão as informações da Mercadex. ".repeat(20),
+          items: [],
+        },
+      }),
+    });
+
+    Object.defineProperty(globalThis, "fetch", {
+      value: fetchMock,
+      writable: true,
+    });
+
+    render(<FloatingRobot />);
+
+    await user.click(screen.getByTestId("floating-robot-button"));
+    await user.type(screen.getByRole("textbox", { name: "Campo de busca do assistente" }), "horario de funcionamento");
+    await user.click(screen.getByRole("button", { name: "Enviar" }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Resposta do assistente").querySelector("div")).toHaveClass("overflow-y-auto");
+    });
   });
 });
