@@ -114,4 +114,41 @@ describe('authService', () => {
 
     await expect(authService.refresh('refresh-token')).rejects.toThrow('USER_NOT_FOUND');
   });
+
+  it('login rejeita senha incorreta', async () => {
+    mockedAuthRepository.findByEmail.mockResolvedValue({
+      id: '1',
+      passwordHash: 'hashed-password',
+      name: 'Test',
+      email: 'test@test.com',
+      role: 'CUSTOMER',
+    } as never);
+    mockedBcrypt.compare.mockResolvedValue(false as never);
+
+    await expect(
+      authService.login({
+        email: 'test@test.com',
+        password: 'senha-errada',
+      }),
+    ).rejects.toThrow('INVALID_CREDENTIALS');
+  });
+
+  it('login rejeita ambiente sem JWT_SECRET', async () => {
+    delete process.env.JWT_SECRET;
+    mockedAuthRepository.findByEmail.mockResolvedValue({
+      id: '1',
+      passwordHash: 'hashed-password',
+      name: 'Test',
+      email: 'test@test.com',
+      role: 'CUSTOMER',
+    } as never);
+    mockedBcrypt.compare.mockResolvedValue(true as never);
+
+    await expect(
+      authService.login({
+        email: 'test@test.com',
+        password: 'senha12345',
+      }),
+    ).rejects.toThrow('MISSING_JWT_SECRET');
+  });
 });

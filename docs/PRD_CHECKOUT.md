@@ -36,8 +36,8 @@ O checkout do Mercadex é o fluxo final de compra que converte itens no carrinho
 ## Regras Básicas de Pagamento (MVP)
 
 ### Métodos Aceitos
-- **PIX** — Único método implementado no MVP. Transação imediata via QR code ou copia-e-cola.
-- **Cartão de Crédito/Débito** (planejado pós-MVP) — Via gateway (ex: Stripe, Mercado Pago)
+- **PIX Estático (Fake)** — Único método no MVP Lean. Exibe chave PIX estática + QR Code fixo. Pedido criado imediatamente com status `PENDING_PIX`. Confirmação manual via Prisma Studio.
+- **Cartão de Crédito/Débito** (planejado pós-MVP) — Via gateway. Código em `backend/src/legacy/`.
 - **Boleto bancário** (planejado pós-MVP)
 
 ### Limites de Transação
@@ -59,17 +59,18 @@ O checkout do Mercadex é o fluxo final de compra que converte itens no carrinho
 
 3. ETAPA 2 - PAGAMENTO
    ├─ Exibir resumo do pedido (itens + frete + total)
-   ├─ Método de pagamento: PIX (único método disponível no MVP)
+   ├─ Método de pagamento: PIX estático (chave fixa + QR Code fixo)
    ├─ Para PIX:
-   │  ├─ Gerar QR code + cópia e cola
-   │  ├─ Exibir timeout de 10 minutos
-   │  └─ Verificar confirmação via webhook (não polling)
-   └─ Confirmação de pagamento (sucesso/falha)
+   │  ├─ Exibir chave PIX estática (Copia e Cola)
+   │  ├─ Exibir QR Code fixo
+   │  └─ Botão "Copiar Chave" com feedback visual
+   └─ Botão "Confirmar Pedido" cria o pedido via POST /api/orders com status PENDING_PIX
 
 4. ETAPA 3 - CONFIRMAÇÃO
    ├─ Exibir número do pedido
+   ├─ Status: "Aguardando pagamento PIX"
    ├─ Resumo do pagamento
-   ├─ Rastreamento será enviado por email
+   ├─ Limpar carrinho do localStorage
    └─ Link para "Voltar ao catálogo" ou "Ver meus pedidos"
 ```
 
@@ -77,10 +78,9 @@ O checkout do Mercadex é o fluxo final de compra que converte itens no carrinho
 
 | Cenário | Comportamento |
 |---------|---|
-| **Pagamento falhado** | Exibir mensagem clara ("Falha ao processar PIX") + opção de tentar novamente |
-| **Timeout PIX (10min)** | Exibir aviso e permitir gerar novo QR code |
+| **Erro na criação do pedido** | Exibir mensagem clara (ex: "Produto indisponível em estoque") + opção de tentar novamente |
 | **Carrinho alterado** | Se item foi removido do estoque durante checkout, notificar e permitir revisão |
-| **Sessão expirada** | Salvar carrinho localmente; ao voltar, restaurar estado de checkout |
+| **Sessão expirada** | Salvar carrinho no localStorage; ao voltar, restaurar estado de checkout |
 
 ### Validações Obrigatórias
 
@@ -92,10 +92,10 @@ O checkout do Mercadex é o fluxo final de compra que converte itens no carrinho
 ### Segurança Mínima (MVP)
 
 - **HTTPS obrigatório** — Todas as comunicações criptografadas
-- **PCI-DSS compliance:** Não armazenar dados de PIX no banco local; delegar ao gateway
-- **Rate limiting:** Máx 5 tentativas de pagamento falhado por sessão
+- **Não armazenar dados de pagamento:** PIX estático — sem dados sensíveis no frontend ou banco
+- **Rate limiting:** Máx 5 tentativas de criação de pedido por sessão
 - **CSRF tokens:** Validar origem de requisições POST
-- **Logs de auditoria:** Registrar tentativas de pagamento (não dados sensíveis)
+- **Logs de auditoria:** Registrar criação de pedidos (não dados sensíveis)
 
 ---
 
@@ -105,7 +105,7 @@ O checkout do Mercadex é o fluxo final de compra que converte itens no carrinho
 {
   orderId: "ORD-2026-001234",
   userId: "user-uuid",
-  status: "pending_payment" | "paid" | "failed" | "cancelled",
+  status: "pending_pix" | "pago" | "cancelado",
   items: [
     { productId, name, price, quantity, subtotal }
   ],
@@ -114,13 +114,6 @@ O checkout do Mercadex é o fluxo final de compra que converte itens no carrinho
     method: "standard",
     cost: 15.00,
     estimatedDelivery: "2026-05-20"
-  },
-  payment: {
-    method: "pix" | "credit_card" | "debit_card",
-    transactionId: "gateway-ref-id",
-    amount: 199.90,
-    status: "pending" | "confirmed" | "failed",
-    timestamp: "2026-05-11T14:30:00Z"
   },
   user: {
     email,
@@ -131,6 +124,8 @@ O checkout do Mercadex é o fluxo final de compra que converte itens no carrinho
   updatedAt: "2026-05-11T14:30:00Z"
 }
 ```
+
+> **Nota MVP Lean:** O campo `payment.transactionId` e `payment.status` são omitidos no MVP estático. A confirmação de pagamento é realizada manualmente via Prisma Studio.
 
 ---
 

@@ -1,0 +1,1 @@
+Analise o diretorio @file:orders e crie um plano para implementacao do  `orders.controller.ts` e `orders.routes.ts` seguindo o padrão dos módulos anteriores. Todas as rotas requerem `authenticate`. Faca também os testes seguindo as diretrizes de testes.

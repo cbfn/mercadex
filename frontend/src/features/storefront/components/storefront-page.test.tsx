@@ -1,8 +1,11 @@
-import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { CartProvider, resetCartStore } from "@/features/cart/model/cart-context";
 import { StorefrontPage } from "@/features/storefront/components/storefront-page";
+
+jest.mock("@/features/auth/model/auth-context", () => ({
+  useAuth: () => ({ user: null, isLoading: false, login: jest.fn(), logout: jest.fn(), register: jest.fn() }),
+}));
 
 function renderPage() {
   return render(

@@ -19,7 +19,7 @@ enum Condition {
 }
 
 enum OrderStatus {
-  PENDENTE
+  PENDING_PIX
   PAGO
   ENVIADO
   ENTREGUE
@@ -27,7 +27,7 @@ enum OrderStatus {
 }
 
 model User {
-  id           Int      @id @default(autoincrement())
+  id           String   @id @default(uuid())
   email        String   @unique
   passwordHash String   @map("password_hash")
   name         String?
@@ -37,14 +37,14 @@ model User {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   orders   Order[]
-  cart     Cart?
   products Product[]
+  reviews  Review[]
 
   @@map("users")
 }
 
 model Category {
-  id          Int       @id @default(autoincrement())
+  id          String    @id @default(uuid())
   name        String    @unique
   description String?
   products    Product[]
@@ -53,9 +53,9 @@ model Category {
 }
 
 model Product {
-  id              Int       @id @default(autoincrement())
-  sellerId        Int       @map("seller_id")
-  categoryId      Int       @map("category_id")
+  id              String    @id @default(uuid())
+  sellerId        String    @map("seller_id")
+  categoryId      String    @map("category_id")
   title           String
   description     String?
   price           Decimal   @db.Decimal(10, 2)
@@ -64,54 +64,59 @@ model Product {
   stock           Int       @default(0)
   active          Boolean   @default(true)
   viewsCount      Int       @default(0) @map("views_count")
-  stripeProductId String?   @map("stripe_product_id")
-  stripePriceId   String?   @map("stripe_price_id")
+  // @legacy Stripe — retomar em sprint futura
+  // stripeProductId String? @map("stripe_product_id")
+  // stripePriceId   String? @map("stripe_price_id")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
   seller     User        @relation(fields: [sellerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   category   Category    @relation(fields: [categoryId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  cartItems  CartItem[]
   orderItems OrderItem[]
+  reviews    Review[]
 
   @@index([sellerId])
   @@index([categoryId])
   @@map("products")
 }
 
-model Cart {
-  id        Int      @id @default(autoincrement())
-  userId    Int      @unique @map("user_id")
-  sessionId String?  @map("session_id")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  items CartItem[]
-
-  @@map("carts")
-}
-
-model CartItem {
-  id        Int @id @default(autoincrement())
-  cartId    Int @map("cart_id")
-  productId Int @map("product_id")
-  quantity  Int @default(1)
-
-  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-
-  @@unique([cartId, productId])
-  @@index([productId])
-  @@map("cart_items")
-}
+// @legacy Cart — Carrinho persistido no banco. Retomar em sprint futura.
+// O carrinho é gerenciado 100% via localStorage no frontend (MVP Lean).
+//
+// model Cart {
+//   id        String   @id @default(uuid())
+//   userId    String   @unique @map("user_id")
+//   sessionId String?  @map("session_id")
+//   updatedAt DateTime @updatedAt @map("updated_at")
+//
+//   user  User       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   items CartItem[]
+//
+//   @@map("carts")
+// }
+//
+// model CartItem {
+//   id        String @id @default(uuid())
+//   cartId    String @map("cart_id")
+//   productId String @map("product_id")
+//   quantity  Int    @default(1)
+//
+//   cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   product Product @relation(fields: [productId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+//
+//   @@unique([cartId, productId])
+//   @@index([productId])
+//   @@map("cart_items")
+// }
 
 model Order {
-  id              Int         @id @default(autoincrement())
-  buyerId         Int         @map("buyer_id")
+  id              String      @id @default(uuid())
+  buyerId         String      @map("buyer_id")
   totalPrice      Decimal     @map("total_price") @db.Decimal(10, 2)
-  status          OrderStatus @default(PENDENTE)
+  status          OrderStatus @default(PENDING_PIX)
   shippingAddress Json        @map("shipping_address")
-  stripePaymentId String?     @map("stripe_payment_id")
+  // @legacy Stripe — retomar em sprint futura
+  // stripePaymentId String? @map("stripe_payment_id")
   createdAt       DateTime    @default(now()) @map("created_at")
   updatedAt       DateTime    @updatedAt @map("updated_at")
 
@@ -123,9 +128,9 @@ model Order {
 }
 
 model OrderItem {
-  id        Int     @id @default(autoincrement())
-  orderId   Int     @map("order_id")
-  productId Int     @map("product_id")
+  id        String  @id @default(uuid())
+  orderId   String  @map("order_id")
+  productId String  @map("product_id")
   quantity  Int
   unitPrice Decimal @map("unit_price") @db.Decimal(10, 2)
 
@@ -135,4 +140,25 @@ model OrderItem {
   @@index([orderId])
   @@index([productId])
   @@map("order_items")
+}
+
+/// Review de produto feito por usuário autenticado.
+/// Apenas um review por usuário por produto (unicidade via @@unique).
+/// O rating deve estar entre 1 e 5 — validado na camada de serviço/DTO.
+model Review {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  productId String   @map("product_id")
+  title     String
+  body      String
+  rating    Int      // 1 a 5
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([userId, productId])
+  @@index([productId])
+  @@map("reviews")
 }

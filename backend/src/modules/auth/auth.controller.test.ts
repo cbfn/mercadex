@@ -136,6 +136,53 @@ describe('authController', () => {
     });
   });
 
+  it('register retorna 500 para erro interno desconhecido', async () => {
+    const req = {
+      body: { name: 'Test', email: 'test@test.com', password: 'senha12345' },
+    } as Request;
+    const res = createRes();
+    (authService.register as jest.Mock).mockRejectedValueOnce(new Error('UNKNOWN_ERROR'));
+
+    await authController.register(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.objectContaining({ code: 'INTERNAL_ERROR' }),
+      }),
+    );
+  });
+
+  it('login retorna 500 para erro interno desconhecido', async () => {
+    const req = { body: { email: 'test@test.com', password: 'senha12345' } } as Request;
+    const res = createRes();
+    (authService.login as jest.Mock).mockRejectedValueOnce(new Error('UNKNOWN_ERROR'));
+
+    await authController.login(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.objectContaining({ code: 'INTERNAL_ERROR' }),
+      }),
+    );
+  });
+
+  it('refresh retorna 401 quando servico lanca excecao', async () => {
+    const req = { headers: {}, body: { refreshToken: 'bad-token' } } as Request;
+    const res = createRes();
+    (authService.refresh as jest.Mock).mockRejectedValueOnce(new Error('jwt expired'));
+
+    await authController.refresh(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.objectContaining({ code: 'REFRESH_TOKEN_INVALID' }),
+      }),
+    );
+  });
+
   it('logout limpa cookie', async () => {
     const req = {} as Request;
     const res = createRes();

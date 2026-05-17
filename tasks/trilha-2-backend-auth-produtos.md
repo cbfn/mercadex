@@ -247,7 +247,7 @@ import { authRepository } from './auth.repository';
 import type { RegisterInput, LoginInput } from './auth.dto';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET!;
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN ?? '7d';
 
 export const authService = {
   async register(input: RegisterInput) {
@@ -271,37 +271,16 @@ export const authService = {
     const valid = await bcrypt.compare(input.password, user.passwordHash);
     if (!valid) throw new Error('INVALID_CREDENTIALS');
 
-    const accessToken = jwt.sign(
+    const token = jwt.sign(
       { sub: user.id, role: user.role },
       JWT_SECRET,
-      { expiresIn: '15m' }
-    );
-
-    const refreshToken = jwt.sign(
-      { sub: user.id },
-      JWT_REFRESH_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: JWT_EXPIRES_IN }
     );
 
     return {
-      accessToken,
-      refreshToken,
+      token,
       user: { id: user.id, name: user.name, email: user.email, role: user.role },
     };
-  },
-
-  async refresh(refreshToken: string) {
-    const payload = jwt.verify(refreshToken, JWT_REFRESH_SECRET) as { sub: string };
-    const user = await authRepository.findById(payload.sub);
-    if (!user) throw new Error('USER_NOT_FOUND');
-
-    const accessToken = jwt.sign(
-      { sub: user.id, role: user.role },
-      JWT_SECRET,
-      { expiresIn: '15m' }
-    );
-
-    return { accessToken };
   },
 };
 ```
@@ -371,13 +350,7 @@ export const authController = {
     }
     try {
       const result = await authService.login(parsed.data);
-      res.cookie('refreshToken', result.refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      });
-      res.json({ success: true, data: { accessToken: result.accessToken, user: result.user } });
+      res.json({ success: true, data: { token: result.token, user: result.user } });
     } catch (err: any) {
       if (err.message === 'INVALID_CREDENTIALS') {
         return res.status(401).json({ success: false, error: { code: 'INVALID_CREDENTIALS' } });
@@ -386,19 +359,7 @@ export const authController = {
     }
   },
 
-  async refresh(req: Request, res: Response) {
-    const token = req.cookies?.refreshToken;
-    if (!token) return res.status(401).json({ success: false, error: { code: 'NO_REFRESH_TOKEN' } });
-    try {
-      const result = await authService.refresh(token);
-      res.json({ success: true, data: result });
-    } catch {
-      res.status(401).json({ success: false, error: { code: 'REFRESH_TOKEN_INVALID' } });
-    }
-  },
-
   async logout(_req: Request, res: Response) {
-    res.clearCookie('refreshToken');
     res.json({ success: true, data: { message: 'Logout realizado' } });
   },
 };
@@ -418,7 +379,6 @@ const router = Router();
 
 router.post('/register', authController.register);
 router.post('/login', loginLimiter, authController.login);
-router.post('/refresh', authController.refresh);
 router.post('/logout', authenticate, authController.logout);
 
 export default router;
@@ -435,7 +395,7 @@ app.use('/api/auth', authRoutes);
 
 ```bash
 git add src/modules/auth/
-git commit -m "feat: modulo de autenticacao (register, login, JWT, refresh token)"
+git commit -m "feat: modulo de autenticacao (register, login, JWT unico 7d)"
 ```
 
 ---
@@ -572,7 +532,7 @@ git commit -m "test: testes de integracao para auth e produtos (cobertura >= 80%
 ## Checklist Final da Trilha 2
 
 - [x] Schema Prisma criado e migration executada
-- [x] Módulo auth funcionando (register, login, refresh, logout)
+- [x] Módulo auth funcionando (register, login, logout)
 - [x] Módulo produtos funcionando (CRUD + categorias + filtros)
 - [x] Testes passando com cobertura >= 80%
 - [x] `npx tsc --noEmit` sem erros

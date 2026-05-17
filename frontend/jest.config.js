@@ -17,6 +17,7 @@ const config = {
     "!src/shared/mocks/**",
     "!src/shared/ui/tabs.tsx",
   ],
+  coverageReporters: ['text', 'json-summary', 'json', 'html', 'lcov'],
   coverageThreshold: {
     global: {
       lines: 80,

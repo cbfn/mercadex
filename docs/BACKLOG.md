@@ -114,46 +114,45 @@
 
 ---
 
-## História 4: Selecionar Método de Pagamento e Confirmar com PIX
+## História 4: Selecionar Método de Pagamento e Confirmar com PIX Estático
 
-**Descrição:** Como cliente, quero escolher PIX como método de pagamento, visualizar o QR code e confirmar que o pagamento foi processado, para que eu complete minha compra de forma segura e imediata.
+**Descrição:** Como cliente, quero visualizar a chave PIX e o QR Code após revisar meu pedido, para que eu possa realizar o pagamento e ter meu pedido registrado imediatamente.
+
+> **MVP Lean:** PIX estático fake. Sem gateway de pagamento, sem webhook, sem timer de expiração. O pedido é criado com status `PENDING_PIX` no momento em que o usuário clica em "Confirmar Pedido".
 
 ### Critérios de Aceitação
 
-**Cenário 1: Exibir PIX como único método de pagamento disponível (MVP)**
+**Cenário 1: Exibir PIX como único método de pagamento disponível**
 - Dado que o cliente está na etapa de pagamento
 - Quando carrega a página de pagamento
 - Então PIX é exibido como único método disponível, com instruções claras de uso
 
-**Cenário 2: Gerar QR code válido e código PIX para cópia**
-- Dado que o cliente selecionou PIX como método
-- Quando clica em "Confirmar e Gerar QR Code"
-- Então exibe: um QR code legível, um código PIX em texto para cópia e cola, e instruções claras: "Escaneie com seu app bancário ou copie o código abaixo"
-
-**Cenário 3: Timer de expiração visível**
-- Dado que o QR code foi gerado
+**Cenário 2: Exibir chave PIX estática e QR Code fixo**
+- Dado que o cliente está na etapa de pagamento
 - Quando a página é carregada
-- Então exibe um timer regressivo indicando "Válido por 10 minutos" com cronômetro visual
+- Então exibe: chave PIX estática (Copia e Cola), QR Code fixo e instruções: "Escaneie com seu app bancário ou copie a chave abaixo"
 
-**Cenário 4: Pagamento confirmado via webhook**
-- Dado que o cliente escaneou e pagou via PIX em seu app bancário
-- Quando o banco confirma o pagamento
-- Então o sistema recebe a confirmação via webhook e automaticamente avança para a página de confirmação (sem cliente precisar clicar em botão)
+**Cenário 3: Copiar chave PIX para área de transferência**
+- Dado que a chave PIX estática está visível na página
+- Quando o cliente clica em "Copiar Chave"
+- Então a chave é copiada para a área de transferência e exibe mensagem rápida: "Chave copiada!"
 
-**Cenário 5: Timeout do QR code após 10 minutos**
-- Dado que o QR code foi gerado há 10 minutos e não foi pago
-- Quando o timer chega a zero
-- Então exibe mensagem: "QR code expirado" com opção de "Gerar Novo QR Code"
+**Cenário 4: Criar pedido ao confirmar**
+- Dado que o cliente revisou o resumo e decidiu comprar
+- Quando o cliente clica em "Confirmar Pedido"
+- Então o sistema envia `POST /api/orders` com o array de itens do localStorage e o endereço de entrega
+- E o pedido é criado com status `PENDING_PIX`
+- E o cliente é redirecionado para a página de confirmação com o número do pedido
 
-**Cenário 6: Pagamento falhado com opção de tentar novamente**
-- Dado que o cliente escaneou e tentou pagar via PIX
-- Quando o banco rejeita a transação (saldo insuficiente, etc)
-- Então exibe erro específico: "Falha ao processar pagamento. Verifique seus dados bancários." com opção de tentar novamente
+**Cenário 5: Carrinho limpo após confirmação**
+- Dado que o pedido foi criado com sucesso
+- Quando o cliente é redirecionado para a página de confirmação
+- Então o carrinho do `localStorage` é esvaziado e o contador do header exibe "0"
 
-**Cenário 7: Copiar código PIX para área de transferência**
-- Dado que o QR code foi gerado
-- Quando o cliente clica em "Copiar Código" ao lado do código PIX
-- Então o código é copiado para a área de transferência e exibe mensagem rápida: "Código copiado!"
+**Cenário 6: Erro na criação do pedido**
+- Dado que a API retorna erro ao tentar criar o pedido (ex: produto fora de estoque)
+- Quando o cliente clica em "Confirmar Pedido"
+- Então exibe mensagem de erro específica e permite nova tentativa sem perder os dados do formulário
 
 ---
 
@@ -205,6 +204,90 @@
 
 ---
 
+## História 6: Avaliar Produto (Review)
+
+**Descrição:** Como cliente logado, quero publicar uma avaliação de um produto com nota, título e descrição, para que outros compradores tenham informações reais sobre o produto.
+
+### Critérios de Aceitação
+
+**Cenário 1: Criar review com sucesso**
+- Dado que o cliente está logado e na página de um produto que ainda não avaliou
+- Quando preenche título, descrição, seleciona nota 5 e clica em "Publicar"
+- Então o review aparece imediatamente na lista do produto e a nota média é atualizada
+
+**Cenário 2: Tentativa de review sem login**
+- Dado que o visitante não está logado
+- Quando tenta clicar em "Escrever Avaliação"
+- Então é redirecionado para o login com mensagem: "Faça login para avaliar este produto"
+
+**Cenário 3: Tentativa de segundo review no mesmo produto**
+- Dado que o cliente já publicou um review para o produto X
+- Quando tenta criar outro review para o mesmo produto X
+- Então a API retorna erro de conflito e a UI exibe: "Você já avaliou este produto"
+
+**Cenário 4: Deletar próprio review**
+- Dado que o cliente está logado e tem um review publicado
+- Quando clica em "Excluir" no próprio review
+- Então o review é removido da lista e o cliente pode criar um novo
+
+**Cenário 5: Review com nota inválida**
+- Dado que o cliente tenta enviar o formulário sem selecionar uma nota
+- Quando clica em "Publicar"
+- Então exibe validação: "Selecione uma nota de 1 a 5"
+
+---
+
+## História 7: Ver Resumo de IA das Avaliações
+
+**Descrição:** Como visitante na página de um produto, quero ver um resumo conciso das avaliações gerado por IA, para entender rapidamente os pontos positivos e negativos.
+
+### Critérios de Aceitação
+
+**Cenário 1: Resumo gerado com sucesso**
+- Dado que um produto tem pelo menos 2 reviews
+- Quando o visitante clica em "Ver Insight da IA"
+- Então exibe estado de loading e, após a resposta da API, exibe resumo de 3 frases sobre pontos positivos e negativos
+
+**Cenário 2: Produto sem reviews suficientes**
+- Dado que um produto não tem reviews
+- Quando o visitante clica em "Ver Insight da IA"
+- Então exibe: "Ainda sem avaliações suficientes para gerar resumo"
+
+**Cenário 3: Falha na API de IA**
+- Dado que o serviço de IA está indisponível
+- Quando o visitante solicita o resumo
+- Então exibe mensagem amigável: "Não foi possível gerar o resumo agora. Tente novamente." com botão de retry
+
+---
+
+## História 8: Chat com IA sobre o Produto
+
+**Descrição:** Como visitante, quero fazer perguntas sobre as especificações de um produto e receber respostas baseadas nas informações reais do produto e avaliações.
+
+### Critérios de Aceitação
+
+**Cenário 1: Resposta gerada com sucesso**
+- Dado que o visitante está com o chat aberto na página do produto
+- Quando digita "Este produto é compatível com Windows 11?" e clica em "Enviar"
+- Então exibe estado de loading e, após resposta, exibe a resposta da IA contextualizada com as specs do produto
+
+**Cenário 2: Histórico mantido durante a conversa**
+- Dado que o visitante fez 3 perguntas na mesma sessão do chat
+- Quando visualiza o chat
+- Então todas as 3 perguntas e respostas estão visíveis no histórico React
+
+**Cenário 3: Histórico descartado ao fechar**
+- Dado que o visitante tinha um histórico de conversa ativo no chat
+- Quando fecha o chat e reabre
+- Então o chat está vazio (sem persistência no banco)
+
+**Cenário 4: Falha na API de IA**
+- Dado que o serviço de IA está indisponível
+- Quando o visitante envia uma pergunta
+- Então exibe mensagem de erro amigável na conversa: "Não foi possível responder agora. Tente novamente."
+
+---
+
 ## Mapa de Cobertura de Testes
 
 | História | Cenários | Casos Felizes | Exceções | Total |
@@ -212,9 +295,12 @@
 | 1. Revisar Carrinho | 6 | 3 | 3 | 6 ✅ |
 | 2. Validar Endereço | 6 | 2 | 4 | 6 ✅ |
 | 3. Resumo do Pedido | 6 | 3 | 3 | 6 ✅ |
-| 4. Pagamento PIX | 7 | 3 | 4 | 7 ✅ |
+| 4. Pagamento PIX Estático | 6 | 3 | 3 | 6 ✅ |
 | 5. Confirmação | 8 | 5 | 3 | 8 ✅ |
-| **TOTAL** | **33 Cenários** | **16** | **17** | **33 ✅** |
+| 6. Reviews | 5 | 2 | 3 | 5 ✅ |
+| 7. Resumo IA | 3 | 1 | 2 | 3 ✅ |
+| 8. Chat de Produto IA | 4 | 2 | 2 | 4 ✅ |
+| **TOTAL** | **44 Cenários** | **21** | **23** | **44 ✅** |
 
 ---
 

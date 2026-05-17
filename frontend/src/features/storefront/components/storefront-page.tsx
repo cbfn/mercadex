@@ -5,6 +5,7 @@ import Image from "next/image";
 import { CATEGORIES, PRODUCTS } from "@/shared/mocks/products";
 import { useCatalogFilters } from "@/features/catalog/model/use-catalog-filters";
 import { useCart } from "@/features/cart/model/cart-context";
+import { useAuth } from "@/features/auth/model/auth-context";
 import { CartDrawer } from "@/features/cart/components/cart-drawer";
 import { Card } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
@@ -12,12 +13,13 @@ import { Input } from "@/shared/ui/input";
 import { Select } from "@/shared/ui/select";
 import { formatBRL } from "@/shared/lib/currency";
 import logoMercadex from "@/assets/logo-mercadex.png";
-import { Search, ShoppingBag, Sparkles, ShieldCheck, Truck } from "lucide-react";
+import { Search, ShoppingBag, Sparkles, ShieldCheck, Truck, User } from "lucide-react";
 
 export function StorefrontPage() {
   const { category, searchQuery, sortBy, filteredProducts, setCategory, setSearchQuery, setSortBy, resetFilters } =
     useCatalogFilters(PRODUCTS);
   const { quantity, openCart } = useCart();
+  const { user, logout, isLoading } = useAuth();
 
   return (
     <main className="pb-16">
@@ -47,10 +49,34 @@ export function StorefrontPage() {
             />
           </div>
 
-          <Button onClick={openCart} data-testid="open-cart-button" variant="secondary" className="ml-auto shrink-0">
-            <ShoppingBag size={18} />
-            {quantity}
-          </Button>
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            {!isLoading && (
+              user ? (
+                <div className="flex items-center gap-2">
+                  <span className="hidden items-center gap-1.5 text-sm font-semibold text-foreground sm:flex">
+                    <User size={15} className="text-muted-foreground" />
+                    {user.name ?? user.email}
+                  </span>
+                  <Button variant="ghost" size="sm" onClick={() => void logout()} data-testid="logout-button">
+                    Sair
+                  </Button>
+                </div>
+              ) : (
+                <Link
+                  href="/login"
+                  data-testid="login-button"
+                  className="inline-flex h-9 items-center rounded-md px-3 text-sm font-semibold text-foreground transition-all hover:bg-muted"
+                >
+                  Entrar
+                </Link>
+              )
+            )}
+
+            <Button onClick={openCart} data-testid="open-cart-button" variant="secondary" className="shrink-0">
+              <ShoppingBag size={18} />
+              {quantity}
+            </Button>
+          </div>
         </div>
       </header>
 
