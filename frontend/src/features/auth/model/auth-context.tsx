@@ -3,22 +3,27 @@
 /**
  * Contexto de autenticação da aplicação.
  * Gerencia estado do usuário, login, logout, registro e restauração de sessão.
+ *
+ * Estratégia de sessão (ADR-004 MVP Lean):
+ * Sessão restaurada de forma síncrona a partir de localStorage no primeiro mount.
+ * Sem chamada de rede para restaurar sessão — token de 7 dias em localStorage.
  */
 
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import { authApi, type ApiUser } from '@/shared/lib/api/auth';
+import { getToken } from '@/shared/lib/api-client';
+import { authApi, getCachedUser, type ApiUser } from '@/shared/lib/api/auth';
 
 interface AuthContextValue {
   /** Usuário autenticado ou null quando não há sessão ativa. */
   user: ApiUser | null;
-  /** True enquanto a sessão está sendo verificada no carregamento inicial. */
+  /** True apenas no primeiro render, antes de ler o localStorage. */
   isLoading: boolean;
   /**
    * Autentica o usuário com email e senha.
    * @throws {ApiError} 401 se as credenciais forem inválidas.
    */
   login: (email: string, password: string) => Promise<void>;
-  /** Encerra a sessão atual. */
+  /** Encerra a sessão atual e limpa localStorage. */
   logout: () => Promise<void>;
   /**
    * Registra um novo usuário.
@@ -31,7 +36,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 /**
  * Provedor de autenticação. Deve envolver toda a aplicação no layout raiz.
- * Tenta restaurar sessão via refresh token (cookie HTTP-only) na inicialização.
+ * Restaura sessão de forma síncrona a partir do localStorage na inicialização.
  *
  * @example
  * <AuthProvider>{children}</AuthProvider>
@@ -40,13 +45,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<ApiUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Restaura sessão ao montar — usa o refresh token (HTTP-only cookie)
+  // Restaura sessão sincronamente a partir do localStorage — sem chamada de rede.
   useEffect(() => {
-    authApi
-      .me()
-      .then((restored) => setUser(restored))
-      .catch(() => setUser(null))
-      .finally(() => setIsLoading(false));
+    const token = getToken();
+    const cached = getCachedUser();
+    if (token && cached) setUser(cached);
+    setIsLoading(false);
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {

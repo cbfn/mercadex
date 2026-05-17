@@ -1,30 +1,36 @@
 /**
- * Cliente HTTP centralizado com suporte a JWT e refresh automático.
+ * Cliente HTTP centralizado com suporte a JWT.
  * Todas as chamadas à API devem usar este módulo.
  *
- * Segurança: access token armazenado apenas em memória (nunca em localStorage).
- * O refresh token trafega via cookie HTTP-only gerenciado pelo backend.
+ * Estratégia de sessão (ADR-004 MVP Lean):
+ * Token único com expiração de 7 dias armazenado em localStorage.
+ * Sem refresh token, sem cookie de sessão.
  */
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
-/** Access token em memória — limpo ao recarregar a página (seguro por design). */
-let accessToken: string | null = null;
+const TOKEN_KEY = 'mercadex_token';
 
 /**
- * Define o access token em memória.
- * @param token - Token JWT ou null para limpar.
+ * Persiste o JWT em localStorage ou o remove quando null.
+ * @param token - Token JWT ou null para encerrar sessão.
  */
-export function setAccessToken(token: string | null): void {
-  accessToken = token;
+export function setToken(token: string | null): void {
+  if (typeof window === 'undefined') return;
+  if (token) {
+    localStorage.setItem(TOKEN_KEY, token);
+  } else {
+    localStorage.removeItem(TOKEN_KEY);
+  }
 }
 
 /**
- * Retorna o access token atual armazenado em memória.
- * @returns Token JWT ou null se não autenticado.
+ * Lê o JWT do localStorage.
+ * Retorna null em ambiente SSR ou quando não há sessão ativa.
  */
-export function getAccessToken(): string | null {
-  return accessToken;
+export function getToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(TOKEN_KEY);
 }
 
 /** Opções de fetch com flag para pular autenticação (ex: login/register). */
@@ -48,14 +54,14 @@ export class ApiError extends Error {
 }
 
 /**
- * Faz uma requisição autenticada para a API.
- * Em caso de 401, tenta renovar o access token via refresh token (cookie)
- * e repete a requisição automaticamente uma vez.
+ * Faz uma requisição para a API.
+ * Envia o JWT via header Authorization quando disponível.
+ * Em caso de 401, lança ApiError diretamente (sem retry).
  *
- * @param path - Caminho relativo do endpoint (ex: `/api/auth/me`).
+ * @param path - Caminho relativo do endpoint (ex: `/api/products`).
  * @param options - Opções de fetch estendidas com `skipAuth`.
  * @returns Dados da resposta deserializados como `T`.
- * @throws {ApiError} Quando a resposta não é OK após todas as tentativas.
+ * @throws {ApiError} Quando a resposta não é OK.
  */
 export async function apiRequest<T>(
   path: string,
@@ -68,23 +74,7 @@ export async function apiRequest<T>(
   const res = await fetch(`${API_URL}${path}`, {
     ...fetchOptions,
     headers,
-    credentials: 'include',
   });
-
-  if (res.status === 401 && !skipAuth) {
-    const refreshed = await tryRefreshToken();
-    if (refreshed) {
-      const retryHeaders = buildHeaders(fetchOptions.headers, false);
-      const retryRes = await fetch(`${API_URL}${path}`, {
-        ...fetchOptions,
-        headers: retryHeaders,
-        credentials: 'include',
-      });
-      if (!retryRes.ok) throw new ApiError(retryRes.status, await retryRes.json());
-      return retryRes.json() as T;
-    }
-    throw new ApiError(401, { error: { code: 'SESSION_EXPIRED' } });
-  }
 
   if (!res.ok) {
     throw new ApiError(res.status, await res.json());
@@ -102,24 +92,10 @@ function buildHeaders(
     ...(extra as Record<string, string>),
   };
 
-  if (!skipAuth && accessToken) {
-    headers['Authorization'] = `Bearer ${accessToken}`;
+  if (!skipAuth) {
+    const token = getToken();
+    if (token) headers['Authorization'] = `Bearer ${token}`;
   }
 
   return headers;
-}
-
-async function tryRefreshToken(): Promise<boolean> {
-  try {
-    const res = await fetch(`${API_URL}/api/auth/refresh`, {
-      method: 'POST',
-      credentials: 'include',
-    });
-    if (!res.ok) return false;
-    const data = (await res.json()) as { data: { accessToken: string } };
-    setAccessToken(data.data.accessToken);
-    return true;
-  } catch {
-    return false;
-  }
 }

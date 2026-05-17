@@ -4,6 +4,7 @@ import { LoginForm } from './login-form';
 
 const mockLogin = jest.fn();
 const mockPush = jest.fn();
+const mockSearchParamsGet = jest.fn<string | null, [string]>();
 
 jest.mock('../model/auth-context', () => ({
   useAuth: () => ({ login: mockLogin }),
@@ -11,6 +12,7 @@ jest.mock('../model/auth-context', () => ({
 
 jest.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush }),
+  useSearchParams: () => ({ get: mockSearchParamsGet }),
 }));
 
 jest.mock('next/link', () => {
@@ -25,6 +27,7 @@ describe('LoginForm', () => {
   beforeEach(() => {
     mockLogin.mockReset();
     mockPush.mockReset();
+    mockSearchParamsGet.mockReturnValue(null); // sem redirect por padrão
   });
 
   it('renderiza campos de e-mail e senha', () => {
@@ -35,7 +38,7 @@ describe('LoginForm', () => {
     expect(screen.getByRole('button', { name: /entrar/i })).toBeInTheDocument();
   });
 
-  it('redireciona para / após login bem-sucedido', async () => {
+  it('redireciona para / após login bem-sucedido quando não há redirect param', async () => {
     mockLogin.mockResolvedValue(undefined);
     const user = userEvent.setup();
 
@@ -48,6 +51,20 @@ describe('LoginForm', () => {
     await waitFor(() => expect(mockLogin).toHaveBeenCalledWith('user@test.com', 'senha123'));
     await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/'));
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('redireciona para URL do redirect param após login bem-sucedido', async () => {
+    mockSearchParamsGet.mockReturnValue('/products/42?reviews=open');
+    mockLogin.mockResolvedValue(undefined);
+    const user = userEvent.setup();
+
+    render(<LoginForm />);
+
+    await user.type(screen.getByLabelText(/e-mail/i), 'user@test.com');
+    await user.type(screen.getByLabelText(/senha/i), 'senha123');
+    await user.click(screen.getByRole('button', { name: /entrar/i }));
+
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/products/42?reviews=open'));
   });
 
   it('exibe mensagem de erro para credenciais inválidas (401)', async () => {
