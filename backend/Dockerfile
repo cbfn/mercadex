@@ -46,12 +46,14 @@ ENV PORT=3001
 COPY package.json package-lock.json ./
 
 # Instala apenas dependências de produção
-RUN npm ci --omit=dev
+# --ignore-scripts evita que o postinstall tente rodar "prisma generate"
+# (o CLI prisma é devDependency e não estará disponível aqui)
+RUN npm ci --omit=dev --ignore-scripts
 
 # Copia artefatos do build
 COPY --from=builder /app/dist ./dist
 
-# Copia o Prisma Client gerado
+# Copia o Prisma Client gerado no stage de build
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/src/generated ./src/generated
