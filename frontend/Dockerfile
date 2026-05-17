@@ -19,6 +19,8 @@ RUN npm ci
 # Copia código-fonte e configs
 COPY tsconfig.json ./
 COPY next.config.mjs ./
+COPY tailwind.config.ts ./
+COPY postcss.config.mjs ./
 COPY src ./src
 
 # Build do Next.js com a variável de ambiente padrão
