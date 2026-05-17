@@ -130,32 +130,36 @@ export class AiSearchAgentService {
       return inferHintsFromText(userMessage);
     }
 
-    const completion = await this.client.chat.completions.create({
-      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-      temperature: 0,
-      messages: [
-        {
-          role: 'system',
-          content:
-            'Você é um assistente de busca de produtos. Extraia os filtros mais úteis da mensagem do usuário e chame a ferramenta interpretar_busca_produtos.',
-        },
-        {
-          role: 'user',
-          content: userMessage,
-        },
-      ],
-      tools: [SEARCH_HINT_TOOL],
-      tool_choice: 'required',
-    });
-
-    const toolCall = completion.choices[0]?.message.tool_calls?.[0];
-
-    if (!toolCall || toolCall.type !== 'function' || toolCall.function.name !== TOOL_NAME) {
-      return inferHintsFromText(userMessage);
-    }
-
     try {
-      return parseToolArguments(toolCall.function.arguments);
+      const completion = await this.client.chat.completions.create({
+        model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+        temperature: 0,
+        messages: [
+          {
+            role: 'system',
+            content:
+              'Você é um assistente de busca de produtos. Extraia os filtros mais úteis da mensagem do usuário e chame a ferramenta interpretar_busca_produtos.',
+          },
+          {
+            role: 'user',
+            content: userMessage,
+          },
+        ],
+        tools: [SEARCH_HINT_TOOL],
+        tool_choice: 'required',
+      });
+
+      const toolCall = completion.choices[0]?.message.tool_calls?.[0];
+
+      if (!toolCall || toolCall.type !== 'function' || toolCall.function.name !== TOOL_NAME) {
+        return inferHintsFromText(userMessage);
+      }
+
+      try {
+        return parseToolArguments(toolCall.function.arguments);
+      } catch {
+        return inferHintsFromText(userMessage);
+      }
     } catch {
       return inferHintsFromText(userMessage);
     }
