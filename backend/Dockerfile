@@ -34,7 +34,7 @@ RUN npm run build
 # ── Stage 2: produção ──────────────────────────────────────
 FROM node:22-slim AS runner
 
-RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update -y && apt-get install -y openssl curl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -65,7 +65,7 @@ EXPOSE ${PORT}
 
 # Healthcheck
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD node -e "fetch('http://localhost:${PORT}/health').then(r=>{if(!r.ok)throw r.status}).catch(()=>process.exit(1))"
+  CMD curl -f http://localhost:${PORT}/health || exit 1
 
 # Comando de inicialização
 CMD ["node", "-r", "dotenv/config", "dist/server.js"]
