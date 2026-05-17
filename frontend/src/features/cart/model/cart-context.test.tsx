@@ -17,7 +17,6 @@ function TestHarness() {
       <span data-testid="subtotal">{cart.subtotal}</span>
       <span data-testid="total">{cart.total}</span>
       <span data-testid="is-open">{String(cart.isOpen)}</span>
-      <span data-testid="step">{cart.checkoutStep}</span>
       <span data-testid="selected">{String(cart.selectedProductId)}</span>
       <button data-testid="add" onClick={() => cart.addToCart(PRODUCTS[0], 1)}>add</button>
       <button data-testid="add2" onClick={() => cart.addToCart(PRODUCTS[1], 2)}>add2</button>
@@ -26,8 +25,6 @@ function TestHarness() {
       <button data-testid="dec" onClick={() => cart.updateQty(PRODUCTS[0].id, -1)}>dec</button>
       <button data-testid="open" onClick={cart.openCart}>open</button>
       <button data-testid="close" onClick={cart.closeCart}>close</button>
-      <button data-testid="step1" onClick={() => cart.setStep(1)}>step1</button>
-      <button data-testid="step2" onClick={() => cart.setStep(2)}>step2</button>
       <button data-testid="open-product" onClick={() => cart.openProduct(5)}>openProduct</button>
       <button data-testid="close-product" onClick={cart.closeProduct}>closeProduct</button>
       <button data-testid="finish" onClick={cart.finishOrder}>finish</button>
@@ -112,26 +109,6 @@ describe("CartProvider / useCart", () => {
     expect(screen.getByTestId("is-open")).toHaveTextContent("false");
   });
 
-  it("resets checkout step to 0 when opening cart", async () => {
-    const user = userEvent.setup();
-    renderWithProvider();
-
-    await user.click(screen.getByTestId("step1"));
-    expect(screen.getByTestId("step")).toHaveTextContent("1");
-    await user.click(screen.getByTestId("open"));
-    expect(screen.getByTestId("step")).toHaveTextContent("0");
-  });
-
-  it("navigates checkout steps", async () => {
-    const user = userEvent.setup();
-    renderWithProvider();
-
-    await user.click(screen.getByTestId("step1"));
-    expect(screen.getByTestId("step")).toHaveTextContent("1");
-    await user.click(screen.getByTestId("step2"));
-    expect(screen.getByTestId("step")).toHaveTextContent("2");
-  });
-
   it("opens and closes product detail", async () => {
     const user = userEvent.setup();
     renderWithProvider();
@@ -153,7 +130,6 @@ describe("CartProvider / useCart", () => {
     await user.click(screen.getByTestId("finish"));
     expect(screen.getByTestId("qty")).toHaveTextContent("0");
     expect(screen.getByTestId("is-open")).toHaveTextContent("false");
-    expect(screen.getByTestId("step")).toHaveTextContent("0");
   });
 
   it("updates zustand store state after add", async () => {
