@@ -22,6 +22,11 @@ jest.mock('../orders/orders.routes', () => {
   return { ordersRouter: express.Router() };
 });
 
+jest.mock('../reviews/reviews.routes', () => {
+  const express = require('express') as typeof import('express');
+  return { reviewsRouter: express.Router() };
+});
+
 import app from '../../server';
 import { authService } from './auth.service';
 
