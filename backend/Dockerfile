@@ -56,8 +56,7 @@ RUN npm ci --omit=dev --ignore-scripts
 COPY --from=builder /app/dist ./dist
 
 # Copia o Prisma Client gerado no stage de build
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+# Prisma 7.x gera em src/generated/prisma (não mais em node_modules/.prisma)
 COPY --from=builder /app/src/generated ./src/generated
 
 # Copia schema do Prisma (necessário para migrations em runtime)
