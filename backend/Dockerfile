@@ -33,6 +33,12 @@ RUN npx prisma generate
 # Compila TypeScript → dist/
 RUN npm run build
 
+# Verificação: garante que os artefatos existem
+RUN echo "=== Verificando artefatos ===" \
+    && ls dist/generated/prisma/client.js \
+    && ls node_modules/.prisma/client/index.js \
+    && echo "=== Artefatos OK ==="
+
 # ── Stage 2: produção ──────────────────────────────────────
 FROM node:22-slim AS runner
 
@@ -52,12 +58,13 @@ COPY package.json package-lock.json ./
 # (o CLI prisma é devDependency e não estará disponível aqui)
 RUN npm ci --omit=dev --ignore-scripts
 
-# Copia artefatos do build
+# Copia artefatos do build (inclui dist/generated/prisma/ compilado pelo tsc)
 COPY --from=builder /app/dist ./dist
 
-# Copia o Prisma Client gerado no stage de build
-# Prisma 7.x gera em src/generated/prisma (não mais em node_modules/.prisma)
+# Copia o Prisma Client gerado para src/generated (usado pelo tsc output em dist/)
+# e recria node_modules/.prisma/client (usado por imports de '@prisma/client')
 COPY --from=builder /app/src/generated ./src/generated
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 # Copia schema do Prisma (necessário para migrations em runtime)
 COPY prisma ./prisma
