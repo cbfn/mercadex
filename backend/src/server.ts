@@ -28,9 +28,11 @@ app.use('/api/categories', categoriesRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/api', reviewsRouter);
 
-app.get('/health', (_req, res) => {
+export function healthHandler(_req: express.Request, res: express.Response) {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
+}
+
+app.get('/health', healthHandler);
 
 if (process.env.NODE_ENV !== "test") {
   app.listen(port, '0.0.0.0', () => {

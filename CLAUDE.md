@@ -47,6 +47,7 @@ Ver `docs/DESIGN_SYSTEM.md` para padrões visuais, tipografia e UX writing do fr
 - Documente novos módulos, funções públicas, contratos de API e utilitários compartilhados com JSDoc.
 - Prefira commits pequenos e descritivos.
 - Sempre que fizer commit, use mensagem semântica no formato `feat:`, `fix:`, `docs:`, `refactor:`, `test:` ou `chore:`.
+- Testes de frontend e backend devem seguir AAA (Arrange, Act, Assert) com setup claro, ação explícita e asserções no fim.
 - Mantenha o backend modular em `backend/src/modules/`.
 
 ## Running the Project

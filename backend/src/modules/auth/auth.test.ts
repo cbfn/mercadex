@@ -1,4 +1,4 @@
-import request from 'supertest';
+import type { Request, Response } from 'express';
 
 process.env.NODE_ENV = 'test';
 process.env.JWT_SECRET = 'test-secret';
@@ -12,68 +12,76 @@ jest.mock('./auth.service', () => ({
   },
 }));
 
-jest.mock('./auth.middleware', () => ({
-  authenticate: (_req: unknown, _res: unknown, next: () => void) => next(),
-  requireAdmin: (_req: unknown, _res: unknown, next: () => void) => next(),
-}));
+const { authController } = require('./auth.controller') as typeof import('./auth.controller');
+const { authService } = require('./auth.service') as typeof import('./auth.service');
 
-jest.mock('../orders/orders.routes', () => {
-  const express = require('express') as typeof import('express');
-  return { ordersRouter: express.Router() };
-});
+function createRes() {
+  return {
+    status: jest.fn().mockReturnThis(),
+    json: jest.fn().mockReturnThis(),
+    setHeader: jest.fn(),
+  } as unknown as Response & {
+    status: jest.Mock;
+    json: jest.Mock;
+    setHeader: jest.Mock;
+  };
+}
 
-jest.mock('../reviews/reviews.routes', () => {
-  const express = require('express') as typeof import('express');
-  return { reviewsRouter: express.Router() };
-});
-
-import app from '../../server';
-import { authService } from './auth.service';
-
-const mockedAuthService = authService as jest.Mocked<typeof authService>;
-
-describe('Auth routes', () => {
+describe('Auth controller', () => {
   beforeEach(() => {
-    mockedAuthService.register.mockReset();
-    mockedAuthService.login.mockReset();
-    mockedAuthService.refresh.mockReset();
+    jest.resetAllMocks();
   });
 
   it('cria usuario com dados validos', async () => {
-    mockedAuthService.register.mockResolvedValue({
+    (authService.register as jest.Mock).mockResolvedValueOnce({
       id: 'user-1',
       name: 'Test',
       email: 'test@test.com',
       role: 'CUSTOMER',
     });
 
-    const res = await request(app)
-      .post('/api/auth/register')
-      .send({ name: 'Test', email: 'test@test.com', password: 'senha12345' });
+    const req = {
+      body: { name: 'Test', email: 'test@test.com', password: 'senha12345' },
+    } as unknown as Request;
+    const res = createRes();
 
-    expect(res.status).toBe(201);
-    expect(res.body.success).toBe(true);
-    expect(res.body.data.email).toBe('test@test.com');
-    expect(mockedAuthService.register).toHaveBeenCalledWith({
+    await authController.register(req, res);
+
+    expect(authService.register).toHaveBeenCalledWith({
       name: 'Test',
       email: 'test@test.com',
       password: 'senha12345',
     });
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        data: expect.objectContaining({ email: 'test@test.com' }),
+      }),
+    );
   });
 
   it('retorna 409 para email duplicado', async () => {
-    mockedAuthService.register.mockRejectedValue(new Error('EMAIL_ALREADY_EXISTS'));
+    (authService.register as jest.Mock).mockRejectedValueOnce(new Error('EMAIL_ALREADY_EXISTS'));
 
-    const res = await request(app)
-      .post('/api/auth/register')
-      .send({ name: 'Test', email: 'dup@test.com', password: 'senha12345' });
+    const req = {
+      body: { name: 'Test', email: 'dup@test.com', password: 'senha12345' },
+    } as unknown as Request;
+    const res = createRes();
 
-    expect(res.status).toBe(409);
-    expect(res.body.error.code).toBe('EMAIL_ALREADY_EXISTS');
+    await authController.register(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        error: expect.objectContaining({ code: 'EMAIL_ALREADY_EXISTS' }),
+      }),
+    );
   });
 
   it('faz login e devolve access token com cookie de refresh', async () => {
-    mockedAuthService.login.mockResolvedValue({
+    (authService.login as jest.Mock).mockResolvedValueOnce({
       accessToken: 'access-token',
       refreshToken: 'refresh-token',
       user: {
@@ -84,43 +92,66 @@ describe('Auth routes', () => {
       },
     });
 
-    const res = await request(app)
-      .post('/api/auth/login')
-      .send({ email: 'test@test.com', password: 'senha12345' });
+    const req = {
+      body: { email: 'test@test.com', password: 'senha12345' },
+    } as unknown as Request;
+    const res = createRes();
 
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(res.body.data.accessToken).toBe('access-token');
-    expect(res.headers['set-cookie']).toBeDefined();
-    expect(mockedAuthService.login).toHaveBeenCalledWith({
+    await authController.login(req, res);
+
+    expect(authService.login).toHaveBeenCalledWith({
       email: 'test@test.com',
       password: 'senha12345',
     });
+    expect(res.setHeader).toHaveBeenCalledWith(
+      'Set-Cookie',
+      expect.stringContaining('refreshToken=refresh-token'),
+    );
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        data: expect.objectContaining({ accessToken: 'access-token' }),
+      }),
+    );
   });
 
   it('renova access token usando refresh token', async () => {
-    mockedAuthService.refresh.mockResolvedValue({
+    (authService.refresh as jest.Mock).mockResolvedValueOnce({
       accessToken: 'new-access-token',
     });
 
-    const res = await request(app)
-      .post('/api/auth/refresh')
-      .set('Cookie', ['refreshToken=refresh-token'])
-      .send({});
+    const req = {
+      headers: { cookie: 'refreshToken=refresh-token' },
+      body: {},
+    } as unknown as Request;
+    const res = createRes();
 
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(res.body.data.accessToken).toBe('new-access-token');
-    expect(mockedAuthService.refresh).toHaveBeenCalledWith('refresh-token');
+    await authController.refresh(req, res);
+
+    expect(authService.refresh).toHaveBeenCalledWith('refresh-token');
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        data: expect.objectContaining({ accessToken: 'new-access-token' }),
+      }),
+    );
   });
 
   it('faz logout limpando o cookie', async () => {
-    const res = await request(app)
-      .post('/api/auth/logout')
-      .set('Authorization', 'Bearer access-token');
+    const req = {} as unknown as Request;
+    const res = createRes();
 
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(res.headers['set-cookie']).toBeDefined();
+    await authController.logout(req, res);
+
+    expect(res.setHeader).toHaveBeenCalledWith(
+      'Set-Cookie',
+      expect.stringContaining('refreshToken=;'),
+    );
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        data: expect.objectContaining({ message: 'Logout realizado' }),
+      }),
+    );
   });
 });
