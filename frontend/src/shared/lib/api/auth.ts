@@ -2,15 +2,14 @@
  * Módulo de API para autenticação.
  * Encapsula todos os endpoints de auth do backend.
  *
- * Estratégia de sessão:
- * - Access token em memória (via api-client).
- * - Refresh token em cookie HTTP-only (gerenciado pelo backend).
+ * Estratégia de sessão (ADR-004 MVP Lean):
+ * - JWT único de 7 dias armazenado em localStorage via setToken/getToken.
  * - Dados públicos do usuário cacheados em localStorage para restauração de sessão.
+ * - Sem refresh token, sem cookie de sessão.
  */
 
-import { apiRequest, setAccessToken } from '../api-client';
+import { apiRequest, setToken } from '../api-client';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 const USER_CACHE_KEY = 'mercadex:auth-user';
 
 /** Dados públicos do usuário retornados pela API. */
@@ -26,11 +25,6 @@ interface LoginResponse {
   data: { accessToken: string; user: ApiUser };
 }
 
-interface RefreshResponse {
-  success: boolean;
-  data: { accessToken: string };
-}
-
 function saveUserToCache(user: ApiUser): void {
   try {
     localStorage.setItem(USER_CACHE_KEY, JSON.stringify(user));
@@ -39,7 +33,12 @@ function saveUserToCache(user: ApiUser): void {
   }
 }
 
-function readUserFromCache(): ApiUser | null {
+/**
+ * Lê os dados do usuário do cache em localStorage.
+ * Retorna null quando não há sessão salva ou em ambiente SSR.
+ */
+export function getCachedUser(): ApiUser | null {
+  if (typeof window === 'undefined') return null;
   try {
     const raw = localStorage.getItem(USER_CACHE_KEY);
     return raw ? (JSON.parse(raw) as ApiUser) : null;
@@ -60,12 +59,11 @@ function clearUserCache(): void {
  * Módulo de chamadas HTTP para autenticação.
  *
  * @example
- * const { user } = await authApi.login('user@example.com', 'senha123');
+ * const user = await authApi.login('user@example.com', 'senha123');
  */
 export const authApi = {
   /**
-   * Autentica o usuário, armazena o access token em memória
-   * e faz cache dos dados públicos do usuário em localStorage.
+   * Autentica o usuário, persiste o JWT e o perfil em localStorage.
    *
    * @param email - Email do usuário.
    * @param password - Senha do usuário.
@@ -77,7 +75,7 @@ export const authApi = {
       body: JSON.stringify({ email, password }),
       skipAuth: true,
     });
-    setAccessToken(res.data.accessToken);
+    setToken(res.data.accessToken);
     saveUserToCache(res.data.user);
     return res.data.user;
   },
@@ -98,44 +96,15 @@ export const authApi = {
   },
 
   /**
-   * Encerra a sessão: limpa o access token em memória, o cache do usuário
-   * e invalida o refresh token cookie via backend.
+   * Encerra a sessão: limpa o JWT e o cache do usuário em localStorage.
+   * Notifica o backend de forma best-effort (sem cookie a invalidar).
    */
   async logout(): Promise<void> {
     try {
       await apiRequest('/api/auth/logout', { method: 'POST' });
     } finally {
-      setAccessToken(null);
+      setToken(null);
       clearUserCache();
-    }
-  },
-
-  /**
-   * Restaura a sessão do usuário usando o refresh token (cookie HTTP-only).
-   * Obtém um novo access token e lê os dados do usuário do cache local.
-   *
-   * Retorna null se não houver sessão ativa.
-   *
-   * @remarks
-   * Quando o backend implementar GET /api/auth/me, esta função poderá
-   * ser simplificada para usar apiRequest diretamente (o api-client
-   * já trata o refresh 401 automaticamente).
-   */
-  async me(): Promise<ApiUser | null> {
-    try {
-      const res = await fetch(`${API_URL}/api/auth/refresh`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-      if (!res.ok) {
-        clearUserCache();
-        return null;
-      }
-      const data = (await res.json()) as RefreshResponse;
-      setAccessToken(data.data.accessToken);
-      return readUserFromCache();
-    } catch {
-      return null;
     }
   },
 };

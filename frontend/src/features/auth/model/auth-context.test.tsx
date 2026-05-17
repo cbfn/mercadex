@@ -2,18 +2,23 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AuthProvider, useAuth } from '@/features/auth/model/auth-context';
 
-const mockMe = jest.fn();
+const mockGetToken = jest.fn<string | null, []>();
+const mockGetCachedUser = jest.fn();
 const mockLogin = jest.fn();
 const mockLogout = jest.fn();
 const mockRegister = jest.fn();
 
+jest.mock('@/shared/lib/api-client', () => ({
+  getToken: () => mockGetToken(),
+}));
+
 jest.mock('@/shared/lib/api/auth', () => ({
   authApi: {
-    me: (...args: unknown[]) => mockMe(...args),
     login: (...args: unknown[]) => mockLogin(...args),
     logout: (...args: unknown[]) => mockLogout(...args),
     register: (...args: unknown[]) => mockRegister(...args),
   },
+  getCachedUser: () => mockGetCachedUser(),
 }));
 
 const mockUser = {
@@ -24,10 +29,15 @@ const mockUser = {
 };
 
 beforeEach(() => {
-  mockMe.mockReset();
+  mockGetToken.mockReset();
+  mockGetCachedUser.mockReset();
   mockLogin.mockReset();
   mockLogout.mockReset();
   mockRegister.mockReset();
+
+  // Default: sem sessão
+  mockGetToken.mockReturnValue(null);
+  mockGetCachedUser.mockReturnValue(null);
 });
 
 function TestConsumer() {
@@ -36,10 +46,7 @@ function TestConsumer() {
     <div>
       <span data-testid="loading">{String(isLoading)}</span>
       <span data-testid="user">{user ? user.email : 'null'}</span>
-      <button
-        data-testid="login"
-        onClick={() => void login('joao@test.com', 'senha123')}
-      >
+      <button data-testid="login" onClick={() => void login('joao@test.com', 'senha123')}>
         Login
       </button>
       <button data-testid="logout" onClick={() => void logout()}>
@@ -64,53 +71,51 @@ function renderWithProvider() {
 }
 
 describe('AuthProvider – restauração de sessão', () => {
-  it('inicia em estado de carregamento', () => {
-    mockMe.mockReturnValue(new Promise(() => {}));
-    renderWithProvider();
-    expect(screen.getByTestId('loading')).toHaveTextContent('true');
-  });
-
-  it('finaliza carregamento após me() resolver', async () => {
-    mockMe.mockResolvedValueOnce(null);
+  it('finaliza carregamento com user null quando localStorage está vazio', async () => {
     renderWithProvider();
 
     await waitFor(() => {
       expect(screen.getByTestId('loading')).toHaveTextContent('false');
     });
+    expect(screen.getByTestId('user')).toHaveTextContent('null');
   });
 
-  it('restaura usuário quando me() retorna usuário', async () => {
-    mockMe.mockResolvedValueOnce(mockUser);
+  it('restaura usuário quando token e cache existem no localStorage', async () => {
+    mockGetToken.mockReturnValue('tok');
+    mockGetCachedUser.mockReturnValue(mockUser);
+
     renderWithProvider();
 
     await waitFor(() => {
       expect(screen.getByTestId('user')).toHaveTextContent(mockUser.email);
     });
+    expect(screen.getByTestId('loading')).toHaveTextContent('false');
   });
 
-  it('mantém user null quando me() retorna null', async () => {
-    mockMe.mockResolvedValueOnce(null);
+  it('mantém user null quando token existe mas não há cache', async () => {
+    mockGetToken.mockReturnValue('tok');
+    mockGetCachedUser.mockReturnValue(null);
+
     renderWithProvider();
 
     await waitFor(() => expect(screen.getByTestId('loading')).toHaveTextContent('false'));
     expect(screen.getByTestId('user')).toHaveTextContent('null');
   });
 
-  it('mantém user null e finaliza loading quando me() lança erro', async () => {
-    mockMe.mockRejectedValueOnce(new Error('No session'));
+  it('mantém user null quando há cache mas não há token', async () => {
+    mockGetToken.mockReturnValue(null);
+    mockGetCachedUser.mockReturnValue(mockUser);
+
     renderWithProvider();
 
-    await waitFor(() => {
-      expect(screen.getByTestId('loading')).toHaveTextContent('false');
-      expect(screen.getByTestId('user')).toHaveTextContent('null');
-    });
+    await waitFor(() => expect(screen.getByTestId('loading')).toHaveTextContent('false'));
+    expect(screen.getByTestId('user')).toHaveTextContent('null');
   });
 });
 
 describe('useAuth – login', () => {
   it('define user após login bem-sucedido', async () => {
     const user = userEvent.setup();
-    mockMe.mockResolvedValueOnce(null);
     mockLogin.mockResolvedValueOnce(mockUser);
     renderWithProvider();
 
@@ -124,7 +129,6 @@ describe('useAuth – login', () => {
 
   it('mantém user null quando login lança erro', async () => {
     const user = userEvent.setup();
-    mockMe.mockResolvedValueOnce(null);
     mockLogin.mockRejectedValueOnce(new Error('Invalid credentials'));
 
     function SafeConsumer() {
@@ -148,9 +152,7 @@ describe('useAuth – login', () => {
       </AuthProvider>,
     );
 
-    await waitFor(() => expect(mockMe).toHaveBeenCalled());
     await user.click(screen.getByTestId('login-safe'));
-
     await waitFor(() => expect(mockLogin).toHaveBeenCalled());
     expect(screen.getByTestId('user')).toHaveTextContent('null');
   });
@@ -159,8 +161,10 @@ describe('useAuth – login', () => {
 describe('useAuth – logout', () => {
   it('limpa user após logout', async () => {
     const user = userEvent.setup();
-    mockMe.mockResolvedValueOnce(mockUser);
+    mockGetToken.mockReturnValue('tok');
+    mockGetCachedUser.mockReturnValue(mockUser);
     mockLogout.mockResolvedValueOnce(undefined);
+
     renderWithProvider();
 
     await waitFor(() => expect(screen.getByTestId('user')).toHaveTextContent(mockUser.email));
@@ -175,7 +179,6 @@ describe('useAuth – logout', () => {
 describe('useAuth – register', () => {
   it('chama API de registro com parâmetros corretos', async () => {
     const user = userEvent.setup();
-    mockMe.mockResolvedValueOnce(null);
     mockRegister.mockResolvedValueOnce(undefined);
     renderWithProvider();
 

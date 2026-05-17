@@ -1,4 +1,4 @@
-import request from 'supertest';
+import type { Response } from 'express';
 
 process.env.NODE_ENV = 'test';
 
@@ -37,14 +37,25 @@ jest.mock('./modules/reviews/reviews.routes', () => {
   return { reviewsRouter: express.Router() };
 });
 
-import app from './server';
+import { healthHandler } from './server';
+
+function createRes() {
+  return {
+    json: jest.fn(),
+  } as unknown as Response & {
+    json: jest.Mock;
+  };
+}
 
 describe('server', () => {
-  it('/health retorna status ok', async () => {
-    const res = await request(app).get('/health');
+  it('/health retorna status ok', () => {
+    const res = createRes();
 
-    expect(res.status).toBe(200);
-    expect(res.body.status).toBe('ok');
-    expect(res.body.timestamp).toBeDefined();
+    healthHandler({} as never, res);
+
+    expect(res.json).toHaveBeenCalledWith({
+      status: 'ok',
+      timestamp: expect.any(String),
+    });
   });
 });

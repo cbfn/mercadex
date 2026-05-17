@@ -5,6 +5,12 @@ import { CartProvider, resetCartStore, useCart } from "@/features/cart/model/car
 import { CartDrawer } from "@/features/cart/components/cart-drawer";
 import { PRODUCTS } from "@/shared/mocks/products";
 
+const mockPush = jest.fn();
+
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({ push: mockPush }),
+}));
+
 jest.mock("@/features/auth/model/auth-context", () => ({
   useAuth: () => ({ user: null, isLoading: false, login: jest.fn(), logout: jest.fn(), register: jest.fn() }),
 }));
@@ -42,6 +48,7 @@ describe("CartDrawer", () => {
   beforeEach(() => {
     resetCartStore();
     localStorage.clear();
+    mockPush.mockReset();
   });
 
   it("shows empty cart message", async () => {
@@ -74,23 +81,13 @@ describe("CartDrawer", () => {
     expect(screen.getByText(/Total/)).toBeInTheDocument();
   });
 
-  it("navigates to delivery step", async () => {
+  it("redirects to checkout page", async () => {
     const user = userEvent.setup();
     renderCartDrawer();
 
     await user.click(screen.getByTestId("setup-open"));
-    await user.click(screen.getByTestId("go-to-delivery"));
-    expect(screen.getByTestId("delivery-step")).toBeInTheDocument();
-  });
-
-  it("can go back from delivery to cart", async () => {
-    const user = userEvent.setup();
-    renderCartDrawer();
-
-    await user.click(screen.getByTestId("setup-open"));
-    await user.click(screen.getByTestId("go-to-delivery"));
-    await user.click(screen.getByRole("button", { name: "Voltar" }));
-    expect(screen.getByTestId("cart-step")).toBeInTheDocument();
+    await user.click(screen.getByTestId("go-to-checkout"));
+    expect(mockPush).toHaveBeenCalledWith("/checkout");
   });
 
   it("removes item from cart", async () => {

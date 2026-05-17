@@ -7,7 +7,7 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Modal } from "@/shared/ui/modal";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+const SEARCH_API_PATH = "/api/products/search";
 
 type SearchProductItem = {
   id: number;
@@ -66,7 +66,7 @@ export function FloatingRobot() {
     setLoading(true);
 
     try {
-      const result = await fetch(`${API_BASE_URL}/api/products/search?q=${encodeURIComponent(trimmedQuery)}`);
+      const result = await fetch(`${SEARCH_API_PATH}?q=${encodeURIComponent(trimmedQuery)}`);
       const data = (await result.json()) as SearchResponse;
 
       setResult(buildSearchResult(data));
@@ -134,12 +134,12 @@ export function FloatingRobot() {
               <Sparkles className="h-4 w-4 text-slate-500" aria-hidden="true" />
               Resposta
             </div>
-            <div aria-label="Resposta do assistente" className="min-h-0 flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/70 p-4 text-sm leading-6 text-slate-800 shadow-inner">
+            <div aria-label="Resposta do assistente" className="min-h-0 flex-1 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50/70 p-4 text-sm leading-6 text-slate-800 shadow-inner">
               <div className="flex h-full flex-col">
                 <p className="shrink-0 font-semibold text-slate-900">{loading ? "Buscando produtos..." : result?.summary ?? DEFAULT_ASSISTANT_MESSAGE}</p>
 
                 {!loading && result?.items?.length ? (
-                  <ul className="mt-4 min-h-0 flex-1 space-y-3 overflow-y-scroll pr-1">
+                  <ul className="mt-4 space-y-3">
                     {result.items.map((item, index) => (
                       <li key={item.id}>
                         <Link

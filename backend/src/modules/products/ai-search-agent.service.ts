@@ -179,34 +179,38 @@ export class AiSearchAgentService {
       return inferHintsFromText(userMessage);
     }
 
-    const completion = await this.client.chat.completions.create({
-      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-      temperature: 0,
-      messages: [
-        {
-          role: 'system',
-          content:
-            'Você é um assistente de busca de produtos. Extraia os filtros mais úteis da mensagem do usuário e chame a ferramenta interpretar_busca_produtos.',
-        },
-        {
-          role: 'user',
-          content: userMessage,
-        },
-      ],
-      tools: [SEARCH_HINT_TOOL],
-      tool_choice: 'required',
-    });
-
-    const toolCall = completion.choices?.[0]?.message?.tool_calls?.[0];
-    const functionName = toolCall?.function?.name;
-    const functionArguments = toolCall?.function?.arguments;
-
-    if (!toolCall || toolCall.type !== 'function' || functionName !== TOOL_NAME || !functionArguments) {
-      return inferHintsFromText(userMessage);
-    }
-
     try {
-      return parseToolArguments(functionArguments);
+      const completion = await this.client.chat.completions.create({
+        model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+        temperature: 0,
+        messages: [
+          {
+            role: 'system',
+            content:
+              'Você é um assistente de busca de produtos. Extraia os filtros mais úteis da mensagem do usuário e chame a ferramenta interpretar_busca_produtos.',
+          },
+          {
+            role: 'user',
+            content: userMessage,
+          },
+        ],
+        tools: [SEARCH_HINT_TOOL],
+        tool_choice: 'required',
+      });
+
+      const toolCall = completion.choices?.[0]?.message?.tool_calls?.[0];
+      const functionName = toolCall?.function?.name;
+      const functionArguments = toolCall?.function?.arguments;
+
+      if (!toolCall || toolCall.type !== 'function' || functionName !== TOOL_NAME || !functionArguments) {
+        return inferHintsFromText(userMessage);
+      }
+
+      try {
+        return parseToolArguments(functionArguments);
+      } catch {
+        return inferHintsFromText(userMessage);
+      }
     } catch {
       return inferHintsFromText(userMessage);
     }
