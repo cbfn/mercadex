@@ -2,18 +2,18 @@
 
 ---
 <!-- ci-auto-entry-start: frontend -->
-## Frontend — 2026-05-17 19:18:41 UTC — [ver execução](https://github.com/cbfn/mercadex/actions/runs/26000248710)
+## Frontend — 2026-05-17 21:53:11 UTC — [ver execução](https://github.com/cbfn/mercadex/actions/runs/26003755822)
 
-- **Cobertura (lines):** 98.41%
-- **Total de testes (statements):** 486
+- **Cobertura (lines):** 97.18%
+- **Total de testes (statements):** 548
 - **Status:** ✅ sucesso
 
 | Métrica     | O que mede | Cobertura | Threshold |
 |-------------|------------|-----------|-----------|
-| Statements  | Cada instrução executável do código | 98.14% | 80% |
-| Branches    | Caminhos de condicionais (if/else, switch, ternário) | 90.3% | 80% |
-| Functions   | Funções e métodos chamados ao menos uma vez | 98.01% | 80% |
-| Lines       | Linhas físicas com ao menos uma instrução executada | 98.41% | 80% |
+| Statements  | Cada instrução executável do código | 96.35% | 80% |
+| Branches    | Caminhos de condicionais (if/else, switch, ternário) | 89.44% | 80% |
+| Functions   | Funções e métodos chamados ao menos uma vez | 95.7% | 80% |
+| Lines       | Linhas físicas com ao menos uma instrução executada | 97.18% | 80% |
 
 > _Entrada gerada automaticamente pelo CI. Para análise detalhada, veja o artefato `coverage-report-frontend`._
 <!-- ci-auto-entry-end: frontend -->
@@ -173,6 +173,7 @@ npm run test:watch
 - `localStorage` limpo via `afterEach` configurado em `jest.setup.ts`
 - Formulários com `required` validados via `fireEvent.submit` (contorna validação HTML5 do jsdom)
 - CartProvider sync testado com variável de módulo que o mock de `useAuth` lê via closure
+
 
 
 
