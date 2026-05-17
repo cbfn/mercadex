@@ -2,7 +2,7 @@ name: CI — Backend
 
 on:
   push:
-    branches: [develop]
+    branches: [main,develop]
     paths:
       - 'backend/**'
       - '!backend/RELATORIO_TESTES.md'
