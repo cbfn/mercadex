@@ -7,6 +7,8 @@ import {
   UpdateProductDto,
 } from './products.dto';
 import { productsService } from './products.service';
+import { SearchProductsDto } from './search-products.dto';
+import { searchProductsService } from './search-products.service';
 
 function getAuthUser(req: Request) {
   return (req as AuthRequest).user;
@@ -14,7 +16,8 @@ function getAuthUser(req: Request) {
 
 function getRouteId(req: Request) {
   const { id } = req.params;
-  return Array.isArray(id) ? id[0] : id;
+  const raw = Array.isArray(id) ? id[0] : id;
+  return raw ?? '';
 }
 
 function getErrorResponse(error: unknown) {
@@ -58,6 +61,16 @@ function getErrorResponse(error: unknown) {
         },
       };
     }
+
+    if (error.message === 'ADMIN_USER_NOT_FOUND') {
+      return {
+        status: 500,
+        body: {
+          success: false,
+          error: { code: 'ADMIN_USER_NOT_FOUND', message: 'Usuário ADMIN não encontrado' },
+        },
+      };
+    }
   }
 
   return {
@@ -70,7 +83,35 @@ function getErrorResponse(error: unknown) {
 }
 
 export const productsController = {
+  async search(req: Request, res: Response) {
+    const parsed = SearchProductsDto.safeParse(req.query);
+
+    if (!parsed.success) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Busca inválida',
+          details: parsed.error.flatten(),
+        },
+      });
+    }
+
+    const data = await searchProductsService.execute(parsed.data);
+    return res.json({ success: true, data });
+  },
+
   async list(req: Request, res: Response) {
+    if ('id' in req.query) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'UNSUPPORTED_QUERY_PARAM',
+          message: 'Use /api/products/:id para buscar um produto específico',
+        },
+      });
+    }
+
     const parsed = ProductFiltersDto.safeParse(req.query);
 
     if (!parsed.success) {
@@ -113,7 +154,7 @@ export const productsController = {
     }
 
     try {
-      const data = await productsService.create(parsed.data, getAuthUser(req));
+      const data = await productsService.create(parsed.data);
       return res.status(201).json({ success: true, data });
     } catch (error) {
       const response = getErrorResponse(error);

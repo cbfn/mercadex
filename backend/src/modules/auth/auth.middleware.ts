@@ -25,12 +25,12 @@ export function authenticate(req: AuthRequest, res: Response, next: NextFunction
 
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET!) as {
-      sub: string;
+      sub: string | number;
       role: string;
     };
 
     req.user = {
-      id: payload.sub,
+      id: String(payload.sub),
       role: payload.role,
     };
 

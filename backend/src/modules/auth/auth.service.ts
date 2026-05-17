@@ -69,13 +69,13 @@ export const authService = {
     }
 
     const accessToken = jwt.sign(
-      { sub: user.id, role: user.role },
+      { sub: String(user.id), role: user.role },
       getJwtSecret() as jwt.Secret,
       { expiresIn: getJwtExpiresIn() },
     );
 
     const refreshToken = jwt.sign(
-      { sub: user.id },
+      { sub: String(user.id) },
       getJwtRefreshSecret() as jwt.Secret,
       { expiresIn: getJwtRefreshExpiresIn() },
     );

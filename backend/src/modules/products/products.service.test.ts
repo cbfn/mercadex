@@ -8,6 +8,7 @@ jest.mock('./products.repository', () => ({
     findById: jest.fn(),
     findCategoryById: jest.fn(),
     findCategoryByName: jest.fn(),
+    findAdminUser: jest.fn(),
     listCategories: jest.fn(),
     createCategory: jest.fn(),
     createProduct: jest.fn(),
@@ -40,82 +41,67 @@ describe('productsService', () => {
 
   it('getById retorna produto mapeado', async () => {
     mockedRepo.findById.mockResolvedValue({
-      id: 'product-1',
+      id: 1,
       price: 10,
-      seller: { id: 'seller-1', name: 'Seller', email: 'seller@test.com', avatarUrl: null },
+      seller: { id: 2, name: 'Seller', email: 'seller@test.com', avatarUrl: null },
     } as never);
 
     await expect(productsService.getById('product-1')).resolves.toMatchObject({
-      id: 'product-1',
+      id: 1,
       price: 10,
-      seller: expect.objectContaining({ id: 'seller-1' }),
+      seller: expect.objectContaining({ id: 2 }),
     });
   });
 
   it('getById retorna erro quando nao encontra', async () => {
     mockedRepo.findById.mockResolvedValue(null);
-
     await expect(productsService.getById('product-1')).rejects.toThrow('PRODUCT_NOT_FOUND');
-  });
-
-  it('create rejeita usuario sem permissao', async () => {
-    await expect(
-      productsService.create(
-        {
-          title: 'Notebook',
-          price: 10,
-          condition: 'NOVO',
-          categoryId: 'category-1',
-          stock: 1,
-          images: [],
-        } as never,
-        { id: 'user-1', role: 'CUSTOMER' },
-      ),
-    ).rejects.toThrow('FORBIDDEN');
   });
 
   it('create rejeita categoria inexistente', async () => {
     mockedRepo.findCategoryById.mockResolvedValue(null);
+    mockedRepo.findAdminUser.mockResolvedValue({ id: 1, role: 'ADMIN' } as never);
 
     await expect(
-      productsService.create(
-        {
-          title: 'Notebook',
-          price: 10,
-          condition: 'NOVO',
-          categoryId: 'category-1',
-          stock: 1,
-          images: [],
-        } as never,
-        adminUser(),
-      ),
+      productsService.create({
+        title: 'Notebook',
+        price: 10,
+        condition: 'NOVO',
+        categoryId: 'category-1',
+        stock: 1,
+        images: [],
+      } as never),
     ).rejects.toThrow('CATEGORY_NOT_FOUND');
   });
 
   it('create cria produto para admin', async () => {
-    mockedRepo.findCategoryById.mockResolvedValue({ id: 'category-1' } as never);
+    mockedRepo.findCategoryById.mockResolvedValue({ id: 1 } as never);
+    mockedRepo.findAdminUser.mockResolvedValue({
+      id: 'admin-1',
+      role: 'ADMIN',
+      name: 'Admin',
+      email: 'admin@test.com',
+      avatarUrl: null,
+    } as never);
     mockedRepo.createProduct.mockResolvedValue({
-      id: 'product-1',
+      id: 1,
       price: 10,
-      seller: { id: 'admin-1', name: 'Admin', email: 'admin@test.com', avatarUrl: null },
-      category: { id: 'category-1', name: 'Notebooks', description: null },
+      seller: { id: 1, name: 'Admin', email: 'admin@test.com', avatarUrl: null },
+      category: { id: 1, name: 'Notebooks', description: null },
       createdAt: new Date(),
       updatedAt: new Date(),
     } as never);
 
     await expect(
-      productsService.create(
-        {
-          title: 'Notebook',
-          price: 10,
-          condition: 'NOVO',
-          categoryId: 'category-1',
-          stock: 1,
-          images: [],
-        } as never,
-        adminUser(),
-      ),
-    ).resolves.toHaveProperty('id', 'product-1');
+      productsService.create({
+        title: 'Notebook',
+        price: 10,
+        condition: 'NOVO',
+        categoryId: 'category-1',
+        stock: 1,
+        images: [],
+      } as never),
+    ).resolves.toHaveProperty('id', 1);
   });
 
   it('update rejeita produto inexistente', async () => {
@@ -132,9 +118,9 @@ describe('productsService', () => {
 
   it('update rejeita categoria inexistente', async () => {
     mockedRepo.findById.mockResolvedValue({
-      id: 'product-1',
+      id: 1,
       price: 10,
-      seller: { id: 'seller-1', name: 'Seller', email: 'seller@test.com', avatarUrl: null },
+      seller: { id: 2, name: 'Seller', email: 'seller@test.com', avatarUrl: null },
     } as never);
     mockedRepo.findCategoryById.mockResolvedValue(null);
 
@@ -149,14 +135,14 @@ describe('productsService', () => {
 
   it('update altera produto para admin', async () => {
     mockedRepo.findById.mockResolvedValue({
-      id: 'product-1',
+      id: 1,
       price: 10,
-      seller: { id: 'seller-1', name: 'Seller', email: 'seller@test.com', avatarUrl: null },
+      seller: { id: 2, name: 'Seller', email: 'seller@test.com', avatarUrl: null },
     } as never);
     mockedRepo.updateProduct.mockResolvedValue({
-      id: 'product-1',
+      id: 1,
       price: 12,
-      seller: { id: 'seller-1', name: 'Seller', email: 'seller@test.com', avatarUrl: null },
+      seller: { id: 2, name: 'Seller', email: 'seller@test.com', avatarUrl: null },
     } as never);
 
     await expect(
@@ -169,9 +155,7 @@ describe('productsService', () => {
   });
 
   it('remove rejeita usuario sem permissao', async () => {
-    await expect(productsService.remove('product-1', { id: 'user-1', role: 'CUSTOMER' })).rejects.toThrow(
-      'FORBIDDEN',
-    );
+    await expect(productsService.remove('product-1', { id: 'user-2', role: 'CUSTOMER' })).rejects.toThrow('FORBIDDEN');
   });
 
   it('remove rejeita produto inexistente', async () => {
@@ -182,45 +166,40 @@ describe('productsService', () => {
 
   it('remove desativa produto', async () => {
     mockedRepo.findById.mockResolvedValue({
-      id: 'product-1',
+      id: 1,
       price: 10,
-      seller: { id: 'seller-1', name: 'Seller', email: 'seller@test.com', avatarUrl: null },
+      seller: { id: 2, name: 'Seller', email: 'seller@test.com', avatarUrl: null },
     } as never);
     mockedRepo.softDelete.mockResolvedValue({
-      id: 'product-1',
+      id: 1,
       price: 10,
-      seller: { id: 'seller-1', name: 'Seller', email: 'seller@test.com', avatarUrl: null },
+      seller: { id: 2, name: 'Seller', email: 'seller@test.com', avatarUrl: null },
     } as never);
 
-    await expect(productsService.remove('product-1', adminUser())).resolves.toHaveProperty(
-      'id',
-      'product-1',
-    );
+    await expect(productsService.remove('product-1', adminUser())).resolves.toHaveProperty('id', 1);
   });
 
   it('listCategories retorna resultado do repository', async () => {
-    mockedRepo.listCategories.mockResolvedValue([{ id: '1', name: 'Notebooks' }] as never);
+    mockedRepo.listCategories.mockResolvedValue([{ id: 1, name: 'Notebooks' }] as never);
 
-    await expect(productsService.listCategories()).resolves.toEqual([
-      { id: '1', name: 'Notebooks' },
-    ]);
+    await expect(productsService.listCategories()).resolves.toEqual([{ id: 1, name: 'Notebooks' }]);
   });
 
   it('createCategory rejeita usuario sem permissao', async () => {
     await expect(
       productsService.createCategory({ name: 'Notebooks' } as never, {
-        id: 'user-1',
+        id: 'user-2',
         role: 'CUSTOMER',
       }),
     ).rejects.toThrow('FORBIDDEN');
   });
 
   it('createCategory rejeita categoria duplicada', async () => {
-    mockedRepo.findCategoryByName.mockResolvedValue({ id: 'category-1' } as never);
+    mockedRepo.findCategoryByName.mockResolvedValue({ id: 1 } as never);
 
-    await expect(
-      productsService.createCategory({ name: 'Notebooks' } as never, adminUser()),
-    ).rejects.toThrow('CATEGORY_ALREADY_EXISTS');
+    await expect(productsService.createCategory({ name: 'Notebooks' } as never, adminUser())).rejects.toThrow(
+      'CATEGORY_ALREADY_EXISTS',
+    );
   });
 
   it('lista produtos com itens reais e converte preco numerico', async () => {
@@ -281,6 +260,7 @@ describe('productsService', () => {
 
   it('create retorna null quando repositorio retorna null inesperadamente', async () => {
     mockedRepo.findCategoryById.mockResolvedValue({ id: 'category-1' } as never);
+    mockedRepo.findAdminUser.mockResolvedValue({ id: 'admin-1', role: 'ADMIN' } as never);
     mockedRepo.createProduct.mockResolvedValue(null as never);
 
     const result = await productsService.create(
@@ -292,7 +272,6 @@ describe('productsService', () => {
         stock: 1,
         images: [],
       } as never,
-      { id: 'admin-1', role: 'ADMIN' },
     );
 
     expect(result).toBeNull();
@@ -300,10 +279,10 @@ describe('productsService', () => {
 
   it('createCategory cria categoria para admin', async () => {
     mockedRepo.findCategoryByName.mockResolvedValue(null);
-    mockedRepo.createCategory.mockResolvedValue({ id: 'category-1', name: 'Notebooks' } as never);
+    mockedRepo.createCategory.mockResolvedValue({ id: 1, name: 'Notebooks' } as never);
 
     await expect(productsService.createCategory({ name: 'Notebooks' } as never, adminUser())).resolves.toEqual({
-      id: 'category-1',
+      id: 1,
       name: 'Notebooks',
     });
   });

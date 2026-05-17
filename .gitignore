@@ -20,3 +20,7 @@ test-results/
 *.swp
 *.swo
 *~
+
+# Repositório git aninhado (subprojeto separado)
+mercadex/
+mercadex.zip

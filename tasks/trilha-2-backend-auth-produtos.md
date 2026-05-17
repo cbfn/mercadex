@@ -10,6 +10,8 @@
 > Cada módulo segue o padrão: controller → service → repository → dto → routes → test.
 > Regra de documentação: novos módulos, funções públicas, contratos de API e utilitários compartilhados devem ser documentados com JSDoc.
 
+> Nota: este documento é histórico. O estado atual do backend já possui os módulos `auth`, `products`, busca assistida e persistência base implementados.
+
 ---
 
 ## Contexto
@@ -184,6 +186,7 @@ npx prisma generate
 ```
 
 **Commit:**
+
 ```bash
 git add prisma/
 git commit -m "feat: schema Prisma completo (User, Product, Cart, Order)"
@@ -389,6 +392,7 @@ app.use('/api/auth', authRoutes);
 ```
 
 **Commit:**
+
 ```bash
 git add src/modules/auth/
 git commit -m "feat: modulo de autenticacao (register, login, JWT unico 7d)"
@@ -457,6 +461,7 @@ paginação, formatação de resposta.
 Seguir o mesmo padrão do módulo auth.
 
 **Commit:**
+
 ```bash
 git add src/modules/products/
 git commit -m "feat: modulo de produtos e categorias com CRUD completo"
@@ -500,7 +505,7 @@ describe('POST /api/auth/register', () => {
 });
 ```
 
-Criar `backend/jest.config.js`:
+Criar `backend/jest.config.cjs`:
 
 ```js
 /** @type {import('jest').Config} */
@@ -516,8 +521,9 @@ module.exports = {
 ```
 
 **Commit:**
+
 ```bash
-git add src/modules/auth/auth.test.ts src/modules/products/products.test.ts jest.config.js
+git add src/modules/auth/auth.test.ts src/modules/products/products.test.ts jest.config.cjs
 git commit -m "test: testes de integracao para auth e produtos (cobertura >= 80%)"
 ```
 

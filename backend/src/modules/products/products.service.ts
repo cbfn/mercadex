@@ -66,17 +66,20 @@ export const productsService = {
     return mapProduct(product);
   },
 
-  async create(input: CreateProductInput, user: AuthRequest['user']) {
-    assertAdminUser(user);
-
+  async create(input: CreateProductInput) {
     const category = await productsRepository.findCategoryById(input.categoryId);
     if (!category) {
       throw new Error('CATEGORY_NOT_FOUND');
     }
 
+    const adminUser = await productsRepository.findAdminUser();
+    if (!adminUser) {
+      throw new Error('ADMIN_USER_NOT_FOUND');
+    }
+
     const product = await productsRepository.createProduct({
       ...input,
-      sellerId: user.id,
+      sellerId: adminUser.id,
     });
 
     return mapProduct(product);

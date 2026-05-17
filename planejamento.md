@@ -2,7 +2,7 @@
 
 **Data:** 12 de Maio de 2026
 **Versão:** 2.0
-**Status:** Fase 1 concluída. Aguardando autorização para execução.
+**Status:** Documento de planejamento histórico. O frontend está concluído e o backend já possui auth, produtos e busca assistida implementados.
 
 > ⚠️ Nenhuma alteração será feita no sistema sem autorização expressa do usuário.
 
@@ -11,9 +11,9 @@
 ## Visão Geral
 
 O Mercadex é um marketplace de eletrônicos. O projeto possui um frontend Next.js 16.2
-funcional com 163 testes unitários e cobertura acima de 80%, e um backend base já iniciado com Prisma 6.19.3 e Neon.
-Este planejamento cobre a limpeza do repositório, atualização de dependências e
-desenvolvimento completo do produto.
+consolidado com 165 testes unitários e cobertura acima de 80%, e um backend em Express + Prisma 7.8.0
+com autenticação, catálogo de produtos, busca dedicada e assistente virtual já implementados.
+Este planejamento permanece como histórico das trilhas iniciais e ainda cobre a evolução do produto.
 
 **Repositório:** `github.com/cbfn/mercadex`
 **Branch principal:** `main`
@@ -39,7 +39,7 @@ a Fase de Integração (Trilha 5).
 
 ## Dependências entre Trilhas
 
-```
+```text
 Trilha 1 (Limpeza + Infra)
     ↓ schema.prisma + estrutura de pastas prontos
 Trilha 2 (Backend Auth + Produtos) ──────────────────────────────┐
@@ -72,6 +72,7 @@ git commit -m "chore: remove arquivos .DS_Store"
 ```
 
 **Convenção de commits:**
+
 - `feat:` nova funcionalidade
 - `fix:` correção de bug
 - `chore:` limpeza, configuração, sem impacto funcional
@@ -80,6 +81,7 @@ git commit -m "chore: remove arquivos .DS_Store"
 - `docs:` documentação
 
 **Regra de documentação:**
+
 - Todo novo módulo, função pública, contrato de API e utilitário compartilhado deve ser documentado com JSDoc.
 - A documentação deve explicar intenção, parâmetros, retorno e efeitos colaterais quando existirem.
 
@@ -101,7 +103,7 @@ git commit -m "chore: remove arquivos .DS_Store"
 
 Após todas as trilhas concluídas:
 
-```
+```text
 mercadex/
 ├── README.md
 ├── CLAUDE.md
@@ -129,7 +131,7 @@ mercadex/
 │   ├── package.json
 │   ├── next.config.mjs
 │   ├── tsconfig.json
-│   ├── jest.config.js
+│   ├── jest.config.cjs
 │   ├── jest.setup.js
 │   ├── playwright.config.ts
 │   └── src/
@@ -191,7 +193,7 @@ mercadex/
 | 1.4 | 1 | Reorganização da árvore de diretórios | 1h | 1.3 |
 | 1.5 | 1 | Migração Vitest → Jest | 2h | 1.4 |
 | 1.6 | 1 | Atualização de dependências (Next.js 16.2, React 19) | 3h | 1.5 |
-| 1.7 | 1 | Setup do backend (package.json, tsconfig, Prisma 6.19.3 + Neon) | 2h | 1.4 |
+| 1.7 | 1 | Setup do backend (package.json, tsconfig, Prisma 7.8.0 + Neon) | 2h | 1.4 |
 | 2.1 | 2 | Schema Prisma completo | 2h | 1.7 |
 | 2.2 | 2 | Módulo Auth (register, login, JWT, middleware) | 1 dia | 2.1 |
 | 2.3 | 2 | Módulo Produtos (CRUD + categorias) | 1 dia | 2.2 |

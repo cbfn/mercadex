@@ -19,11 +19,8 @@ const productInclude = {
 } as const;
 
 function buildCategoryFilter(category: string) {
-  return {
-    is: {
-      OR: [{ id: category }, { name: category }],
-    },
-  };
+  // Com IDs UUID, filtro de categoria por query string deve usar nome.
+  return { is: { name: String(category) } };
 }
 
 function buildProductWhere(filters: ProductFiltersInput) {
@@ -34,20 +31,20 @@ function buildProductWhere(filters: ProductFiltersInput) {
       : {}),
     ...(filters.search
       ? {
-          OR: [
-            { title: { contains: filters.search, mode: 'insensitive' as const } },
-            { description: { contains: filters.search, mode: 'insensitive' as const } },
-          ],
-        }
+        OR: [
+          { title: { contains: filters.search, mode: 'insensitive' as const } },
+          { description: { contains: filters.search, mode: 'insensitive' as const } },
+        ],
+      }
       : {}),
     ...(filters.condition ? { condition: filters.condition } : {}),
     ...(filters.minPrice !== undefined || filters.maxPrice !== undefined
       ? {
-          price: {
-            ...(filters.minPrice !== undefined ? { gte: filters.minPrice } : {}),
-            ...(filters.maxPrice !== undefined ? { lte: filters.maxPrice } : {}),
-          },
-        }
+        price: {
+          ...(filters.minPrice !== undefined ? { gte: filters.minPrice } : {}),
+          ...(filters.maxPrice !== undefined ? { lte: filters.maxPrice } : {}),
+        },
+      }
       : {}),
   };
 }
@@ -94,6 +91,12 @@ export const productsRepository = {
 
   findCategoryByName(name: string) {
     return prisma.category.findUnique({ where: { name } });
+  },
+
+  findAdminUser() {
+    return prisma.user.findFirst({
+      where: { role: 'ADMIN' },
+    });
   },
 
   listCategories() {

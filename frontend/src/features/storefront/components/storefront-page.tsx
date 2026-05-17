@@ -26,7 +26,15 @@ export function StorefrontPage() {
       <header className="sticky top-0 z-40 border-b border-white/50 bg-white/80 backdrop-blur-xl">
         <div className="container flex h-20 items-center gap-4">
           <Link href="/" className="shrink-0" aria-label="Mercadex">
-            <Image src={logoMercadex} alt="Mercadex" width={220} height={64} priority />
+            <Image
+              src={logoMercadex}
+              alt="Mercadex"
+              width={220}
+              height={64}
+              priority
+              className="h-auto w-auto"
+              sizes="220px"
+            />
           </Link>
 
           <div className="relative hidden flex-1 md:block">
