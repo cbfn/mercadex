@@ -27,7 +27,7 @@ function getJwtRefreshExpiresIn() {
 }
 
 function publicUser(user: {
-  id: number;
+  id: string;
   name: string | null;
   email: string;
   role: string;
@@ -93,7 +93,7 @@ export const authService = {
       getJwtRefreshSecret() as jwt.Secret,
     ) as { sub: string };
 
-    const user = await authRepository.findById(Number(payload.sub));
+    const user = await authRepository.findById(payload.sub);
     if (!user) {
       throw new Error('USER_NOT_FOUND');
     }

@@ -170,7 +170,7 @@ describe('productsController', () => {
         title: 'Notebook',
         price: 10,
         condition: 'NOVO',
-        categoryId: 3,
+        categoryId: '550e8400-e29b-41d4-a716-446655440000',
         stock: 1,
         images: [],
       },
@@ -186,7 +186,7 @@ describe('productsController', () => {
         title: 'Notebook',
         price: 10,
         condition: 'NOVO',
-        categoryId: 3,
+        categoryId: '550e8400-e29b-41d4-a716-446655440000',
         stock: 1,
         images: [],
       }),
@@ -196,7 +196,7 @@ describe('productsController', () => {
   it('update mapeia categoria inexistente', async () => {
     const req = {
       params: { id: '1' },
-      body: { categoryId: 3 },
+      body: { categoryId: '550e8400-e29b-41d4-a716-446655440000' },
     } as unknown as Request;
     const res = createRes();
     (productsService.update as jest.Mock).mockRejectedValueOnce(new Error('CATEGORY_NOT_FOUND'));

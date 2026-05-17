@@ -111,7 +111,7 @@ const SEARCH_HINT_TOOL = {
       },
     },
   },
-} satisfies OpenAI.ChatCompletionTool;
+};
 
 function parseToolArguments(rawArguments: string): SearchHints {
   const parsed = JSON.parse(rawArguments) as unknown;
@@ -119,14 +119,21 @@ function parseToolArguments(rawArguments: string): SearchHints {
 }
 
 export class AiSearchAgentService {
-  private readonly client: OpenAI;
+  private readonly client?: OpenAI;
 
   constructor(client?: OpenAI) {
-    this.client = client ?? new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    if (client) {
+      this.client = client;
+      return;
+    }
+
+    if (process.env.OPENAI_API_KEY) {
+      this.client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    }
   }
 
   async run(userMessage: string): Promise<SearchHints> {
-    if (!process.env.OPENAI_API_KEY) {
+    if (!process.env.OPENAI_API_KEY || !this.client) {
       return inferHintsFromText(userMessage);
     }
 

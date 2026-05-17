@@ -85,7 +85,7 @@ describe('authenticate', () => {
 
 describe('requireAdmin', () => {
   it('retorna 403 quando usuario nao e admin', () => {
-    const req = { user: { id: 'user-1', role: 'CUSTOMER' } } as AuthRequest;
+    const req = { user: { id: 'user-1', role: 'CUSTOMER' } } as unknown as AuthRequest;
     const res = createRes();
     const next = createNext();
 
@@ -112,7 +112,7 @@ describe('requireAdmin', () => {
   });
 
   it('chama next para usuario admin', () => {
-    const req = { user: { id: 'admin-1', role: 'ADMIN' } } as AuthRequest;
+    const req = { user: { id: 'admin-1', role: 'ADMIN' } } as unknown as AuthRequest;
     const res = createRes();
     const next = createNext();
 

@@ -192,7 +192,7 @@ describe('Products routes', () => {
     expect(res.body.success).toBe(true);
     expect(mockedProductsService.createCategory).toHaveBeenCalledWith(
       { name: 'Notebooks', description: 'Categoria teste' },
-      expect.any(Object),
+      undefined,
     );
   });
 });

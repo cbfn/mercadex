@@ -17,7 +17,7 @@ function getAuthUser(req: Request) {
 function getRouteId(req: Request) {
   const { id } = req.params;
   const raw = Array.isArray(id) ? id[0] : id;
-  return raw ? Number(raw) : NaN;
+  return raw ?? '';
 }
 
 function getErrorResponse(error: unknown) {
