@@ -1,6 +1,6 @@
 import { Condition } from "@prisma/client";
 import "dotenv/config";
-import { prisma } from "../dist/shared/db/prisma.js";
+import { prisma } from "../src/shared/db/prisma";
 
 async function main() {
   // Buscar o usuário ADMIN existente
