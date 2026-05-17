@@ -3,7 +3,10 @@ import cors from 'cors';
 import helmet from 'helmet';
 import "dotenv/config";
 import authRoutes from './modules/auth/auth.routes';
+import { ordersRouter } from './modules/orders/orders.routes';
 import { categoriesRouter, productsRouter } from './modules/products/products.routes';
+import { reviewsRouter } from './modules/reviews/reviews.routes';
+import { swaggerUiMiddleware } from './shared/swagger/swagger';
 
 const app = express();
 const port = Number(process.env.PORT || 3001);
@@ -11,14 +14,19 @@ const port = Number(process.env.PORT || 3001);
 app.use(helmet());
 app.use(
   cors({
-    origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+    origin: process.env.CORS_ORIGIN
+      ? process.env.CORS_ORIGIN.split(',').map((value) => value.trim())
+      : ['http://localhost:3000', 'http://127.0.0.1:3000'],
     credentials: true,
   }),
 );
 app.use(express.json());
+app.use('/api-docs', ...swaggerUiMiddleware);
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productsRouter);
 app.use('/api/categories', categoriesRouter);
+app.use('/api/orders', ordersRouter);
+app.use('/api', reviewsRouter);
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

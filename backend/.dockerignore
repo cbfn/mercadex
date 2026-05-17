@@ -1,0 +1,30 @@
+# Dependências (serão instaladas dentro do container)
+node_modules
+
+# Build output (será gerado dentro do container)
+dist
+
+# Testes e cobertura
+coverage
+*.test.ts
+jest.config.cjs
+
+# Ambiente local
+.env
+.env.local
+
+# IDE / editor
+.vscode
+.idea
+*.swp
+
+# Git
+.git
+.gitignore
+
+# Docs
+*.md
+bruno
+
+# Logs
+npm-debug.log*

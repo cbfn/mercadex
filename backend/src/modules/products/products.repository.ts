@@ -18,17 +18,8 @@ const productInclude = {
   category: true,
 } as const;
 
-function buildCategoryFilter(category: string | number) {
-  if (typeof category === 'number') {
-    return { is: { OR: [{ id: category }, { name: String(category) }] } };
-  }
-
-  // se for string numérica, usa id; caso contrário, filtra apenas por nome
-  if (/^\d+$/.test(category)) {
-    const id = Number(category);
-    return { is: { OR: [{ id }, { name: String(category) }] } };
-  }
-
+function buildCategoryFilter(category: string) {
+  // Com IDs UUID, filtro de categoria por query string deve usar nome.
   return { is: { name: String(category) } };
 }
 
@@ -87,14 +78,14 @@ export const productsRepository = {
     return { items, total };
   },
 
-  findById(id: number) {
+  findById(id: string) {
     return prisma.product.findFirst({
       where: { id, active: true },
       include: productInclude,
     });
   },
 
-  findCategoryById(id: number) {
+  findCategoryById(id: string) {
     return prisma.category.findUnique({ where: { id } });
   },
 
@@ -118,7 +109,7 @@ export const productsRepository = {
     return prisma.category.create({ data });
   },
 
-  createProduct(data: CreateProductInput & { sellerId: number }) {
+  createProduct(data: CreateProductInput & { sellerId: string }) {
     return prisma.product.create({
       data: {
         ...data,
@@ -130,7 +121,7 @@ export const productsRepository = {
     });
   },
 
-  updateProduct(id: number, data: UpdateProductInput) {
+  updateProduct(id: string, data: UpdateProductInput) {
     return prisma.product.update({
       where: { id },
       data: {
@@ -142,7 +133,7 @@ export const productsRepository = {
     });
   },
 
-  softDelete(id: number) {
+  softDelete(id: string) {
     return prisma.product.update({
       where: { id },
       data: { active: false },

@@ -48,10 +48,10 @@ describe('authRepository', () => {
   it('findById consulta o usuario pelo id', async () => {
     mockPrisma.user.findUnique.mockResolvedValue({ id: 1 });
 
-    await authRepository.findById(1);
+    await authRepository.findById('user-1');
 
     expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({
-      where: { id: 1 },
+      where: { id: 'user-1' },
     });
   });
 });

@@ -5,7 +5,7 @@ export const CreateProductDto = z.object({
   description: z.string().optional(),
   price: z.number().positive(),
   condition: z.enum(['NOVO', 'EXCELENTE', 'BOM', 'USADO']),
-  categoryId: z.number().int().positive(),
+  categoryId: z.string().uuid(),
   stock: z.number().int().min(0).default(0),
   images: z.array(z.string().url()).default([]),
 });

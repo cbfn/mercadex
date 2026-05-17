@@ -15,8 +15,11 @@
 ## Contexto
 
 Neste ponto, o projeto tem:
-- Backend com Auth, Produtos, Carrinho, Pedidos e Stripe (Trilhas 2 e 3)
-- Frontend com Login, Registro e Dashboard Admin usando mocks (Trilha 4)
+- Backend com Auth, Produtos, Pedidos, Reviews e AI (Trilhas 2 e 3)
+- Frontend com Login, Registro, Checkout PIX, Reviews e Chat IA usando mocks (Trilha 4)
+
+**MVP Lean:** sem Stripe, sem carrinho no backend (localStorage), sem dashboard admin.
+Ver `docs/ADR.md` ADR-007 a ADR-010.
 
 Esta trilha substitui os mocks pela API real, adiciona JSDoc, garante
 cobertura de testes ≥ 80% e atualiza o CI/CD.
@@ -88,225 +91,75 @@ export const productsApi = {
 };
 ```
 
-### 5.1.2 — API de Carrinho
+### 5.1.2 — API de Reviews e Chat
 
-Criar `frontend/src/shared/lib/api/cart.ts`:
+Criar `frontend/src/shared/lib/api/reviews.ts`:
 
 ```typescript
 import { apiRequest } from '../api-client';
 
-export const cartApi = {
-  get: () => apiRequest<{ success: boolean; data: { items: CartItem[]; total: number } }>('/api/cart'),
+export interface Review {
+  id: string;
+  title: string;
+  body: string;
+  rating: number;
+  user: { name: string };
+  createdAt: string;
+}
 
-  addItem: (productId: string, quantity: number) =>
-    apiRequest('/api/cart/items', {
-      method: 'POST',
-      body: JSON.stringify({ productId, quantity }),
-    }),
+export const reviewsApi = {
+  list: (productId: string) =>
+    apiRequest<{ success: boolean; data: Review[] }>(
+      `/api/products/${productId}/reviews`,
+      { skipAuth: true }
+    ),
 
-  updateItem: (itemId: string, quantity: number) =>
-    apiRequest(`/api/cart/items/${itemId}`, {
-      method: 'PUT',
-      body: JSON.stringify({ quantity }),
-    }),
+  create: (productId: string, data: { title: string; body: string; rating: number }) =>
+    apiRequest<{ success: boolean; data: Review }>(
+      `/api/products/${productId}/reviews`,
+      { method: 'POST', body: JSON.stringify(data) }
+    ),
 
-  removeItem: (itemId: string) =>
-    apiRequest(`/api/cart/items/${itemId}`, { method: 'DELETE' }),
-
-  clear: () => apiRequest('/api/cart', { method: 'DELETE' }),
+  delete: (reviewId: string) =>
+    apiRequest(`/api/reviews/${reviewId}`, { method: 'DELETE' }),
 };
 ```
 
-### 5.1.3 — Atualizar hooks do admin para usar API real
-
-Atualizar `frontend/src/features/admin/model/use-products-admin.ts`:
+Criar `frontend/src/shared/lib/api/chat.ts`:
 
 ```typescript
-'use client';
+import { apiRequest } from '../api-client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { productsApi, type Product } from '@/shared/lib/api/products';
-
-export function useProductsAdmin() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchProducts = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const res = await productsApi.list({ limit: 100 });
-      setProducts(res.data);
-    } catch {
-      setError('Erro ao carregar produtos');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetchProducts(); }, [fetchProducts]);
-
-  const deleteProduct = async (id: string) => {
-    await productsApi.delete(id);
-    setProducts((prev) => prev.filter((p) => p.id !== id));
-  };
-
-  const createProduct = async (data: Parameters<typeof productsApi.create>[0]) => {
-    const res = await productsApi.create(data);
-    setProducts((prev) => [...prev, res.data]);
-    return res.data;
-  };
-
-  return { products, isLoading, error, deleteProduct, createProduct, refetch: fetchProducts };
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
 }
+
+export const chatApi = {
+  send: (productId: string, message: string, history: ChatMessage[]) =>
+    apiRequest<{ success: boolean; data: { reply: string } }>(
+      `/api/products/${productId}/chat`,
+      { method: 'POST', body: JSON.stringify({ message, history }), skipAuth: true }
+    ),
+
+  getAiSummary: (productId: string) =>
+    apiRequest<{ success: boolean; data: { summary: string } }>(
+      `/api/products/${productId}/ai-summary`,
+      { skipAuth: true }
+    ),
+};
 ```
 
-### 5.1.4 — Atualizar CartContext para usar API real
+### 5.1.3 — CartContext mantém-se 100% localStorage (sem sync com backend)
 
-Modificar `frontend/src/features/cart/model/cart-context.tsx` para sincronizar
-com o backend quando o usuário estiver logado, mantendo localStorage como fallback
-para usuários não autenticados.
+O `frontend/src/features/cart/model/cart-context.tsx` **não precisa de alterações**.
+O carrinho é totalmente client-side via Zustand + localStorage (ADR-007).
+O checkout cria o pedido via `POST /api/orders` com os itens do store.
 
 **Commit:**
 ```bash
-git add src/shared/lib/api/ src/features/admin/model/ src/features/cart/
-git commit -m "feat: integra frontend com API real (produtos, carrinho, pedidos)"
-```
-
----
-
-## Tarefa 5.2 — Integração Stripe no Frontend
-
-**Tempo:** 1 dia
-
-### Instalação
-
-```bash
-cd frontend
-npm install @stripe/stripe-js@^5.0.0 @stripe/react-stripe-js@^3.0.0
-```
-
-### Variável de ambiente
-
-```bash
-# frontend/.env.local
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
-NEXT_PUBLIC_API_URL=http://localhost:3001
-```
-
-### stripe-payment-form.tsx
-
-```tsx
-'use client';
-
-import { useState } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
-import {
-  Elements,
-  PaymentElement,
-  useStripe,
-  useElements,
-} from '@stripe/react-stripe-js';
-import { apiRequest } from '@/shared/lib/api-client';
-
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
-
-interface CheckoutFormProps {
-  clientSecret: string;
-  orderId: string;
-  onSuccess: () => void;
-}
-
-function CheckoutForm({ clientSecret, orderId, onSuccess }: CheckoutFormProps) {
-  const stripe = useStripe();
-  const elements = useElements();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!stripe || !elements) return;
-
-    setIsLoading(true);
-    setError('');
-
-    const { error: stripeError } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        return_url: `${window.location.origin}/pedido/${orderId}/confirmacao`,
-      },
-    });
-
-    if (stripeError) {
-      setError(stripeError.message ?? 'Erro no pagamento');
-      setIsLoading(false);
-    } else {
-      onSuccess();
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit}>
-      <PaymentElement />
-      {error && <p role="alert">{error}</p>}
-      <button type="submit" disabled={isLoading || !stripe}>
-        {isLoading ? 'Processando...' : 'Confirmar pagamento'}
-      </button>
-    </form>
-  );
-}
-
-interface StripePaymentFormProps {
-  shippingAddress: object;
-  onSuccess: () => void;
-}
-
-export function StripePaymentForm({ shippingAddress, onSuccess }: StripePaymentFormProps) {
-  const [clientSecret, setClientSecret] = useState('');
-  const [orderId, setOrderId] = useState('');
-  const [isCreating, setIsCreating] = useState(false);
-
-  const initCheckout = async () => {
-    setIsCreating(true);
-    try {
-      const res = await apiRequest<{
-        success: boolean;
-        data: { clientSecret: string; orderId: string };
-      }>('/api/payments/checkout', {
-        method: 'POST',
-        body: JSON.stringify({ shippingAddress }),
-      });
-      setClientSecret(res.data.clientSecret);
-      setOrderId(res.data.orderId);
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
-  if (!clientSecret) {
-    return (
-      <button onClick={initCheckout} disabled={isCreating}>
-        {isCreating ? 'Preparando pagamento...' : 'Ir para pagamento'}
-      </button>
-    );
-  }
-
-  return (
-    <Elements stripe={stripePromise} options={{ clientSecret }}>
-      <CheckoutForm
-        clientSecret={clientSecret}
-        orderId={orderId}
-        onSuccess={onSuccess}
-      />
-    </Elements>
-  );
-}
-```
-
-**Commit:**
-```bash
-git add src/features/checkout/
-git commit -m "feat: formulario de pagamento Stripe (cartao e PIX)"
+git add src/shared/lib/api/ src/features/
+git commit -m "feat: integra frontend com API real (produtos, reviews, chat, pedidos)"
 ```
 
 ---
@@ -388,10 +241,13 @@ frontend/src/features/
 │   ├── components/login-form.test.tsx      ← já criado na Trilha 4
 │   ├── components/register-form.test.tsx   ← já criado na Trilha 4
 │   └── model/auth-context.test.tsx
-└── admin/
-    ├── components/product-form.test.tsx
-    ├── components/products-table.test.tsx
-    └── model/use-products-admin.test.ts
+├── product-detail/
+│   ├── components/review-form.test.tsx
+│   ├── components/review-list.test.tsx
+│   ├── components/ai-summary-button.test.tsx
+│   └── components/product-chat-drawer.test.tsx
+└── checkout/
+    └── components/checkout-page.test.tsx    ← já criado na Trilha 4
 ```
 
 ### auth-context.test.tsx
@@ -400,12 +256,10 @@ frontend/src/features/
 import { render, screen, act } from '@testing-library/react';
 import { AuthProvider, useAuth } from './auth-context';
 
-// Mock da API
 jest.mock('@/shared/lib/api/auth', () => ({
   authApi: {
-    me: jest.fn().mockRejectedValue(new Error('Not authenticated')),
-    login: jest.fn().mockResolvedValue({ user: { id: '1', name: 'Test', role: 'CUSTOMER' } }),
-    logout: jest.fn().mockResolvedValue(undefined),
+    login: jest.fn().mockResolvedValue({ token: 'tok', user: { id: '1', name: 'Test', role: 'CUSTOMER' } }),
+    logout: jest.fn(),
     register: jest.fn().mockResolvedValue(undefined),
   },
 }));
@@ -417,47 +271,11 @@ function TestComponent() {
 }
 
 describe('AuthContext', () => {
-  it('inicia sem usuario autenticado', async () => {
+  it('inicia sem usuario autenticado quando localStorage está vazio', async () => {
     await act(async () => {
       render(<AuthProvider><TestComponent /></AuthProvider>);
     });
     expect(screen.getByText('Não logado')).toBeInTheDocument();
-  });
-});
-```
-
-### use-products-admin.test.ts
-
-```typescript
-import { renderHook, waitFor } from '@testing-library/react';
-import { useProductsAdmin } from './use-products-admin';
-
-jest.mock('@/shared/lib/api/products', () => ({
-  productsApi: {
-    list: jest.fn().mockResolvedValue({
-      data: [{ id: '1', title: 'iPhone', price: 4999, stock: 10 }],
-    }),
-    delete: jest.fn().mockResolvedValue(undefined),
-  },
-}));
-
-describe('useProductsAdmin', () => {
-  it('carrega produtos da API', async () => {
-    const { result } = renderHook(() => useProductsAdmin());
-
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
-
-    expect(result.current.products).toHaveLength(1);
-    expect(result.current.products[0].title).toBe('iPhone');
-  });
-
-  it('remove produto da lista ao deletar', async () => {
-    const { result } = renderHook(() => useProductsAdmin());
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
-
-    await result.current.deleteProduct('1');
-
-    expect(result.current.products).toHaveLength(0);
   });
 });
 ```
@@ -472,8 +290,8 @@ npm run test:coverage
 
 **Commit:**
 ```bash
-git add src/features/auth/model/ src/features/admin/
-git commit -m "test: cobertura de testes >= 80% para auth e admin"
+git add src/features/
+git commit -m "test: cobertura de testes >= 80% para auth, reviews e chat"
 ```
 
 ---
@@ -586,7 +404,6 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JWT_SECRET: ci_test_secret_nao_usar_em_producao
-          JWT_REFRESH_SECRET: ci_test_refresh_secret_nao_usar_em_producao
           NODE_ENV: test
 ```
 
@@ -609,8 +426,8 @@ Criar `.env.example` na raiz do projeto:
 # URL da API backend
 NEXT_PUBLIC_API_URL=http://localhost:3001
 
-# Chave pública do Stripe (segura para expor no frontend)
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+# Chave PIX estática (fake para MVP)
+NEXT_PUBLIC_PIX_KEY=00020126360014br.gov.bcb.pix...
 
 # ─── Backend ─────────────────────────────────────────────────────────────────
 # Neon Postgres
@@ -618,13 +435,11 @@ DATABASE_URL=postgresql://USER:PASSWORD@ep-your-project-pooler.us-east-2.aws.neo
 
 # JWT — gerar com: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 JWT_SECRET=
-JWT_REFRESH_SECRET=
-JWT_EXPIRES_IN=15m
-JWT_REFRESH_EXPIRES_IN=7d
+JWT_EXPIRES_IN=7d
 
-# Stripe — obter em dashboard.stripe.com/test/apikeys
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
+# LLM Provider (para features de IA)
+LLM_PROVIDER_API_KEY=
+LLM_PROVIDER_MODEL=gpt-4o-mini
 
 # Servidor
 PORT=3001
@@ -641,12 +456,12 @@ git commit -m "docs: documenta todas as variaveis de ambiente necessarias"
 
 ## Checklist Final da Trilha 5
 
-- [ ] Mocks substituídos pela API real (produtos, carrinho, pedidos)
-- [ ] Stripe integrado no frontend (formulário de pagamento)
+- [ ] Mocks substituídos pela API real (produtos, reviews, chat, pedidos)
+- [ ] API de reviews e chat integrados no frontend
 - [ ] JSDoc adicionado em todos os arquivos
 - [ ] Cobertura de testes ≥ 80% (frontend e backend)
 - [ ] CI/CD atualizado com job de backend + Neon
-- [ ] `.env.example` documentado
+- [ ] `.env.example` documentado (sem Stripe, com LLM_PROVIDER)
 - [ ] `npm run build` passando (frontend)
 - [ ] `npm run test:coverage` passando (frontend e backend)
 - [ ] Nenhuma secret commitada

@@ -170,7 +170,7 @@ describe('productsController', () => {
         title: 'Notebook',
         price: 10,
         condition: 'NOVO',
-        categoryId: 3,
+        categoryId: '550e8400-e29b-41d4-a716-446655440000',
         stock: 1,
         images: [],
       },
@@ -186,7 +186,7 @@ describe('productsController', () => {
         title: 'Notebook',
         price: 10,
         condition: 'NOVO',
-        categoryId: 3,
+        categoryId: '550e8400-e29b-41d4-a716-446655440000',
         stock: 1,
         images: [],
       }),
@@ -196,7 +196,7 @@ describe('productsController', () => {
   it('update mapeia categoria inexistente', async () => {
     const req = {
       params: { id: '1' },
-      body: { categoryId: 3 },
+      body: { categoryId: '550e8400-e29b-41d4-a716-446655440000' },
     } as unknown as Request;
     const res = createRes();
     (productsService.update as jest.Mock).mockRejectedValueOnce(new Error('CATEGORY_NOT_FOUND'));
@@ -264,6 +264,29 @@ describe('productsController', () => {
     await productsController.createCategory(req, res);
 
     expect(res.status).toHaveBeenCalledWith(409);
+  });
+
+  it('getById retorna produto com sucesso', async () => {
+    const req = { params: { id: 'product-1' } } as unknown as Request;
+    const res = createRes();
+    (productsService.getById as jest.Mock).mockResolvedValueOnce({ id: 'product-1', price: 10 });
+
+    await productsController.getById(req, res);
+
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: { id: 'product-1', price: 10 },
+    });
+  });
+
+  it('getById retorna 500 para Error desconhecido passando pela chain de if', async () => {
+    const req = { params: { id: 'product-1' } } as unknown as Request;
+    const res = createRes();
+    (productsService.getById as jest.Mock).mockRejectedValueOnce(new Error('SOME_RANDOM_ERROR'));
+
+    await productsController.getById(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
   });
 
   it('createCategory rejeita payload invalido', async () => {

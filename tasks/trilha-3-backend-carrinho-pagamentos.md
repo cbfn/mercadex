@@ -1,4 +1,4 @@
-# Trilha 3 — Backend: Carrinho, Pedidos e Stripe
+# Trilha 3 — Backend: Pedidos, Reviews e IA
 
 **Responsável:** Dev 3
 **Branch:** `feature/backend-carrinho-pagamentos`
@@ -7,152 +7,22 @@
 **Pré-requisito:** Trilha 1 concluída. Schema Prisma da Trilha 2 disponível em `develop`.
 
 > Esta trilha pode rodar em paralelo com a Trilha 2 e Trilha 4.
-> Depende apenas do schema Prisma (Tarefa 2.1 da Trilha 2).
-> Se a Trilha 2 ainda não mergeou, copie o schema.prisma localmente.
 > Regra de documentação: novos módulos, funções públicas, contratos de API e utilitários compartilhados devem ser documentados com JSDoc.
 
 ---
 
-## Contexto
+## Contexto (Pivot MVP Lean)
 
-Esta trilha implementa o fluxo de compra completo no backend:
-carrinho persistido no banco → criação de pedido → pagamento via Stripe.
+Esta trilha implementa:
+1. **Módulo de Pedidos** — recebe array de itens do frontend (localStorage), valida estoque e cria pedido com status `PENDING_PIX`.
+2. **Módulo de Reviews** — CRUD de avaliações de produtos.
+3. **AI Services** — resumo de reviews via LLM e chat stateless sobre produto.
 
-O Stripe é integrado sem Docker. As chaves de teste estão disponíveis
-gratuitamente em [dashboard.stripe.com](https://dashboard.stripe.com).
-
----
-
-## Tarefa 3.1 — Módulo de Carrinho
-
-**Tempo:** 1 dia
-**Diretório:** `backend/src/modules/cart/`
-
-### Endpoints
-
-| Método | Rota | Descrição | Auth |
-| --- | --- | --- | --- |
-| GET | /api/cart | Ver carrinho do usuário | Sim |
-| POST | /api/cart/items | Adicionar item | Sim |
-| PUT | /api/cart/items/:itemId | Atualizar quantidade | Sim |
-| DELETE | /api/cart/items/:itemId | Remover item | Sim |
-| DELETE | /api/cart | Limpar carrinho | Sim |
-
-### cart.dto.ts
-
-```typescript
-import { z } from 'zod';
-
-export const AddCartItemDto = z.object({
-  productId: z.string().uuid(),
-  quantity: z.number().int().min(1).max(99),
-});
-
-export const UpdateCartItemDto = z.object({
-  quantity: z.number().int().min(1).max(99),
-});
-```
-
-### cart.repository.ts
-
-```typescript
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
-
-export const cartRepository = {
-  findOrCreate: async (userId: string) => {
-    return prisma.cart.upsert({
-      where: { userId },
-      create: { userId },
-      update: {},
-      include: {
-        items: {
-          include: { product: true },
-        },
-      },
-    });
-  },
-
-  addItem: async (cartId: string, productId: string, quantity: number) => {
-    return prisma.cartItem.upsert({
-      where: { cartId_productId: { cartId, productId } },
-      create: { cartId, productId, quantity },
-      update: { quantity: { increment: quantity } },
-    });
-  },
-
-  updateItem: async (itemId: string, quantity: number) => {
-    return prisma.cartItem.update({
-      where: { id: itemId },
-      data: { quantity },
-    });
-  },
-
-  removeItem: async (itemId: string) => {
-    return prisma.cartItem.delete({ where: { id: itemId } });
-  },
-
-  clearCart: async (cartId: string) => {
-    return prisma.cartItem.deleteMany({ where: { cartId } });
-  },
-};
-```
-
-### cart.service.ts
-
-```typescript
-import { cartRepository } from './cart.repository';
-import type { AddCartItemDto, UpdateCartItemDto } from './cart.dto';
-import { z } from 'zod';
-
-export const cartService = {
-  async getCart(userId: string) {
-    const cart = await cartRepository.findOrCreate(userId);
-    const total = cart.items.reduce(
-      (sum, item) => sum + Number(item.product.price) * item.quantity,
-      0
-    );
-    return { ...cart, total };
-  },
-
-  async addItem(userId: string, input: z.infer<typeof AddCartItemDto>) {
-    const cart = await cartRepository.findOrCreate(userId);
-    await cartRepository.addItem(cart.id, input.productId, input.quantity);
-    return cartService.getCart(userId);
-  },
-
-  async updateItem(userId: string, itemId: string, input: z.infer<typeof UpdateCartItemDto>) {
-    await cartRepository.updateItem(itemId, input.quantity);
-    return cartService.getCart(userId);
-  },
-
-  async removeItem(userId: string, itemId: string) {
-    await cartRepository.removeItem(itemId);
-    return cartService.getCart(userId);
-  },
-
-  async clearCart(userId: string) {
-    const cart = await cartRepository.findOrCreate(userId);
-    await cartRepository.clearCart(cart.id);
-    return { items: [], total: 0 };
-  },
-};
-```
-
-### cart.controller.ts + cart.routes.ts
-
-Seguir o padrão dos módulos anteriores. Todas as rotas requerem `authenticate`.
-
-**Commit:**
-```bash
-git add src/modules/cart/
-git commit -m "feat: modulo de carrinho com persistencia no banco"
-```
+> **@legacy:** O módulo de Carrinho com persistência no banco e a integração Stripe foram movidos para `backend/src/legacy/`. Retomar em sprint futura.
 
 ---
 
-## Tarefa 3.2 — Módulo de Pedidos
+## Tarefa 3.1 — Módulo de Pedidos
 
 **Tempo:** 1 dia
 **Diretório:** `backend/src/modules/orders/`
@@ -161,10 +31,9 @@ git commit -m "feat: modulo de carrinho com persistencia no banco"
 
 | Método | Rota | Descrição | Auth |
 | --- | --- | --- | --- |
-| POST | /api/orders | Criar pedido a partir do carrinho | Sim |
-| GET | /api/orders | Listar pedidos do usuário | Sim |
+| POST | /api/orders | Criar pedido a partir do carrinho frontend | Sim |
+| GET | /api/orders | Listar pedidos do usuário logado | Sim |
 | GET | /api/orders/:id | Detalhe do pedido | Sim |
-| PATCH | /api/orders/:id/status | Atualizar status (Admin) | Admin |
 
 ### orders.dto.ts
 
@@ -172,6 +41,12 @@ git commit -m "feat: modulo de carrinho com persistencia no banco"
 import { z } from 'zod';
 
 export const CreateOrderDto = z.object({
+  items: z.array(
+    z.object({
+      productId: z.string().uuid(),
+      quantity: z.number().int().min(1).max(99),
+    })
+  ).min(1, 'Carrinho não pode estar vazio'),
   shippingAddress: z.object({
     cep: z.string().length(8),
     street: z.string().min(3),
@@ -187,71 +62,71 @@ export const CreateOrderDto = z.object({
 
 ```typescript
 import { PrismaClient } from '@prisma/client';
+import type { z } from 'zod';
 import type { CreateOrderDto } from './orders.dto';
-import { z } from 'zod';
 
 const prisma = new PrismaClient();
 
 export const ordersService = {
+  /**
+   * Cria um pedido a partir dos itens enviados pelo frontend (localStorage).
+   * Valida estoque de cada produto e calcula o total antes de persistir.
+   *
+   * @param userId - ID do usuário autenticado
+   * @param input - DTO com array de itens e endereço de entrega
+   */
   async createOrder(userId: string, input: z.infer<typeof CreateOrderDto>) {
-    // 1. Buscar carrinho com itens
-    const cart = await prisma.cart.findUnique({
-      where: { userId },
-      include: { items: { include: { product: true } } },
+    const productIds = input.items.map((i) => i.productId);
+    const products = await prisma.product.findMany({
+      where: { id: { in: productIds }, active: true },
     });
 
-    if (!cart || cart.items.length === 0) {
-      throw new Error('CART_EMPTY');
+    if (products.length !== productIds.length) {
+      throw new Error('Um ou mais produtos não encontrados ou inativos');
     }
 
-    // 2. Verificar estoque de cada item
-    for (const item of cart.items) {
-      if (item.product.stock < item.quantity) {
-        throw new Error(`INSUFFICIENT_STOCK:${item.product.title}`);
+    for (const item of input.items) {
+      const product = products.find((p) => p.id === item.productId)!;
+      if (product.stock < item.quantity) {
+        throw new Error(`Estoque insuficiente para: ${product.title}`);
       }
     }
 
-    // 3. Calcular total
-    const totalPrice = cart.items.reduce(
-      (sum, item) => sum + Number(item.product.price) * item.quantity,
-      0
-    );
+    const totalPrice = input.items.reduce((sum, item) => {
+      const product = products.find((p) => p.id === item.productId)!;
+      return sum + Number(product.price) * item.quantity;
+    }, 0);
 
-    // 4. Criar pedido em transação
-    const order = await prisma.$transaction(async (tx) => {
-      const newOrder = await tx.order.create({
+    return prisma.$transaction(async (tx) => {
+      const order = await tx.order.create({
         data: {
           buyerId: userId,
           totalPrice,
           shippingAddress: input.shippingAddress,
+          status: 'PENDING_PIX',
           items: {
-            create: cart.items.map((item) => ({
+            create: input.items.map((item) => ({
               productId: item.productId,
               quantity: item.quantity,
-              unitPrice: item.product.price,
+              unitPrice: products.find((p) => p.id === item.productId)!.price,
             })),
           },
         },
-        include: { items: { include: { product: true } } },
+        include: { items: true },
       });
 
-      // Decrementar estoque
-      for (const item of cart.items) {
+      for (const item of input.items) {
         await tx.product.update({
           where: { id: item.productId },
           data: { stock: { decrement: item.quantity } },
         });
       }
 
-      // Limpar carrinho
-      await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
-
-      return newOrder;
+      return order;
     });
-
-    return order;
   },
 
+  /** Lista pedidos do usuário. @param userId - ID do usuário */
   async listOrders(userId: string) {
     return prisma.order.findMany({
       where: { buyerId: userId },
@@ -260,226 +135,259 @@ export const ordersService = {
     });
   },
 
-  async getOrder(userId: string, orderId: string) {
+  /** Retorna detalhe de um pedido verificando ownership. */
+  async getOrder(orderId: string, userId: string) {
     const order = await prisma.order.findFirst({
       where: { id: orderId, buyerId: userId },
       include: { items: { include: { product: true } } },
     });
-    if (!order) throw new Error('ORDER_NOT_FOUND');
+    if (!order) throw new Error('Pedido não encontrado');
     return order;
   },
 };
 ```
 
+Criar `orders.controller.ts` e `orders.routes.ts` seguindo o padrão dos módulos anteriores. Todas as rotas requerem `authenticate`.
+
 **Commit:**
 ```bash
 git add src/modules/orders/
-git commit -m "feat: modulo de pedidos com criacao a partir do carrinho"
+git commit -m "feat: modulo de pedidos com PENDING_PIX e validacao de estoque"
 ```
 
 ---
 
-## Tarefa 3.3 — Integração Stripe
+## Tarefa 3.2 — Módulo de Reviews
 
 **Tempo:** 1 dia
-**Diretório:** `backend/src/modules/payments/`
+**Diretório:** `backend/src/modules/reviews/`
 
-### Instalação
+### Endpoints
 
-```bash
-cd backend
-npm install stripe@^17.0.0
-```
+| Método | Rota | Descrição | Auth |
+| --- | --- | --- | --- |
+| GET | /api/products/:id/reviews | Listar reviews de um produto | Não |
+| POST | /api/products/:id/reviews | Criar review (1 por usuário/produto) | Sim |
+| DELETE | /api/reviews/:id | Deletar próprio review | Sim |
 
-### Configuração de chaves
-
-Obter chaves em [dashboard.stripe.com/test/apikeys](https://dashboard.stripe.com/test/apikeys):
-
-```bash
-# backend/.env.local
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-```
-
-### stripe.service.ts
+### reviews.dto.ts
 
 ```typescript
-import Stripe from 'stripe';
+import { z } from 'zod';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-12-18.acacia',
+export const CreateReviewDto = z.object({
+  title: z.string().min(3).max(100),
+  body: z.string().min(10).max(1000),
+  rating: z.number().int().min(1).max(5),
 });
+```
 
-export const stripeService = {
+### reviews.service.ts
+
+```typescript
+import { PrismaClient } from '@prisma/client';
+import type { z } from 'zod';
+import type { CreateReviewDto } from './reviews.dto';
+
+const prisma = new PrismaClient();
+
+export const reviewsService = {
   /**
-   * Cria um PaymentIntent para o valor do pedido.
-   * O frontend usa o clientSecret para exibir o formulário de pagamento.
+   * Lista todas as reviews de um produto com dados do autor.
+   * @param productId - ID do produto
    */
-  async createPaymentIntent(orderId: string, amountInCents: number) {
-    return stripe.paymentIntents.create({
-      amount: amountInCents,
-      currency: 'brl',
-      metadata: { orderId },
-      payment_method_types: ['card', 'pix'],
+  async listReviews(productId: string) {
+    return prisma.review.findMany({
+      where: { productId },
+      include: { user: { select: { id: true, name: true } } },
+      orderBy: { createdAt: 'desc' },
     });
   },
 
   /**
-   * Valida a assinatura do webhook e retorna o evento Stripe.
-   * NUNCA confiar no corpo sem validar a assinatura.
+   * Cria uma review. Garante unicidade (1 review por usuário por produto).
+   * @param userId - ID do usuário autenticado
+   * @param productId - ID do produto avaliado
+   * @param input - DTO com título, corpo e nota
    */
-  constructWebhookEvent(payload: Buffer, signature: string) {
-    return stripe.webhooks.constructEvent(
-      payload,
-      signature,
-      process.env.STRIPE_WEBHOOK_SECRET!
-    );
+  async createReview(userId: string, productId: string, input: z.infer<typeof CreateReviewDto>) {
+    const existing = await prisma.review.findUnique({
+      where: { userId_productId: { userId, productId } },
+    });
+    if (existing) throw new Error('Você já avaliou este produto');
+    return prisma.review.create({ data: { userId, productId, ...input } });
+  },
+
+  /**
+   * Deleta uma review. Verifica que pertence ao usuário.
+   * @param reviewId - ID da review
+   * @param userId - ID do usuário autenticado
+   */
+  async deleteReview(reviewId: string, userId: string) {
+    const review = await prisma.review.findFirst({ where: { id: reviewId, userId } });
+    if (!review) throw new Error('Review não encontrada ou sem permissão');
+    return prisma.review.delete({ where: { id: reviewId } });
   },
 };
 ```
 
-### payments.routes.ts
-
-```typescript
-import { Router, raw } from 'express';
-import { PrismaClient } from '@prisma/client';
-import { stripeService } from './stripe.service';
-import { authenticate } from '../auth/auth.middleware';
-import { ordersService } from '../orders/orders.service';
-import { CreateOrderDto } from '../orders/orders.dto';
-import type { AuthRequest } from '../auth/auth.middleware';
-
-const prisma = new PrismaClient();
-const router = Router();
-
-// Criar pedido + PaymentIntent
-router.post('/checkout', authenticate, async (req: AuthRequest, res) => {
-  const parsed = CreateOrderDto.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR' } });
-  }
-
-  try {
-    const order = await ordersService.createOrder(req.user!.id, parsed.data);
-    const amountInCents = Math.round(Number(order.totalPrice) * 100);
-    const paymentIntent = await stripeService.createPaymentIntent(order.id, amountInCents);
-
-    // Salvar stripePaymentId no pedido
-    await prisma.order.update({
-      where: { id: order.id },
-      data: { stripePaymentId: paymentIntent.id },
-    });
-
-    res.json({
-      success: true,
-      data: {
-        orderId: order.id,
-        clientSecret: paymentIntent.client_secret,
-        amount: amountInCents,
-      },
-    });
-  } catch (err: any) {
-    if (err.message === 'CART_EMPTY') {
-      return res.status(400).json({ success: false, error: { code: 'CART_EMPTY' } });
-    }
-    res.status(500).json({ success: false, error: { code: 'INTERNAL_ERROR' } });
-  }
-});
-
-// Webhook Stripe — usar raw body para validar assinatura
-router.post(
-  '/webhook',
-  raw({ type: 'application/json' }),
-  async (req, res) => {
-    const sig = req.headers['stripe-signature'] as string;
-
-    try {
-      const event = stripeService.constructWebhookEvent(req.body, sig);
-
-      if (event.type === 'payment_intent.succeeded') {
-        const pi = event.data.object as { id: string };
-        await prisma.order.updateMany({
-          where: { stripePaymentId: pi.id },
-          data: { status: 'PAGO' },
-        });
-      }
-
-      res.json({ received: true });
-    } catch {
-      res.status(400).json({ error: 'Webhook signature invalid' });
-    }
-  }
-);
-
-export default router;
-```
-
-Registrar no `server.ts`:
-
-```typescript
-import paymentsRoutes from './modules/payments/payments.routes';
-app.use('/api/payments', paymentsRoutes);
-```
-
-**Testar webhook localmente:**
-
-```bash
-# Instalar Stripe CLI
-# https://stripe.com/docs/stripe-cli
-
-stripe listen --forward-to localhost:3001/api/payments/webhook
-# Copiar o webhook secret exibido para .env.local
-```
+Criar `reviews.controller.ts` e `reviews.routes.ts`. Registrar as rotas em `server.ts`.
 
 **Commit:**
 ```bash
-git add src/modules/payments/
-git commit -m "feat: integracao Stripe (PaymentIntent, webhook, PIX e cartao)"
+git add src/modules/reviews/
+git commit -m "feat: modulo de reviews com unicidade por usuario/produto"
 ```
 
 ---
 
-## Tarefa 3.4 — Testes unitários
+## Tarefa 3.3 — AI Services (Resumo e Chat)
+
+**Tempo:** 1,5 dias
+**Diretório:** `backend/src/modules/ai/`
+
+> Provider LLM configurado via `LLM_PROVIDER_API_KEY` e `LLM_PROVIDER_MODEL` em `.env`. A escolha do provider (OpenAI, Anthropic, etc.) é feita na implementação da função `callLLM`.
+
+### Endpoints
+
+| Método | Rota | Descrição | Auth |
+| --- | --- | --- | --- |
+| GET | /api/products/:id/ai-summary | Resumo IA das reviews do produto | Não |
+| POST | /api/products/:id/chat | Chat stateless sobre o produto | Não |
+
+### ai.service.ts
+
+```typescript
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+/**
+ * Retorna um resumo de 3 frases das reviews de um produto gerado por LLM.
+ * @param productId - ID do produto
+ */
+export async function getAiSummary(productId: string): Promise<{ summary: string }> {
+  const reviews = await prisma.review.findMany({
+    where: { productId },
+    select: { title: true, body: true, rating: true },
+  });
+
+  if (reviews.length === 0) {
+    throw new Error('Sem avaliações suficientes para gerar resumo');
+  }
+
+  const reviewsText = reviews
+    .map((r) => `Nota: ${r.rating}/5 — ${r.title}: ${r.body}`)
+    .join('\n');
+
+  const prompt = `Você é um assistente de e-commerce. Com base nas avaliações abaixo, escreva um resumo CONCISO de exatamente 3 frases destacando os principais pontos POSITIVOS e NEGATIVOS do produto. Seja objetivo e baseado apenas nas avaliações fornecidas.\n\nAvaliações:\n${reviewsText}`;
+
+  const summary = await callLLM(prompt);
+  return { summary };
+}
+
+/**
+ * Responde uma pergunta sobre o produto com base nas specs e reviews.
+ * Stateless — sem persistência de histórico no banco.
+ *
+ * @param productId - ID do produto
+ * @param message - Pergunta do usuário
+ */
+export async function chatWithProduct(productId: string, message: string): Promise<{ reply: string }> {
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+    include: {
+      category: { select: { name: true } },
+      reviews: { select: { title: true, body: true, rating: true }, take: 10 },
+    },
+  });
+
+  if (!product) throw new Error('Produto não encontrado');
+
+  const specs = `Produto: ${product.title}\nCategoria: ${product.category.name}\nPreço: R$ ${product.price}\nCondição: ${product.condition}\nDescrição: ${product.description ?? 'N/A'}`;
+  const reviewsText = product.reviews.length > 0
+    ? product.reviews.map((r) => `Nota ${r.rating}/5: ${r.title} — ${r.body}`).join('\n')
+    : 'Sem avaliações disponíveis';
+
+  const prompt = `Você é um assistente especialista em eletrônicos. Responda a pergunta do cliente com base APENAS nas especificações e avaliações do produto abaixo. Se não souber, diga que não tem informação suficiente.\n\nEspecificações:\n${specs}\n\nAvaliações:\n${reviewsText}\n\nPergunta: ${message}`;
+
+  const reply = await callLLM(prompt);
+  return { reply };
+}
+
+/** @internal Chama o LLM configurado via variável de ambiente. Implementar conforme provider escolhido. */
+async function callLLM(prompt: string): Promise<string> {
+  throw new Error('LLM provider não configurado. Implemente callLLM em ai.service.ts');
+}
+```
+
+### ai.dto.ts
+
+```typescript
+import { z } from 'zod';
+
+export const ChatDto = z.object({
+  message: z.string().min(1).max(500),
+});
+```
+
+Criar `ai.controller.ts` e `ai.routes.ts`. Registrar as rotas em `server.ts`.
+
+**Commit:**
+```bash
+git add src/modules/ai/
+git commit -m "feat: ai services — resumo de reviews e chat stateless de produto"
+```
+
+---
+
+## Tarefa 3.4 — Testes Unitários
 
 **Tempo:** 1 dia
 
-```typescript
-// cart.test.ts — estrutura
-describe('GET /api/cart', () => {
-  it('retorna carrinho vazio para usuario novo', async () => { ... });
-  it('retorna 401 sem token', async () => { ... });
-});
+Seguir padrão AAA (Arrange / Act / Assert) com descrições em frases completas.
 
-describe('POST /api/cart/items', () => {
-  it('adiciona item ao carrinho', async () => { ... });
-  it('incrementa quantidade se item ja existe', async () => { ... });
-});
+**`orders.service.test.ts`:**
+- `"creates order with PENDING_PIX status when items and address are valid"`
+- `"throws when product has insufficient stock"`
+- `"throws when product is not found or inactive"`
+- `"throws when items array is empty"`
 
-// orders.test.ts
-describe('POST /api/orders', () => {
-  it('cria pedido a partir do carrinho', async () => { ... });
-  it('retorna 400 para carrinho vazio', async () => { ... });
-  it('decrementa estoque apos criacao', async () => { ... });
-});
-```
+**`reviews.service.test.ts`:**
+- `"creates review when user has not reviewed this product before"`
+- `"throws conflict error when user already reviewed the product"`
+- `"deletes review when it belongs to the authenticated user"`
+- `"throws when review does not belong to the user"`
+
+**`ai.service.test.ts`:**
+- `"returns summary when product has reviews"`
+- `"throws when product has no reviews"`
+- `"returns reply when product exists"`
+- `"throws when product is not found"`
 
 **Commit:**
 ```bash
-git add src/modules/cart/cart.test.ts src/modules/orders/orders.test.ts
-git commit -m "test: testes de integracao para carrinho e pedidos"
+git add tests/
+git commit -m "test: testes unitarios para orders, reviews e ai services"
 ```
 
 ---
 
-## Checklist Final da Trilha 3
+## Checklist Final
 
-- [ ] Módulo carrinho funcionando (CRUD completo)
-- [ ] Módulo pedidos funcionando (criação, listagem, detalhe)
-- [ ] Stripe integrado (PaymentIntent + webhook)
-- [ ] Webhook testado com Stripe CLI
-- [ ] Testes passando com cobertura >= 80%
-- [ ] `npx tsc --noEmit` sem erros
-- [ ] Nenhuma chave Stripe commitada
-- [ ] PR aberto para `develop`
+- [ ] Cobertura ≥ 80% nos arquivos da trilha
+- [ ] Sem erros TypeScript (`npx tsc --noEmit`)
+- [ ] JSDoc em todos os services, controllers e dtos públicos
+- [ ] `.env.example` atualizado com `LLM_PROVIDER_API_KEY` e `LLM_PROVIDER_MODEL`
+- [ ] PR contra `develop` com descrição clara
 
-**Título do PR:** `feat: backend carrinho, pedidos e integracao Stripe`
+**Título do PR:** `feat: backend pedidos, reviews e ai services (MVP Lean)`
+
+---
+
+## Referências
+
+- `docs/ADR.md` — ADR-007 (Cart localStorage), ADR-008 (PIX fake), ADR-010 (IA)
+- `backend/prisma/schema.prisma` — Models Order, Review (Cart/CartItem comentados como @legacy)
+- `backend/src/legacy/` — Módulo Stripe e Cart (não deletar)
+

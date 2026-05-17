@@ -1,4 +1,4 @@
-# Trilha 4 — Frontend: Autenticação e Dashboard Administrativo
+# Trilha 4 — Frontend: Autenticação, Checkout PIX e Features de IA
 
 **Responsável:** Dev 4
 **Branch:** `feature/frontend-auth-dashboard`
@@ -10,6 +10,11 @@
 > Usar dados mock para desenvolver o frontend enquanto o backend não está pronto.
 > A integração real acontece na Trilha 5.
 > Regra de documentação: novos módulos, funções públicas, contratos de API e utilitários compartilhados devem ser documentados com JSDoc.
+
+**MVP Lean:** Dashboard administrativo removido — gestão via Prisma Studio.
+JWT único com expiração de 7 dias armazenado em `localStorage`. Sem refresh token.
+Carrinho 100% em `localStorage` via Zustand (sem sync com backend).
+Ver `docs/ADR.md` ADR-007 a ADR-010 para contexto completo.
 
 ---
 
@@ -28,23 +33,31 @@ Use mocks e stubs para simular as respostas da API.
 **Tempo:** 4 horas
 **Arquivo:** `frontend/src/shared/lib/api-client.ts`
 
+JWT único de 7 dias, armazenado em `localStorage`. Sem refresh token, sem cookie.
+Em 401 o utilizador é redirecionado para /login pelo AuthContext.
+
 ```typescript
 /**
- * Cliente HTTP centralizado com suporte a JWT e refresh automático.
+ * Cliente HTTP centralizado com suporte a JWT.
+ * Token único de 7 dias armazenado em localStorage.
  * Todas as chamadas à API devem usar este módulo.
  */
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
-/** Token de acesso armazenado em memória (não localStorage — segurança) */
-let accessToken: string | null = null;
+const TOKEN_KEY = 'mercadex_token';
 
-export function setAccessToken(token: string | null) {
-  accessToken = token;
+export function setToken(token: string | null) {
+  if (token) {
+    localStorage.setItem(TOKEN_KEY, token);
+  } else {
+    localStorage.removeItem(TOKEN_KEY);
+  }
 }
 
-export function getAccessToken() {
-  return accessToken;
+export function getToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(TOKEN_KEY);
 }
 
 interface ApiOptions extends RequestInit {
@@ -53,7 +66,7 @@ interface ApiOptions extends RequestInit {
 
 /**
  * Faz uma requisição autenticada para a API.
- * Renova o access token automaticamente se expirado (via refresh token em cookie).
+ * Token JWT lido do localStorage em cada chamada.
  */
 export async function apiRequest<T>(
   path: string,
@@ -66,52 +79,21 @@ export async function apiRequest<T>(
     ...(fetchOptions.headers as Record<string, string>),
   };
 
-  if (!skipAuth && accessToken) {
-    headers['Authorization'] = `Bearer ${accessToken}`;
+  if (!skipAuth) {
+    const token = getToken();
+    if (token) headers['Authorization'] = `Bearer ${token}`;
   }
 
   const res = await fetch(`${API_URL}${path}`, {
     ...fetchOptions,
     headers,
-    credentials: 'include', // envia cookies (refresh token)
   });
-
-  // Token expirado — tentar renovar
-  if (res.status === 401 && !skipAuth) {
-    const refreshed = await tryRefreshToken();
-    if (refreshed) {
-      headers['Authorization'] = `Bearer ${accessToken}`;
-      const retryRes = await fetch(`${API_URL}${path}`, {
-        ...fetchOptions,
-        headers,
-        credentials: 'include',
-      });
-      if (!retryRes.ok) throw new ApiError(retryRes.status, await retryRes.json());
-      return retryRes.json();
-    }
-    throw new ApiError(401, { error: { code: 'SESSION_EXPIRED' } });
-  }
 
   if (!res.ok) {
     throw new ApiError(res.status, await res.json());
   }
 
   return res.json();
-}
-
-async function tryRefreshToken(): Promise<boolean> {
-  try {
-    const res = await fetch(`${API_URL}/api/auth/refresh`, {
-      method: 'POST',
-      credentials: 'include',
-    });
-    if (!res.ok) return false;
-    const data = await res.json();
-    setAccessToken(data.data.accessToken);
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 export class ApiError extends Error {
@@ -127,19 +109,19 @@ export class ApiError extends Error {
 Criar `frontend/src/shared/lib/api/auth.ts`:
 
 ```typescript
-import { apiRequest, setAccessToken } from '../api-client';
+import { apiRequest, setToken } from '../api-client';
 
 export const authApi = {
   async login(email: string, password: string) {
     const res = await apiRequest<{
       success: boolean;
-      data: { accessToken: string; user: { id: string; name: string; role: string } };
+      data: { token: string; user: { id: string; name: string; role: string } };
     }>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
       skipAuth: true,
     });
-    setAccessToken(res.data.accessToken);
+    setToken(res.data.token);
     return res.data;
   },
 
@@ -151,15 +133,8 @@ export const authApi = {
     });
   },
 
-  async logout() {
-    await apiRequest('/api/auth/logout', { method: 'POST' });
-    setAccessToken(null);
-  },
-
-  async me() {
-    return apiRequest<{ success: boolean; data: { id: string; name: string; role: string } }>(
-      '/api/auth/me'
-    );
+  logout() {
+    setToken(null);
   },
 };
 ```
@@ -167,7 +142,7 @@ export const authApi = {
 **Commit:**
 ```bash
 git add src/shared/lib/api-client.ts src/shared/lib/api/
-git commit -m "feat: api-client com JWT e refresh automatico"
+git commit -m "feat: api-client com JWT via localStorage"
 ```
 
 ---
@@ -177,11 +152,18 @@ git commit -m "feat: api-client com JWT e refresh automatico"
 **Tempo:** 3 horas
 **Arquivo:** `frontend/src/features/auth/model/auth-context.tsx`
 
+Token JWT de 7 dias e dados do usuário armazenados em `localStorage`.
+Restauração ao montar via `useEffect` (evita SSR mismatch).
+Sem chamada a `/api/auth/me` — sessão é local até o token expirar.
+
 ```typescript
 'use client';
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { authApi } from '@/shared/lib/api/auth';
+import { getToken, setToken } from '@/shared/lib/api-client';
+
+const USER_KEY = 'mercadex_user';
 
 interface User {
   id: string;
@@ -193,7 +175,7 @@ interface AuthContextValue {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
+  logout: () => void;
   register: (name: string, email: string, password: string) => Promise<void>;
 }
 
@@ -203,22 +185,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Tentar restaurar sessão ao carregar
+  // Restaurar sessão a partir do localStorage após montagem (SSR-safe)
   useEffect(() => {
-    authApi.me()
-      .then((res) => setUser(res.data as User))
-      .catch(() => setUser(null))
-      .finally(() => setIsLoading(false));
+    const token = getToken();
+    const stored = localStorage.getItem(USER_KEY);
+    if (token && stored) {
+      try {
+        setUser(JSON.parse(stored) as User);
+      } catch {
+        setToken(null);
+        localStorage.removeItem(USER_KEY);
+      }
+    }
+    setIsLoading(false);
   }, []);
 
   const login = async (email: string, password: string) => {
     const data = await authApi.login(email, password);
     setUser(data.user as User);
+    localStorage.setItem(USER_KEY, JSON.stringify(data.user));
   };
 
-  const logout = async () => {
-    await authApi.logout();
+  const logout = () => {
+    authApi.logout();
     setUser(null);
+    localStorage.removeItem(USER_KEY);
   };
 
   const register = async (name: string, email: string, password: string) => {
@@ -426,30 +417,21 @@ git commit -m "feat: paginas de login e registro com testes"
 **Tempo:** 2 horas
 **Arquivo:** `frontend/src/middleware.ts`
 
+Como o JWT está em `localStorage` (inacessível no servidor), a proteção real de rotas
+autenticadas é feita pelo AuthContext no cliente. O middleware limita-se a redirecionar
+rotas de auth para `/` quando o utilizador já tem sessão (via cookie de convenção que o
+AuthProvider pode opcionalmente definir) e a excluir assets estáticos do matcher.
+
 ```typescript
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const PUBLIC_ROUTES = ['/', '/login', '/register'];
-const ADMIN_ROUTES = ['/admin'];
-
+/**
+ * Middleware de roteamento simplificado.
+ * Proteção de rotas autenticadas é feita no lado do cliente (AuthContext).
+ * O middleware apenas exclui arquivos estáticos do processamento.
+ */
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  // Rotas públicas — sempre acessíveis
-  if (PUBLIC_ROUTES.some((r) => pathname === r || pathname.startsWith('/api'))) {
-    return NextResponse.next();
-  }
-
-  // Verificar se há refresh token (indica sessão ativa)
-  const hasSession = request.cookies.has('refreshToken');
-
-  if (!hasSession) {
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
   return NextResponse.next();
 }
 
@@ -461,313 +443,524 @@ export const config = {
 **Commit:**
 ```bash
 git add src/middleware.ts
-git commit -m "feat: middleware de protecao de rotas autenticadas"
+git commit -m "feat: middleware de roteamento (protecao client-side via AuthContext)"
 ```
 
 ---
 
-## Tarefa 4.5 — Dashboard Administrativo
+## Tarefa 4.5 — Página de Checkout PIX
 
 **Tempo:** 1 dia
+**Arquivo:** `frontend/src/app/checkout/page.tsx`
+
+Exibe itens do carrinho (Zustand), formulário de endereço, chave PIX estática + QR code
+e botão de confirmação que faz POST /api/orders.
 
 ### Estrutura de arquivos
 
 ```
 frontend/src/
 ├── app/
-│   └── (admin)/
-│       ├── layout.tsx
-│       ├── dashboard/
-│       │   └── page.tsx
-│       ├── products/
-│       │   ├── page.tsx
-│       │   ├── new/
-│       │   │   └── page.tsx
-│       │   └── [id]/
-│       │       └── edit/
-│       │           └── page.tsx
-│       └── orders/
-│           └── page.tsx
+│   └── checkout/
+│       └── page.tsx
 └── features/
-    └── admin/
-        ├── components/
-        │   ├── admin-sidebar.tsx
-        │   ├── stats-card.tsx
-        │   ├── products-table.tsx
-        │   └── product-form.tsx
-        └── model/
-            └── use-products-admin.ts
+    └── checkout/
+        └── components/
+            ├── checkout-page.tsx
+            ├── checkout-page.test.tsx
+            └── pix-display.tsx
 ```
 
-### app/(admin)/layout.tsx
-
-```tsx
-'use client';
-
-import { useAuth } from '@/features/auth/model/auth-context';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-import { AdminSidebar } from '@/features/admin/components/admin-sidebar';
-
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isLoading && user?.role !== 'ADMIN') {
-      router.push('/');
-    }
-  }, [user, isLoading, router]);
-
-  if (isLoading) return <div>Carregando...</div>;
-  if (user?.role !== 'ADMIN') return null;
-
-  return (
-    <div style={{ display: 'flex' }}>
-      <AdminSidebar />
-      <main style={{ flex: 1, padding: '1rem' }}>{children}</main>
-    </div>
-  );
-}
-```
-
-### admin-sidebar.tsx
-
-```tsx
-'use client';
-
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-
-const links = [
-  { href: '/admin/dashboard', label: 'Dashboard' },
-  { href: '/admin/products', label: 'Produtos' },
-  { href: '/admin/orders', label: 'Pedidos' },
-];
-
-export function AdminSidebar() {
-  const pathname = usePathname();
-
-  return (
-    <nav aria-label="Menu administrativo">
-      <ul>
-        {links.map((link) => (
-          <li key={link.href}>
-            <Link
-              href={link.href}
-              aria-current={pathname.startsWith(link.href) ? 'page' : undefined}
-            >
-              {link.label}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </nav>
-  );
-}
-```
-
-### use-products-admin.ts (com mock para desenvolvimento)
-
-```typescript
-'use client';
-
-import { useState, useEffect } from 'react';
-
-// Mock temporário — será substituído pela API real na Trilha 5
-const MOCK_PRODUCTS = [
-  { id: '1', title: 'iPhone 15', price: 4999.90, stock: 10, active: true },
-  { id: '2', title: 'MacBook Air', price: 8999.90, stock: 5, active: true },
-];
-
-export function useProductsAdmin() {
-  const [products, setProducts] = useState(MOCK_PRODUCTS);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const deleteProduct = (id: string) => {
-    setProducts((prev) => prev.filter((p) => p.id !== id));
-  };
-
-  return { products, isLoading, deleteProduct };
-}
-```
-
-### products-table.tsx
-
-```tsx
-'use client';
-
-import Link from 'next/link';
-import { useProductsAdmin } from '../model/use-products-admin';
-
-export function ProductsTable() {
-  const { products, isLoading, deleteProduct } = useProductsAdmin();
-
-  if (isLoading) return <p>Carregando produtos...</p>;
-
-  return (
-    <table>
-      <thead>
-        <tr>
-          <th>Produto</th>
-          <th>Preço</th>
-          <th>Estoque</th>
-          <th>Ações</th>
-        </tr>
-      </thead>
-      <tbody>
-        {products.map((product) => (
-          <tr key={product.id}>
-            <td>{product.title}</td>
-            <td>R$ {product.price.toFixed(2)}</td>
-            <td>{product.stock}</td>
-            <td>
-              <Link href={`/admin/products/${product.id}/edit`}>Editar</Link>
-              <button onClick={() => deleteProduct(product.id)}>Remover</button>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-}
-```
-
-**Commit:**
-```bash
-git add src/app/\(admin\)/ src/features/admin/
-git commit -m "feat: dashboard administrativo com CRUD de produtos e listagem de pedidos"
-```
-
----
-
-## Tarefa 4.6 — Formulário de Produto (criação e edição)
-
-**Tempo:** 4 horas
-**Arquivo:** `frontend/src/features/admin/components/product-form.tsx`
+### checkout-page.tsx
 
 ```tsx
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useCartStore } from '@/features/cart/model/cart-context';
+import { useAuth } from '@/features/auth/model/auth-context';
+import { PixDisplay } from './pix-display';
+import { apiRequest } from '@/shared/lib/api-client';
 
-interface ProductFormProps {
-  initialData?: {
-    id?: string;
-    title: string;
-    price: number;
-    stock: number;
-    condition: string;
-    description?: string;
-  };
-  onSubmit: (data: FormData) => Promise<void>;
+interface ShippingAddress {
+  cep: string;
+  street: string;
+  number: string;
+  complement?: string;
+  city: string;
+  state: string;
 }
 
-export function ProductForm({ initialData, onSubmit }: ProductFormProps) {
+const STATIC_PIX_KEY = process.env.NEXT_PUBLIC_PIX_KEY ?? '00020126360014br.gov.bcb.pix0114+55119999999995204000053039865802BR5913Mercadex MVP6009SAO PAULO62070503***63041D3D';
+
+/**
+ * Página de checkout com endereço, PIX estático e confirmação de pedido.
+ * Após confirmação, limpa o carrinho e redireciona para /orders/:id.
+ */
+export function CheckoutPage() {
+  const { items, clearCart } = useCartStore();
+  const { user } = useAuth();
   const router = useRouter();
+  const [address, setAddress] = useState<ShippingAddress>({
+    cep: '', street: '', number: '', city: '', state: '',
+  });
+  const [step, setStep] = useState<'address' | 'pix'>('address');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const total = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+
+  if (!user) {
+    router.push('/login?redirect=/checkout');
+    return null;
+  }
+
+  const handleConfirm = async () => {
     setError('');
     setIsLoading(true);
-
     try {
-      const formData = new FormData(e.currentTarget);
-      await onSubmit(formData);
-      router.push('/admin/products');
+      const res = await apiRequest<{ success: boolean; data: { id: string } }>(
+        '/api/orders',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            items: items.map((i) => ({ productId: i.id, quantity: i.quantity })),
+            shippingAddress: address,
+          }),
+        }
+      );
+      clearCart();
+      router.push(`/orders/${res.data.id}`);
     } catch {
-      setError('Erro ao salvar produto. Tente novamente.');
+      setError('Erro ao criar pedido. Tente novamente.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} aria-label="Formulário de produto">
+    <main>
+      <h1>Finalizar Compra</h1>
+      {step === 'address' && (
+        <section aria-label="Endereço de entrega">
+          {/* Campos de endereço omitidos por brevidade — seguir padrão shadcn/Input */}
+          <button onClick={() => setStep('pix')} disabled={!address.cep || !address.street}>
+            Continuar para pagamento
+          </button>
+        </section>
+      )}
+      {step === 'pix' && (
+        <section aria-label="Pagamento via PIX">
+          <PixDisplay pixCode={STATIC_PIX_KEY} total={total} />
+          {error && <p role="alert">{error}</p>}
+          <button onClick={handleConfirm} disabled={isLoading}>
+            {isLoading ? 'Confirmando...' : 'Confirmar Pedido'}
+          </button>
+        </section>
+      )}
+    </main>
+  );
+}
+```
+
+### pix-display.tsx
+
+```tsx
+'use client';
+
+import { useState } from 'react';
+
+interface PixDisplayProps {
+  pixCode: string;
+  total: number;
+}
+
+/**
+ * Exibe a chave PIX estática, QR code (via API externa) e botão de cópia.
+ */
+export function PixDisplay({ pixCode, total }: PixDisplayProps) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(pixCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(pixCode)}`;
+
+  return (
+    <div>
+      <p>Total: <strong>R$ {total.toFixed(2)}</strong></p>
+      <p>Escaneie o QR code ou copie a chave PIX:</p>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={qrUrl} alt="QR code PIX" width={200} height={200} />
+      <code>{pixCode.slice(0, 40)}…</code>
+      <button onClick={handleCopy} aria-label="Copiar chave PIX">
+        {copied ? 'Copiado!' : 'Copiar Chave'}
+      </button>
+    </div>
+  );
+}
+```
+
+### checkout-page.test.tsx
+
+```tsx
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { CheckoutPage } from './checkout-page';
+
+jest.mock('@/features/cart/model/cart-context', () => ({
+  useCartStore: () => ({
+    items: [{ id: 'p1', title: 'iPhone', price: 4999, quantity: 1 }],
+    clearCart: jest.fn(),
+  }),
+}));
+jest.mock('@/features/auth/model/auth-context', () => ({
+  useAuth: () => ({ user: { id: 'u1', name: 'Ana', role: 'CUSTOMER' } }),
+}));
+jest.mock('next/navigation', () => ({ useRouter: () => ({ push: jest.fn() }) }));
+
+describe('CheckoutPage', () => {
+  it('renderiza etapa de endereco por padrao', () => {
+    render(<CheckoutPage />);
+    expect(screen.getByLabelText(/endereco/i)).toBeInTheDocument();
+  });
+});
+```
+
+**Commit:**
+```bash
+git add src/app/checkout/ src/features/checkout/
+git commit -m "feat: pagina de checkout com PIX estatico e confirmacao de pedido"
+```
+
+---
+
+## Tarefa 4.6 — Review UI
+
+**Tempo:** 4 horas
+
+### Estrutura de arquivos
+
+```
+frontend/src/features/product-detail/components/
+├── review-form.tsx
+├── review-form.test.tsx
+├── review-list.tsx
+└── review-list.test.tsx
+```
+
+### review-form.tsx
+
+```tsx
+'use client';
+
+import { useState } from 'react';
+import { useAuth } from '@/features/auth/model/auth-context';
+import { apiRequest } from '@/shared/lib/api-client';
+
+interface ReviewFormProps {
+  productId: string;
+  onSuccess: () => void;
+}
+
+/**
+ * Formulário autenticado para submissão de review.
+ * Visível apenas para utilizadores com sessão ativa.
+ * Rating de 1 a 5 estrelas; título e corpo obrigatórios.
+ */
+export function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
+  const { user } = useAuth();
+  const [rating, setRating] = useState(5);
+  const [title, setTitle] = useState('');
+  const [body, setBody] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  if (!user) return <p>Faça login para deixar uma avaliação.</p>;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+    try {
+      await apiRequest(`/api/products/${productId}/reviews`, {
+        method: 'POST',
+        body: JSON.stringify({ rating, title, body }),
+      });
+      onSuccess();
+    } catch {
+      setError('Erro ao enviar avaliação. Tente novamente.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} aria-label="Formulário de avaliação">
       <div>
-        <label htmlFor="title">Nome do produto</label>
+        <label htmlFor="rating">Nota (1–5)</label>
         <input
-          id="title"
-          name="title"
-          type="text"
-          defaultValue={initialData?.title}
-          required
-          minLength={3}
-        />
-      </div>
-      <div>
-        <label htmlFor="price">Preço (R$)</label>
-        <input
-          id="price"
-          name="price"
+          id="rating"
           type="number"
-          step="0.01"
-          min="0"
-          defaultValue={initialData?.price}
+          min={1}
+          max={5}
+          value={rating}
+          onChange={(e) => setRating(Number(e.target.value))}
           required
         />
       </div>
       <div>
-        <label htmlFor="stock">Estoque</label>
-        <input
-          id="stock"
-          name="stock"
-          type="number"
-          min="0"
-          defaultValue={initialData?.stock ?? 0}
-          required
-        />
+        <label htmlFor="review-title">Título</label>
+        <input id="review-title" value={title} onChange={(e) => setTitle(e.target.value)} required />
       </div>
       <div>
-        <label htmlFor="condition">Condição</label>
-        <select id="condition" name="condition" defaultValue={initialData?.condition ?? 'NOVO'}>
-          <option value="NOVO">Novo</option>
-          <option value="EXCELENTE">Excelente</option>
-          <option value="BOM">Bom</option>
-          <option value="USADO">Usado</option>
-        </select>
-      </div>
-      <div>
-        <label htmlFor="description">Descrição</label>
-        <textarea
-          id="description"
-          name="description"
-          defaultValue={initialData?.description}
-          rows={4}
-        />
+        <label htmlFor="review-body">Avaliação</label>
+        <textarea id="review-body" value={body} onChange={(e) => setBody(e.target.value)} required rows={3} />
       </div>
       {error && <p role="alert">{error}</p>}
       <button type="submit" disabled={isLoading}>
-        {isLoading ? 'Salvando...' : initialData?.id ? 'Atualizar' : 'Criar produto'}
+        {isLoading ? 'Enviando...' : 'Enviar avaliação'}
       </button>
     </form>
   );
 }
 ```
 
+### review-list.tsx
+
+```tsx
+interface Review {
+  id: string;
+  title: string;
+  body: string;
+  rating: number;
+  user: { name: string };
+  createdAt: string;
+}
+
+interface ReviewListProps {
+  reviews: Review[];
+}
+
+/**
+ * Lista de avaliações com média de rating calculada localmente.
+ */
+export function ReviewList({ reviews }: ReviewListProps) {
+  if (reviews.length === 0) return <p>Nenhuma avaliação ainda.</p>;
+
+  const avg = reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
+
+  return (
+    <section aria-label="Avaliações do produto">
+      <p>Média: {avg.toFixed(1)} ⭐ ({reviews.length} avaliações)</p>
+      <ul>
+        {reviews.map((r) => (
+          <li key={r.id}>
+            <strong>{r.title}</strong> — {r.rating}★
+            <p>{r.body}</p>
+            <small>{r.user.name} · {new Date(r.createdAt).toLocaleDateString('pt-BR')}</small>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+```
+
 **Commit:**
 ```bash
-git add src/features/admin/components/product-form.tsx
-git commit -m "feat: formulario de produto para criacao e edicao"
+git add src/features/product-detail/components/review-form.tsx src/features/product-detail/components/review-list.tsx
+git commit -m "feat: UI de reviews com formulario e listagem"
+```
+
+---
+
+## Tarefa 4.7 — AI Features UI (Resumo IA + Chat)
+
+**Tempo:** 1 dia
+
+### Estrutura de arquivos
+
+```
+frontend/src/features/product-detail/components/
+├── ai-summary-button.tsx
+├── ai-summary-button.test.tsx
+├── product-chat-drawer.tsx
+└── product-chat-drawer.test.tsx
+```
+
+### ai-summary-button.tsx
+
+```tsx
+'use client';
+
+import { useState } from 'react';
+import { apiRequest } from '@/shared/lib/api-client';
+
+interface AiSummaryButtonProps {
+  productId: string;
+}
+
+/**
+ * Botão que busca e exibe o resumo de reviews gerado por IA.
+ * GET /api/products/:id/ai-summary
+ */
+export function AiSummaryButton({ productId }: AiSummaryButtonProps) {
+  const [summary, setSummary] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleClick = async () => {
+    setError('');
+    setIsLoading(true);
+    try {
+      const res = await apiRequest<{ success: boolean; data: { summary: string } }>(
+        `/api/products/${productId}/ai-summary`,
+        { skipAuth: true }
+      );
+      setSummary(res.data.summary);
+    } catch {
+      setError('Não foi possível gerar o resumo. Tente novamente.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div>
+      {!summary && (
+        <button onClick={handleClick} disabled={isLoading}>
+          {isLoading ? 'Gerando resumo...' : '✨ Ver Insight da IA'}
+        </button>
+      )}
+      {error && <p role="alert">{error}</p>}
+      {summary && (
+        <blockquote aria-label="Resumo gerado por IA">
+          <p>{summary}</p>
+        </blockquote>
+      )}
+    </div>
+  );
+}
+```
+
+### product-chat-drawer.tsx
+
+```tsx
+'use client';
+
+import { useState, useRef, useEffect } from 'react';
+import { apiRequest } from '@/shared/lib/api-client';
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+interface ProductChatDrawerProps {
+  productId: string;
+  productTitle: string;
+  onClose: () => void;
+}
+
+/**
+ * Chat stateless com IA sobre o produto.
+ * Histórico mantido apenas em estado React — descartado ao fechar.
+ * POST /api/products/:id/chat com { message, history[] }
+ */
+export function ProductChatDrawer({ productId, productTitle, onClose }: ProductChatDrawerProps) {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSend = async () => {
+    if (!input.trim()) return;
+    const userMessage: Message = { role: 'user', content: input.trim() };
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
+    setInput('');
+    setIsLoading(true);
+
+    try {
+      const res = await apiRequest<{ success: boolean; data: { reply: string } }>(
+        `/api/products/${productId}/chat`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ message: userMessage.content, history: messages }),
+          skipAuth: true,
+        }
+      );
+      setMessages([...updatedMessages, { role: 'assistant', content: res.data.reply }]);
+    } catch {
+      setMessages([...updatedMessages, { role: 'assistant', content: 'Erro ao conectar com a IA.' }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <aside aria-label={`Chat sobre ${productTitle}`} role="complementary">
+      <header>
+        <h2>Tirar Dúvida — {productTitle}</h2>
+        <button onClick={onClose} aria-label="Fechar chat">✕</button>
+      </header>
+      <div role="log" aria-live="polite">
+        {messages.map((m, i) => (
+          <div key={i} data-role={m.role}>
+            <strong>{m.role === 'user' ? 'Você' : 'IA'}:</strong> {m.content}
+          </div>
+        ))}
+        <div ref={bottomRef} />
+      </div>
+      <form
+        onSubmit={(e) => { e.preventDefault(); handleSend(); }}
+        aria-label="Enviar mensagem"
+      >
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Faça uma pergunta..."
+          disabled={isLoading}
+        />
+        <button type="submit" disabled={isLoading || !input.trim()}>
+          {isLoading ? '...' : 'Enviar'}
+        </button>
+      </form>
+    </aside>
+  );
+}
+```
+
+**Commit:**
+```bash
+git add src/features/product-detail/components/
+git commit -m "feat: AI summary button e chat drawer no detalhe do produto"
 ```
 
 ---
 
 ## Checklist Final da Trilha 4
 
-- [ ] api-client.ts criado com refresh automático
-- [ ] AuthProvider e useAuth funcionando
+- [ ] api-client.ts com JWT via localStorage (sem refresh token)
+- [ ] AuthProvider e useAuth funcionando com restauração via localStorage
 - [ ] Páginas de login e registro com testes
-- [ ] Middleware de proteção de rotas
-- [ ] Dashboard admin com layout e sidebar
-- [ ] CRUD de produtos no admin (com mocks)
-- [ ] Listagem de pedidos no admin (com mocks)
-- [ ] Formulário de produto (criação e edição)
+- [ ] Middleware simplificado (proteção de rotas client-side)
+- [ ] Página de checkout PIX com endereço + QR + confirmação
+- [ ] Review form e review list com testes
+- [ ] AiSummaryButton funcional (GET /ai-summary)
+- [ ] ProductChatDrawer funcional (POST /chat, histórico React-only)
 - [ ] `npm run test` passando
 - [ ] `npm run build` passando
 - [ ] PR aberto para `develop`
 
-**Título do PR:** `feat: frontend auth (login/registro) e dashboard administrativo`
+**Título do PR:** `feat: frontend auth (login/registro), checkout PIX e features de IA`
+

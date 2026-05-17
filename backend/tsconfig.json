@@ -1,12 +1,12 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "commonjs",
+    "module": "Node16",
     "lib": [
       "ES2022"
     ],
-    "moduleResolution": "node",
-    "ignoreDeprecations": "6.0",
+    "moduleResolution": "node16",
+    "ignoreDeprecations": "5.0",
     "rootDir": ".",
     "outDir": "./dist",
     "strict": true,
@@ -20,10 +20,9 @@
       "node",
       "jest"
     ],
-    "baseUrl": ".",
     "paths": {
       "@/*": [
-        "src/*"
+        "./src/*"
       ]
     }
   },

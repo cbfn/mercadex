@@ -1,5 +1,26 @@
-import OpenAI from 'openai';
 import { z } from 'zod';
+
+type ChatCompletionResponse = {
+  choices?: Array<{
+    message?: {
+      tool_calls?: Array<{
+        type?: string;
+        function?: {
+          name?: string;
+          arguments?: string;
+        };
+      }>;
+    };
+  }>;
+};
+
+type AiClient = {
+  chat: {
+    completions: {
+      create(payload: unknown): Promise<ChatCompletionResponse>;
+    };
+  };
+};
 
 const TOOL_NAME = 'interpretar_busca_produtos';
 
@@ -111,7 +132,7 @@ const SEARCH_HINT_TOOL = {
       },
     },
   },
-} satisfies OpenAI.ChatCompletionTool;
+};
 
 function parseToolArguments(rawArguments: string): SearchHints {
   const parsed = JSON.parse(rawArguments) as unknown;
@@ -119,14 +140,42 @@ function parseToolArguments(rawArguments: string): SearchHints {
 }
 
 export class AiSearchAgentService {
-  private readonly client: OpenAI;
+  private readonly client?: AiClient;
 
-  constructor(client?: OpenAI) {
-    this.client = client ?? new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  constructor(client?: AiClient) {
+    if (client) {
+      this.client = client;
+      return;
+    }
+
+    if (process.env.OPENAI_API_KEY) {
+      // O provider LLM e opcional no backend. O import dinamico evita
+      // bloquear `npm ci` quando a dependencia nao estiver instalada.
+      this.client = this.createOptionalClient(process.env.OPENAI_API_KEY);
+    }
+  }
+
+  private createOptionalClient(apiKey: string): AiClient | undefined {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-implied-eval
+      const dynamicRequire = (Function('return require')() as (id: string) => unknown);
+      const openaiModule = dynamicRequire('openai') as {
+        default?: new (config: { apiKey: string }) => AiClient;
+      };
+      const OpenAIClient = openaiModule.default;
+
+      if (!OpenAIClient) {
+        return undefined;
+      }
+
+      return new OpenAIClient({ apiKey });
+    } catch {
+      return undefined;
+    }
   }
 
   async run(userMessage: string): Promise<SearchHints> {
-    if (!process.env.OPENAI_API_KEY) {
+    if (!process.env.OPENAI_API_KEY || !this.client) {
       return inferHintsFromText(userMessage);
     }
 
@@ -149,14 +198,16 @@ export class AiSearchAgentService {
         tool_choice: 'required',
       });
 
-      const toolCall = completion.choices[0]?.message.tool_calls?.[0];
+      const toolCall = completion.choices?.[0]?.message?.tool_calls?.[0];
+      const functionName = toolCall?.function?.name;
+      const functionArguments = toolCall?.function?.arguments;
 
-      if (!toolCall || toolCall.type !== 'function' || toolCall.function.name !== TOOL_NAME) {
+      if (!toolCall || toolCall.type !== 'function' || functionName !== TOOL_NAME || !functionArguments) {
         return inferHintsFromText(userMessage);
       }
 
       try {
-        return parseToolArguments(toolCall.function.arguments);
+        return parseToolArguments(functionArguments);
       } catch {
         return inferHintsFromText(userMessage);
       }

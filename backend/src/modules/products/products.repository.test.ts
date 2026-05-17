@@ -98,21 +98,21 @@ describe('productsRepository', () => {
 
   it('findById consulta o produto', async () => {
     mockPrisma.product.findFirst.mockResolvedValue(null);
-    await productsRepository.findById(1);
+    await productsRepository.findById('product-1');
 
     expect(mockPrisma.product.findFirst).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: 1, active: true },
+        where: { id: 'product-1', active: true },
       }),
     );
   });
 
   it('findCategoryById consulta categoria por id', async () => {
     mockPrisma.category.findUnique.mockResolvedValue(null);
-    await productsRepository.findCategoryById(1);
+    await productsRepository.findCategoryById('category-1');
 
     expect(mockPrisma.category.findUnique).toHaveBeenCalledWith({
-      where: { id: 1 },
+      where: { id: 'category-1' },
     });
   });
 
@@ -150,8 +150,8 @@ describe('productsRepository', () => {
     mockPrisma.product.create.mockResolvedValue({ id: 1 });
 
     await productsRepository.createProduct({
-      sellerId: 2,
-      categoryId: 1,
+      sellerId: 'seller-1',
+      categoryId: 'category-1',
       title: 'Notebook',
       price: 10,
       condition: 'NOVO',
@@ -166,27 +166,69 @@ describe('productsRepository', () => {
     mockPrisma.product.update.mockResolvedValue({ id: '1' });
     mockPrisma.product.update.mockResolvedValue({ id: 1 });
 
-    await productsRepository.updateProduct(1, { title: 'Novo nome' } as never);
+    await productsRepository.updateProduct('product-1', { title: 'Novo nome' } as never);
 
     expect(mockPrisma.product.update).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 1 } }),
+      expect.objectContaining({ where: { id: 'product-1' } }),
     );
   });
 
   it('softDelete desativa produto', async () => {
     mockPrisma.product.update.mockResolvedValue({ id: 1 });
 
-    await productsRepository.softDelete(1);
+    await productsRepository.softDelete('product-1');
 
     expect(mockPrisma.product.update).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 1 }, data: { active: false } }),
+      expect.objectContaining({ where: { id: 'product-1' }, data: { active: false } }),
+    );
+  });
+
+  it('findMany com apenas minPrice (sem maxPrice)', async () => {
+    mockPrisma.product.findMany.mockResolvedValue([]);
+    mockPrisma.product.count.mockResolvedValue(0);
+    mockPrisma.$transaction.mockResolvedValue([[], 0]);
+
+    await productsRepository.findMany({
+      minPrice: 100,
+      sort: 'newest',
+      page: 1,
+      limit: 20,
+    } as never);
+
+    expect(mockPrisma.product.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          price: { gte: 100 },
+        }),
+      }),
+    );
+  });
+
+  it('findMany com apenas maxPrice (sem minPrice)', async () => {
+    mockPrisma.product.findMany.mockResolvedValue([]);
+    mockPrisma.product.count.mockResolvedValue(0);
+    mockPrisma.$transaction.mockResolvedValue([[], 0]);
+
+    await productsRepository.findMany({
+      maxPrice: 1000,
+      sort: 'newest',
+      page: 1,
+      limit: 20,
+    } as never);
+
+    expect(mockPrisma.product.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          price: { lte: 1000 },
+        }),
+      }),
     );
   });
 
   it('updateProduct preserva campos opcionais quando presentes', async () => {
     mockPrisma.product.update.mockResolvedValue({ id: 1 });
 
-    await productsRepository.updateProduct(1, {
+    await productsRepository.updateProduct('product-1', {
       title: 'Novo nome',
       price: 25,
       images: ['https://example.com/foto.jpg'],
@@ -194,7 +236,7 @@ describe('productsRepository', () => {
 
     expect(mockPrisma.product.update).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: 1 },
+        where: { id: 'product-1' },
         data: expect.objectContaining({
           price: 25,
           images: ['https://example.com/foto.jpg'],

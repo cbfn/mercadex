@@ -57,7 +57,7 @@ export const productsService = {
     };
   },
 
-  async getById(id: number) {
+  async getById(id: string) {
     const product = await productsRepository.findById(id);
     if (!product) {
       throw new Error('PRODUCT_NOT_FOUND');
@@ -85,7 +85,7 @@ export const productsService = {
     return mapProduct(product);
   },
 
-  async update(id: number, input: UpdateProductInput, user: AuthRequest['user']) {
+  async update(id: string, input: UpdateProductInput, user: AuthRequest['user']) {
     assertAdminUser(user);
 
     const existing = await productsRepository.findById(id);
@@ -104,7 +104,7 @@ export const productsService = {
     return mapProduct(product);
   },
 
-  async remove(id: number, user: AuthRequest['user']) {
+  async remove(id: string, user: AuthRequest['user']) {
     assertAdminUser(user);
 
     const existing = await productsRepository.findById(id);
