@@ -36,7 +36,6 @@ RUN npm run build
 # Verificação: garante que os artefatos existem
 RUN echo "=== Verificando artefatos ===" \
     && ls dist/generated/prisma/client.js \
-    && ls node_modules/.prisma/client/index.js \
     && echo "=== Artefatos OK ==="
 
 # ── Stage 2: produção ──────────────────────────────────────
@@ -62,9 +61,7 @@ RUN npm ci --omit=dev --ignore-scripts
 COPY --from=builder /app/dist ./dist
 
 # Copia o Prisma Client gerado para src/generated (usado pelo tsc output em dist/)
-# e recria node_modules/.prisma/client (usado por imports de '@prisma/client')
 COPY --from=builder /app/src/generated ./src/generated
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 # Copia schema do Prisma (necessário para migrations em runtime)
 COPY prisma ./prisma

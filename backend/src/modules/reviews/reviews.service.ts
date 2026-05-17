@@ -1,8 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../shared/db/prisma';
 import type { z } from 'zod';
 import type { CreateReviewDto } from './reviews.dto';
-
-const prisma = new PrismaClient();
 
 export const reviewsService = {
   /**
