@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import authRoutes from './modules/auth/auth.routes';
+import { ordersRouter } from './modules/orders/orders.routes';
 import { categoriesRouter, productsRouter } from './modules/products/products.routes';
 import { swaggerUiMiddleware } from './shared/swagger/swagger';
 
@@ -20,6 +21,7 @@ app.use('/api-docs', ...swaggerUiMiddleware);
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productsRouter);
 app.use('/api/categories', categoriesRouter);
+app.use('/api/orders', ordersRouter);
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
