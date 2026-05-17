@@ -27,7 +27,6 @@
     "express-rate-limit": "^8.0.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
-    "openai": "^4.104.0",
     "swagger-ui-express": "^5.0.1",
     "ws": "^8.20.1",
     "zod": "^4.1.5"
