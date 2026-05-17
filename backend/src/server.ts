@@ -14,7 +14,9 @@ const port = Number(process.env.PORT || 3001);
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    origin: process.env.CORS_ORIGIN
+      ? process.env.CORS_ORIGIN.split(',').map((value) => value.trim())
+      : ['http://localhost:3000', 'http://127.0.0.1:3000'],
     credentials: true,
   }),
 );

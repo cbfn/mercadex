@@ -4,9 +4,10 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
+    "postinstall": "prisma generate",
     "dev": "node -r dotenv/config -r ts-node/register src/server.ts",
     "build": "tsc",
-    "start": "node -r dotenv/config dist/server.js",
+    "start": "node -r dotenv/config dist/src/server.js",
     "test": "jest",
     "test:coverage": "jest --coverage",
     "db:migrate": "prisma migrate dev",
