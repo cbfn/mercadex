@@ -30,6 +30,8 @@ RUN npm run build
 # ── Stage 2: produção ──────────────────────────────────────
 FROM node:22-slim AS runner
 
+RUN apt-get update -y && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 # Variáveis de ambiente padrão (podem ser sobrescritas no Coolify)
