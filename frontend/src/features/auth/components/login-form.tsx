@@ -5,7 +5,7 @@
  */
 
 import { useState, type FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../model/auth-context';
 import { Button } from '@/shared/ui/button';
@@ -22,6 +22,7 @@ import { ApiError } from '@/shared/lib/api-client';
 export function LoginForm() {
   const { login } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -35,7 +36,7 @@ export function LoginForm() {
 
     try {
       await login(email, password);
-      router.push('/');
+      router.push(searchParams.get('redirect') ?? '/');
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         setError('E-mail ou senha inválidos. Verifique e tente novamente.');

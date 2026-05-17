@@ -1,15 +1,12 @@
 import { authApi } from '@/shared/lib/api/auth';
 
 const mockApiRequest = jest.fn();
-const mockSetAccessToken = jest.fn();
+const mockSetToken = jest.fn();
 
 jest.mock('@/shared/lib/api-client', () => ({
   apiRequest: (...args: unknown[]) => mockApiRequest(...args),
-  setAccessToken: (...args: unknown[]) => mockSetAccessToken(...args),
+  setToken: (...args: unknown[]) => mockSetToken(...args),
 }));
-
-const mockFetch = jest.fn();
-global.fetch = mockFetch;
 
 const USER_CACHE_KEY = 'mercadex:auth-user';
 
@@ -22,8 +19,7 @@ const mockUser = {
 
 beforeEach(() => {
   mockApiRequest.mockReset();
-  mockSetAccessToken.mockReset();
-  mockFetch.mockReset();
+  mockSetToken.mockReset();
   localStorage.clear();
 });
 
@@ -35,7 +31,7 @@ describe('authApi.login', () => {
     });
 
     const result = await authApi.login('joao@test.com', 'senha123');
-    expect(mockSetAccessToken).toHaveBeenCalledWith('tok');
+    expect(mockSetToken).toHaveBeenCalledWith('tok');
     expect(result).toEqual(mockUser);
   });
 
@@ -87,65 +83,32 @@ describe('authApi.register', () => {
 });
 
 describe('authApi.logout', () => {
-  it('limpa access token e cache do usuário', async () => {
+  it('limpa token e cache do usuário em localStorage', async () => {
     localStorage.setItem(USER_CACHE_KEY, JSON.stringify(mockUser));
     mockApiRequest.mockResolvedValueOnce({ success: true });
 
     await authApi.logout();
-    expect(mockSetAccessToken).toHaveBeenCalledWith(null);
+    expect(mockSetToken).toHaveBeenCalledWith(null);
     expect(localStorage.getItem(USER_CACHE_KEY)).toBeNull();
   });
 
   it('limpa token mesmo quando apiRequest lança erro (finally block)', async () => {
     mockApiRequest.mockRejectedValueOnce(new Error('Server error'));
 
-    // try-finally re-lança o erro, mas o finally limpa o token antes
     await expect(authApi.logout()).rejects.toThrow('Server error');
-    expect(mockSetAccessToken).toHaveBeenCalledWith(null);
+    expect(mockSetToken).toHaveBeenCalledWith(null);
   });
 });
 
-describe('authApi.me', () => {
-  it('retorna usuário do cache quando refresh funciona', async () => {
+describe('getCachedUser', () => {
+  it('retorna null quando localStorage está vazio', async () => {
+    const { getCachedUser } = await import('@/shared/lib/api/auth');
+    expect(getCachedUser()).toBeNull();
+  });
+
+  it('retorna usuário quando há cache válido', async () => {
     localStorage.setItem(USER_CACHE_KEY, JSON.stringify(mockUser));
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ success: true, data: { accessToken: 'new-tok' } }),
-    });
-
-    const result = await authApi.me();
-    expect(result).toEqual(mockUser);
-    expect(mockSetAccessToken).toHaveBeenCalledWith('new-tok');
-  });
-
-  it('retorna null quando não há cache mesmo com refresh ok', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ success: true, data: { accessToken: 'new-tok' } }),
-    });
-
-    const result = await authApi.me();
-    expect(result).toBeNull();
-  });
-
-  it('retorna null quando refresh falha', async () => {
-    mockFetch.mockResolvedValueOnce({ ok: false });
-    const result = await authApi.me();
-    expect(result).toBeNull();
-  });
-
-  it('limpa cache quando refresh falha', async () => {
-    localStorage.setItem(USER_CACHE_KEY, JSON.stringify(mockUser));
-    mockFetch.mockResolvedValueOnce({ ok: false });
-
-    const result = await authApi.me();
-    expect(result).toBeNull();
-    expect(localStorage.getItem(USER_CACHE_KEY)).toBeNull();
-  });
-
-  it('retorna null quando fetch lança erro de rede', async () => {
-    mockFetch.mockRejectedValueOnce(new Error('Network error'));
-    const result = await authApi.me();
-    expect(result).toBeNull();
+    const { getCachedUser } = await import('@/shared/lib/api/auth');
+    expect(getCachedUser()).toEqual(mockUser);
   });
 });

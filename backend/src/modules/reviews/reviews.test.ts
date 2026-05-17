@@ -1,4 +1,4 @@
-import request from 'supertest';
+import type { Request, Response } from 'express';
 
 process.env.NODE_ENV = 'test';
 process.env.JWT_SECRET = 'test-secret';
@@ -19,106 +19,138 @@ jest.mock('./reviews.service', () => ({
   },
 }));
 
-jest.mock('../orders/orders.routes', () => {
-  const express = require('express') as typeof import('express');
-  return { ordersRouter: express.Router() };
-});
+const { reviewsController } = require('./reviews.controller') as typeof import('./reviews.controller');
+const { reviewsService } = require('./reviews.service') as typeof import('./reviews.service');
 
-import app from '../../server';
-import { reviewsService } from './reviews.service';
+function createRes() {
+  return {
+    status: jest.fn().mockReturnThis(),
+    json: jest.fn().mockReturnThis(),
+  } as unknown as Response & {
+    status: jest.Mock;
+    json: jest.Mock;
+  };
+}
 
-const mockedReviewsService = reviewsService as jest.Mocked<typeof reviewsService>;
-
-describe('Reviews routes', () => {
+describe('Reviews controller', () => {
   beforeEach(() => {
-    mockedReviewsService.listReviews.mockReset();
-    mockedReviewsService.createReview.mockReset();
-    mockedReviewsService.deleteReview.mockReset();
+    (reviewsService.listReviews as jest.Mock).mockReset();
+    (reviewsService.createReview as jest.Mock).mockReset();
+    (reviewsService.deleteReview as jest.Mock).mockReset();
     process.env.NODE_ENV = 'test';
     process.env.JWT_SECRET = 'test-secret';
   });
 
-  it('returns reviews list for a product without requiring authentication', async () => {
-    mockedReviewsService.listReviews.mockResolvedValueOnce([
+  it('lista reviews para um produto', async () => {
+    (reviewsService.listReviews as jest.Mock).mockResolvedValueOnce([
       {
         id: 'review-1',
         title: 'Produto excelente',
         body: 'Gostei muito da durabilidade e do desempenho geral.',
         rating: 5,
       },
-    ] as any);
+    ]);
 
-    const res = await request(app).get('/api/products/product-1/reviews');
+    const req = { params: { id: 'product-1' } } as unknown as Request;
+    const res = createRes();
 
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(res.body.data).toHaveLength(1);
-    expect(mockedReviewsService.listReviews).toHaveBeenCalledWith('product-1');
-  });
+    await reviewsController.listByProduct(req, res);
 
-  it('creates review when payload is valid and user is authenticated', async () => {
-    mockedReviewsService.createReview.mockResolvedValueOnce({ id: 'review-1' } as any);
-
-    const res = await request(app).post('/api/products/product-1/reviews').send({
-      title: 'Excelente compra',
-      body: 'Produto com bom acabamento e performance consistente no uso diario.',
-      rating: 5,
-    });
-
-    expect(res.status).toBe(201);
-    expect(res.body.success).toBe(true);
-    expect(mockedReviewsService.createReview).toHaveBeenCalledWith(
-      'user-1',
-      'product-1',
-      expect.any(Object),
+    expect(reviewsService.listReviews).toHaveBeenCalledWith('product-1');
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        data: expect.arrayContaining([expect.objectContaining({ id: 'review-1' })]),
+      }),
     );
   });
 
-  it('returns validation error when create review payload is invalid', async () => {
-    const res = await request(app).post('/api/products/product-1/reviews').send({
-      title: 'ab',
-      body: 'curto',
-      rating: 8,
-    });
+  it('cria review quando payload e valido e usuario esta autenticado', async () => {
+    (reviewsService.createReview as jest.Mock).mockResolvedValueOnce({ id: 'review-1' });
 
-    expect(res.status).toBe(400);
-    expect(res.body.success).toBe(false);
-    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    const req = {
+      params: { id: 'product-1' },
+      body: {
+        title: 'Excelente compra',
+        body: 'Produto com bom acabamento e performance consistente no uso diario.',
+        rating: 5,
+      },
+      user: { id: 'user-1', role: 'CUSTOMER' },
+    } as unknown as Request;
+    const res = createRes();
+
+    await reviewsController.create(req, res);
+
+    expect(reviewsService.createReview).toHaveBeenCalledWith('user-1', 'product-1', expect.any(Object));
+    expect(res.status).toHaveBeenCalledWith(201);
   });
 
-  it('returns conflict when user already reviewed product', async () => {
-    mockedReviewsService.createReview.mockRejectedValueOnce(new Error('Você já avaliou este produto'));
+  it('retorna erro de validacao quando payload da review e invalido', async () => {
+    const req = {
+      params: { id: 'product-1' },
+      body: {
+        title: 'ab',
+        body: 'curto',
+        rating: 8,
+      },
+      user: { id: 'user-1', role: 'CUSTOMER' },
+    } as unknown as Request;
+    const res = createRes();
 
-    const res = await request(app).post('/api/products/product-1/reviews').send({
-      title: 'Muito bom mesmo',
-      body: 'Atendeu minhas expectativas e funcionou muito bem em todos os cenarios.',
-      rating: 5,
-    });
+    await reviewsController.create(req, res);
 
-    expect(res.status).toBe(409);
-    expect(res.body.success).toBe(false);
-    expect(res.body.error.code).toBe('CONFLICT');
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        error: expect.objectContaining({
+          code: 'VALIDATION_ERROR',
+        }),
+      }),
+    );
   });
 
-  it('deletes review when it belongs to authenticated user', async () => {
-    mockedReviewsService.deleteReview.mockResolvedValueOnce({ id: 'review-1' } as any);
+  it('remove review quando ela pertence ao usuario autenticado', async () => {
+    (reviewsService.deleteReview as jest.Mock).mockResolvedValueOnce({ id: 'review-1' });
 
-    const res = await request(app).delete('/api/reviews/review-1');
+    const req = {
+      params: { id: 'review-1' },
+      user: { id: 'user-1', role: 'CUSTOMER' },
+    } as unknown as Request;
+    const res = createRes();
 
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(mockedReviewsService.deleteReview).toHaveBeenCalledWith('review-1', 'user-1');
+    await reviewsController.remove(req, res);
+
+    expect(reviewsService.deleteReview).toHaveBeenCalledWith('review-1', 'user-1');
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        data: expect.objectContaining({ id: 'review-1' }),
+      }),
+    );
   });
 
-  it('returns not found when review cannot be deleted by authenticated user', async () => {
-    mockedReviewsService.deleteReview.mockRejectedValueOnce(
+  it('retorna not found quando review nao pode ser removida pelo usuario autenticado', async () => {
+    (reviewsService.deleteReview as jest.Mock).mockRejectedValueOnce(
       new Error('Review não encontrada ou sem permissão'),
     );
 
-    const res = await request(app).delete('/api/reviews/review-1');
+    const req = {
+      params: { id: 'review-1' },
+      user: { id: 'user-1', role: 'CUSTOMER' },
+    } as unknown as Request;
+    const res = createRes();
 
-    expect(res.status).toBe(404);
-    expect(res.body.success).toBe(false);
-    expect(res.body.error.code).toBe('NOT_FOUND');
+    await reviewsController.remove(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        error: expect.objectContaining({
+          code: 'NOT_FOUND',
+        }),
+      }),
+    );
   });
 });

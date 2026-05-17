@@ -14,7 +14,9 @@ const port = Number(process.env.PORT || 3001);
 app.use(helmet());
 app.use(
   cors({
-    origin: 'http://localhost:3000',
+    origin: process.env.CORS_ORIGIN
+      ? process.env.CORS_ORIGIN.split(',').map((value) => value.trim())
+      : ['http://localhost:3000', 'http://127.0.0.1:3000'],
     credentials: true,
   }),
 );
@@ -26,9 +28,11 @@ app.use('/api/categories', categoriesRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/api', reviewsRouter);
 
-app.get('/health', (_req, res) => {
+export function healthHandler(_req: express.Request, res: express.Response) {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
+}
+
+app.get('/health', healthHandler);
 
 if (process.env.NODE_ENV !== "test") {
   app.listen(port, '0.0.0.0', () => {
