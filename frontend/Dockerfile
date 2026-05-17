@@ -44,7 +44,6 @@ RUN npm ci --omit=dev
 
 # Copia artefatos do build do Next.js
 COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
 
 # Exposição da porta
 EXPOSE ${PORT}
