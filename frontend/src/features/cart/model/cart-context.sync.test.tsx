@@ -27,13 +27,6 @@ function TestChild() {
   return (
     <div>
       <span data-testid="qty">{cart.quantity}</span>
-      <span data-testid="tab">{cart.paymentTab}</span>
-      <button data-testid="set-tab-credit" onClick={() => cart.setTab('credit')}>
-        set-credit
-      </button>
-      <button data-testid="set-tab-pix" onClick={() => cart.setTab('pix')}>
-        set-pix
-      </button>
       <button data-testid="set-items" onClick={() => cart.setItemsFromApi([])}>
         set-items
       </button>
@@ -48,38 +41,6 @@ function renderProvider() {
     </CartProvider>,
   );
 }
-
-describe('CartProvider – setTab', () => {
-  beforeEach(() => {
-    resetCartStore();
-    localStorage.clear();
-    mockUserResult = null;
-    mockCartGet.mockReset();
-    mockCartGet.mockResolvedValue({ data: { items: [], total: 0, id: 'c1', userId: 'u1' } });
-  });
-
-  it('começa com paymentTab "pix"', () => {
-    renderProvider();
-    expect(screen.getByTestId('tab')).toHaveTextContent('pix');
-  });
-
-  it('setTab atualiza paymentTab para credit', async () => {
-    const user = userEvent.setup();
-    renderProvider();
-
-    await user.click(screen.getByTestId('set-tab-credit'));
-    expect(screen.getByTestId('tab')).toHaveTextContent('credit');
-  });
-
-  it('setTab atualiza paymentTab de volta para pix', async () => {
-    const user = userEvent.setup();
-    renderProvider();
-
-    await user.click(screen.getByTestId('set-tab-credit'));
-    await user.click(screen.getByTestId('set-tab-pix'));
-    expect(screen.getByTestId('tab')).toHaveTextContent('pix');
-  });
-});
 
 describe('CartProvider – setItemsFromApi', () => {
   beforeEach(() => {

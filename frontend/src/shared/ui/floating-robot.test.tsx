@@ -55,10 +55,12 @@ describe("FloatingRobot", () => {
       expect(responseBox.textContent).toContain("Console PS5");
     });
 
-    expect(screen.getByRole("link", { name: "Abrir produto Notebook Gamer RTX 4060" })).toHaveAttribute("href", "/products/1");
+    const firstProductLink = screen.getByRole("link", { name: "Abrir produto Notebook Gamer RTX 4060" });
+    expect(firstProductLink).toHaveAttribute("href", "/products/1");
     expect(screen.getByRole("link", { name: "Abrir produto Console PS5" })).toHaveAttribute("href", "/products/2");
 
-    await user.click(screen.getByRole("link", { name: "Abrir produto Notebook Gamer RTX 4060" }));
+    firstProductLink.addEventListener("click", (event) => event.preventDefault());
+    await user.click(firstProductLink);
 
     await waitFor(() => {
       expect(screen.queryByRole("dialog", { name: "Assistente virtual" })).not.toBeInTheDocument();
@@ -98,8 +100,6 @@ describe("FloatingRobot", () => {
     await user.type(screen.getByRole("textbox", { name: "Campo de busca do assistente" }), "horario de funcionamento");
     await user.click(screen.getByRole("button", { name: "Enviar" }));
 
-    await waitFor(() => {
-      expect(screen.getByLabelText("Resposta do assistente").querySelector("div")).toHaveClass("overflow-y-auto");
-    });
+    expect(screen.getByLabelText("Resposta do assistente")).toHaveClass("overflow-y-auto");
   });
 });

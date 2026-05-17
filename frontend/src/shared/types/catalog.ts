@@ -9,6 +9,7 @@ export type ProductCondition = "Novo" | "Excelente" | "Bom" | "Usado";
 
 export interface Product {
   id: number;
+  backendProductId?: string;
   title: string;
   category: string;
   price: number;
