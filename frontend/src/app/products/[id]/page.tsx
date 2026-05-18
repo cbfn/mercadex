@@ -129,7 +129,7 @@ export default function ProductPage({ params }: ProductPageProps) {
     }
 
     void loadProduct();
-  }, [loadProduct]);
+  }, [loadProduct, id]);
 
   useEffect(() => {
     setQty(1);
