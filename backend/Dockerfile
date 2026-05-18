@@ -64,6 +64,9 @@ COPY --from=builder /app/dist ./dist
 # (o tsc compila .ts mas ignora os .js gerados pelo Prisma no src/generated)
 COPY --from=builder /app/src/generated/prisma ./dist/generated/prisma
 
+# ✅ IMPORTANTE: Copia Prisma Client gerado (necessário para runtime)
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+
 # Copia schema do Prisma (necessário para migrations em runtime)
 COPY prisma ./prisma
 COPY prisma.config.ts ./
