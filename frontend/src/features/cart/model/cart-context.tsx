@@ -16,6 +16,7 @@ import type { ReactNode } from "react";
 import { useEffect, useRef } from "react";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { toast } from "sonner";
 import { addItem, cartQuantity, cartSubtotal, cartTotal, removeItem, updateItemQty } from "@/shared/lib/cart";
 import type { CartItem } from "@/shared/types/cart";
 import type { Product } from "@/shared/types/catalog";
@@ -29,7 +30,6 @@ import { cartApi, type ApiCartItem } from "@/shared/lib/api/cart";
 interface CartState {
   items: CartItem[];
   isOpen: boolean;
-  selectedProductId: number | null;
   quantity: number;
   subtotal: number;
   total: number;
@@ -37,12 +37,10 @@ interface CartState {
 
 interface CartActions {
   addToCart: (product: Product, qty?: number) => void;
-  removeFromCart: (id: number) => void;
-  updateQty: (id: number, delta: number) => void;
+  removeFromCart: (id: Product["id"]) => void;
+  updateQty: (id: Product["id"], delta: number) => void;
   openCart: () => void;
   closeCart: () => void;
-  openProduct: (id: number) => void;
-  closeProduct: () => void;
   finishOrder: () => void;
   /** Substitui os itens do carrinho com os dados vindos da API do backend. */
   setItemsFromApi: (items: CartItem[]) => void;
@@ -52,10 +50,32 @@ export type CartStore = CartState & CartActions;
 
 const STORAGE_KEY = "mercadex:cart-state";
 
+// ---------------------------------------------------------------------------
+// UUID validation for cart-item hydration cleanup
+// ---------------------------------------------------------------------------
+
+const CART_UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isValidUuid(value: string | number | undefined | null): boolean {
+  return typeof value === "string" && CART_UUID_REGEX.test(value);
+}
+
+/** Returns true when the item carries a valid backend product UUID. */
+function isValidCartItem(item: CartItem): boolean {
+  return isValidUuid(item.backendProductId) || isValidUuid(item.id);
+}
+
+/**
+ * Module-level counter set synchronously inside the Zustand `merge` callback
+ * (before any React component mounts). CartProvider reads it once to decide
+ * whether to show the stale-items toast.
+ */
+let staleItemsRemovedOnHydration = 0;
+
 const initialState: CartState = {
   items: [],
   isOpen: false,
-  selectedProductId: null,
   quantity: 0,
   subtotal: 0,
   total: 0
@@ -88,8 +108,6 @@ export const useCart = create<CartStore>()(
       },
       openCart: () => set({ isOpen: true }),
       closeCart: () => set({ isOpen: false }),
-      openProduct: (id) => set({ selectedProductId: id }),
-      closeProduct: () => set({ selectedProductId: null }),
       finishOrder: () => set({ ...withDerived([]), isOpen: false }),
       setItemsFromApi: (items) => set(withDerived(items))
     }),
@@ -98,16 +116,17 @@ export const useCart = create<CartStore>()(
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         items: state.items,
-        isOpen: state.isOpen,
-        selectedProductId: state.selectedProductId
+        isOpen: state.isOpen
       }),
       merge: (persistedState, currentState) => {
         const persisted = persistedState as Partial<CartState>;
-        const items = persisted.items ?? currentState.items;
+        const rawItems = persisted.items ?? currentState.items;
+        const validItems = rawItems.filter(isValidCartItem);
+        staleItemsRemovedOnHydration = rawItems.length - validItems.length;
         return {
           ...currentState,
           ...persisted,
-          ...withDerived(items)
+          ...withDerived(validItems)
         };
       }
     }
@@ -165,6 +184,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const prevUserIdRef = useRef<string | null>(null);
 
+  // Show a one-time toast if stale (non-UUID) items were removed during hydration.
+  useEffect(() => {
+    if (staleItemsRemovedOnHydration > 0) {
+      const count = staleItemsRemovedOnHydration;
+      staleItemsRemovedOnHydration = 0;
+      toast.info(
+        count === 1
+          ? "Um item do carrinho foi removido por ser incompatível com o catálogo atual."
+          : `${count} itens do carrinho foram removidos por serem incompatíveis com o catálogo atual.`
+      );
+    }
+  }, []);
+
   useEffect(() => {
     const prevUserId = prevUserIdRef.current;
     const currentUserId = user?.id ?? null;
@@ -172,18 +204,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     // Detecta transição de não-autenticado → autenticado
     if (currentUserId && currentUserId !== prevUserId) {
-      cartApi
-        .get()
-        .then((res) => {
-          if (res.data.items.length > 0) {
-            const mapped = res.data.items.map(mapApiItemToLocal);
-            useCart.getState().setItemsFromApi(mapped);
-          }
-        })
-        .catch(() => {
-          // Backend do carrinho ainda não disponível (Trilha 3 pendente).
-          // Mantém o carrinho local sem interrupção de UX.
-        });
+      // Preserva o carrinho local: itens adicionados antes do login não podem ser perdidos.
+      // Só sincroniza do backend se o carrinho local estiver vazio.
+      // O endpoint /api/cart é @legacy (ADR-007) — a chamada pode retornar 404.
+      const localItems = useCart.getState().items;
+      if (localItems.length === 0) {
+        cartApi
+          .get()
+          .then((res) => {
+            if (res.data.items.length > 0) {
+              const mapped = res.data.items.map(mapApiItemToLocal);
+              useCart.getState().setItemsFromApi(mapped);
+            }
+          })
+          .catch(() => {
+            // Backend do carrinho não disponível (ADR-007 @legacy). Mantém carrinho local.
+          });
+      }
     }
   }, [user?.id]);
 

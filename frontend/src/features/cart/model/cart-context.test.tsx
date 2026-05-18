@@ -17,7 +17,6 @@ function TestHarness() {
       <span data-testid="subtotal">{cart.subtotal}</span>
       <span data-testid="total">{cart.total}</span>
       <span data-testid="is-open">{String(cart.isOpen)}</span>
-      <span data-testid="selected">{String(cart.selectedProductId)}</span>
       <button data-testid="add" onClick={() => cart.addToCart(PRODUCTS[0], 1)}>add</button>
       <button data-testid="add2" onClick={() => cart.addToCart(PRODUCTS[1], 2)}>add2</button>
       <button data-testid="remove" onClick={() => cart.removeFromCart(PRODUCTS[0].id)}>remove</button>
@@ -25,8 +24,6 @@ function TestHarness() {
       <button data-testid="dec" onClick={() => cart.updateQty(PRODUCTS[0].id, -1)}>dec</button>
       <button data-testid="open" onClick={cart.openCart}>open</button>
       <button data-testid="close" onClick={cart.closeCart}>close</button>
-      <button data-testid="open-product" onClick={() => cart.openProduct(5)}>openProduct</button>
-      <button data-testid="close-product" onClick={cart.closeProduct}>closeProduct</button>
       <button data-testid="finish" onClick={cart.finishOrder}>finish</button>
     </div>
   );
@@ -107,16 +104,6 @@ describe("CartProvider / useCart", () => {
     expect(screen.getByTestId("is-open")).toHaveTextContent("true");
     await user.click(screen.getByTestId("close"));
     expect(screen.getByTestId("is-open")).toHaveTextContent("false");
-  });
-
-  it("opens and closes product detail", async () => {
-    const user = userEvent.setup();
-    renderWithProvider();
-
-    await user.click(screen.getByTestId("open-product"));
-    expect(screen.getByTestId("selected")).toHaveTextContent("5");
-    await user.click(screen.getByTestId("close-product"));
-    expect(screen.getByTestId("selected")).toHaveTextContent("null");
   });
 
   it("finishes order and resets state", async () => {

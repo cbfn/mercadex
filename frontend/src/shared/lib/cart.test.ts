@@ -21,6 +21,28 @@ describe("cart logic", () => {
     expect(updated).toHaveLength(0);
   });
 
+  it("updates backendProductId when re-adding an item that had none", () => {
+    const productWithoutBackendId = { ...PRODUCTS[0], backendProductId: undefined };
+    const productWithBackendId = { ...PRODUCTS[0], backendProductId: "550e8400-e29b-41d4-a716-446655440000" };
+
+    const initial = addItem([], productWithoutBackendId, 1);
+    const updated = addItem(initial, productWithBackendId, 1);
+
+    expect(updated).toHaveLength(1);
+    expect(updated[0]?.qty).toBe(2);
+    expect(updated[0]?.backendProductId).toBe("550e8400-e29b-41d4-a716-446655440000");
+  });
+
+  it("does not overwrite an existing backendProductId when re-adding", () => {
+    const productFirst = { ...PRODUCTS[0], backendProductId: "aaaaaaaa-e29b-41d4-a716-446655440000" };
+    const productSecond = { ...PRODUCTS[0], backendProductId: "bbbbbbbb-e29b-41d4-a716-446655440000" };
+
+    const initial = addItem([], productFirst, 1);
+    const updated = addItem(initial, productSecond, 1);
+
+    expect(updated[0]?.backendProductId).toBe("aaaaaaaa-e29b-41d4-a716-446655440000");
+  });
+
   it("calculates totals", () => {
     const first = addItem([], PRODUCTS[0], 1);
     const second = addItem(first, PRODUCTS[1], 2);
