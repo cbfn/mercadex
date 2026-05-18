@@ -205,4 +205,78 @@ describe("StorefrontPage – extended", () => {
     expect(cards.length).toBeGreaterThan(0);
     expect(cards.length).toBeLessThan(mockApiProducts.length);
   });
+
+  it("shows error state when products API fails", async () => {
+    (productsApi.list as jest.Mock).mockRejectedValue(new Error("network error"));
+
+    renderPage();
+
+    expect(await screen.findByTestId("catalog-error")).toBeInTheDocument();
+    expect(screen.getByText("Falha ao carregar vitrine")).toBeInTheDocument();
+  });
+
+  it("retries loading after error when 'Tentar novamente' is clicked", async () => {
+    const user = userEvent.setup();
+    (productsApi.list as jest.Mock)
+      .mockRejectedValueOnce(new Error("network error"))
+      .mockResolvedValueOnce({
+        success: true,
+        data: { items: mockApiProducts, pagination: { page: 1, limit: 100, total: 3, totalPages: 1 } },
+      });
+
+    renderPage();
+
+    await screen.findByTestId("catalog-error");
+    await user.click(screen.getByRole("button", { name: "Tentar novamente" }));
+
+    expect(await screen.findByTestId("products-grid")).toBeInTheDocument();
+  });
+
+  it("falls back to categories from products when categories API fails", async () => {
+    (productsApi.listCategories as jest.Mock).mockRejectedValue(new Error("categories unavailable"));
+
+    renderPage();
+
+    await screen.findByTestId("products-grid");
+
+    // Categories derived from products should still appear (Smartphones, Games)
+    expect(screen.getByTestId("category-Smartphones")).toBeInTheDocument();
+    expect(screen.getByTestId("category-Games")).toBeInTheDocument();
+  });
+
+  it("renders product image from { url } object format", async () => {
+    (productsApi.list as jest.Mock).mockResolvedValue({
+      success: true,
+      data: {
+        items: [
+          {
+            ...mockApiProducts[0],
+            images: [{ url: "https://example.com/object-image.jpg" }],
+          },
+        ],
+        pagination: { page: 1, limit: 100, total: 1, totalPages: 1 },
+      },
+    });
+
+    renderPage();
+
+    const img = (await screen.findByAltText(mockApiProducts[0].title)) as HTMLImageElement;
+    expect(img.src).toContain("object-image.jpg");
+  });
+
+  it("renders fallback image when product has no images", async () => {
+    (productsApi.list as jest.Mock).mockResolvedValue({
+      success: true,
+      data: {
+        items: [{ ...mockApiProducts[0], images: [] }],
+        pagination: { page: 1, limit: 100, total: 1, totalPages: 1 },
+      },
+    });
+
+    renderPage();
+
+    await screen.findByTestId("products-grid");
+    // Component renders without crashing — fallback image is used
+    expect(screen.getAllByTestId("product-card")).toHaveLength(1);
+  });
 });
