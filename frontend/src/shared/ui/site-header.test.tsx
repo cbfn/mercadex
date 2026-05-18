@@ -24,8 +24,8 @@ jest.mock("@/features/cart/model/cart-context", () => ({
 import { useAuth } from "@/features/auth/model/auth-context";
 import { useCart } from "@/features/cart/model/cart-context";
 
-const mockUseAuth = useAuth as jest.Mock;
-const mockUseCart = useCart as jest.Mock;
+const mockUseAuth = useAuth as unknown as jest.Mock;
+const mockUseCart = useCart as unknown as jest.Mock;
 
 describe("SiteHeader", () => {
   beforeEach(() => {
