@@ -73,7 +73,10 @@ export const productsRepository = {
         take: filters.limit,
       }),
       prisma.product.count({ where }),
-    ]);
+    ], {
+      maxWait: 10000, // 10 segundos para aguardar a conexão
+      timeout: 20000, // 20 segundos de timeout total para a transação (útil para cold starts no Neon Serverless)
+    });
 
     return { items, total };
   },

@@ -57,6 +57,9 @@ export const ordersService = {
       }
 
       return order;
+    }, {
+      maxWait: 10000, // 10 segundos
+      timeout: 20000, // 20 segundos
     });
   },
 
