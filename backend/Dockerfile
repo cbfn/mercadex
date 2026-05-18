@@ -64,9 +64,6 @@ COPY --from=builder /app/dist ./dist
 # (o tsc compila .ts mas ignora os .js gerados pelo Prisma no src/generated)
 COPY --from=builder /app/src/generated/prisma ./dist/generated/prisma
 
-# ✅ IMPORTANTE: Copia Prisma Client gerado (necessário para runtime)
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-
 # Copia schema do Prisma (necessário para migrations em runtime)
 COPY prisma ./prisma
 COPY prisma.config.ts ./
@@ -78,5 +75,5 @@ EXPOSE ${PORT}
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD curl -f http://localhost:${PORT}/health || exit 1
 
-# Comando de inicialização
-CMD ["node", "-r", "dotenv/config", "dist/server.js"]
+# Comando de inicialização: gera Prisma Client e inicia o servidor
+CMD sh -c "npx prisma generate && node -r dotenv/config dist/server.js"
