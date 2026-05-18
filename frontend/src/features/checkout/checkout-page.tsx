@@ -74,6 +74,37 @@ function resolveBackendProductId(item: { id: number | string; backendProductId?:
   return null;
 }
 
+function normalizeTitle(value: string) {
+  return value.trim().toLowerCase();
+}
+
+async function resolveCheckoutProductId(item: {
+  id: number | string;
+  backendProductId?: string;
+  title: string;
+}) {
+  const resolved = resolveBackendProductId(item);
+  if (resolved) return resolved;
+
+  const title = item.title.trim();
+  if (!title) return null;
+
+  try {
+    const search = encodeURIComponent(title);
+    const response = await apiRequest<{
+      success: boolean;
+      data: { items: Array<{ id: string; title: string }> };
+    }>(`/api/products?search=${search}&limit=20`, { skipAuth: true });
+
+    const normalizedTitle = normalizeTitle(title);
+    const exactMatch = response.data.items.find((product) => normalizeTitle(product.title) === normalizedTitle);
+
+    return exactMatch?.id ?? response.data.items[0]?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Página de checkout com endereço, PIX estático e confirmação de pedido.
  * Após confirmação, limpa o carrinho e redireciona para /orders/:id.
@@ -207,9 +238,9 @@ export function CheckoutPage() {
     setError('');
     setIsLoading(true);
 
-    const orderItems = items
-      .map((item) => {
-        const productId = resolveBackendProductId(item);
+    const orderItems = (await Promise.all(
+      items.map(async (item) => {
+        const productId = await resolveCheckoutProductId(item);
         if (!productId) {
           return null;
         }
@@ -219,6 +250,7 @@ export function CheckoutPage() {
           quantity: item.qty,
         };
       })
+    ))
       .filter((item): item is { productId: string; quantity: number } => Boolean(item));
 
     if (orderItems.length !== items.length) {
