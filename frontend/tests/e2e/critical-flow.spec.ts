@@ -12,7 +12,7 @@ const mockProduct1 = {
   description: "Smartphone premium da Apple com chip A16 Bionic",
   price: 2999,
   condition: "EXCELENTE",
-  images: ["https://via.placeholder.com/400x400"],
+  images: ["https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=400&auto=format&fit=crop"],
   stock: 3,
   active: true,
   viewsCount: 120,
@@ -28,7 +28,7 @@ const mockProduct2 = {
   description: "Console de nova geração da Sony",
   price: 2799,
   condition: "BOM",
-  images: ["https://via.placeholder.com/400x400"],
+  images: ["https://images.unsplash.com/photo-1486401899868-0e435ed85128?q=80&w=400&auto=format&fit=crop"],
   stock: 2,
   active: true,
   viewsCount: 80,
@@ -51,35 +51,40 @@ const mockCategories = [
  * individual tests).
  */
 async function setupApiMocks(page: Page) {
-  await page.route("**/api/**", async (route) => {
-    const url = route.request().url();
+  await page.route("**/*", async (route) => {
+    const { pathname } = new URL(route.request().url());
 
-    if (url.includes("/api/products/categories")) {
+    if (!pathname.startsWith("/api/")) {
+      await route.fallback();
+      return;
+    }
+
+    if (pathname === "/api/categories") {
       await route.fulfill({
         contentType: "application/json",
         body: JSON.stringify({ success: true, data: mockCategories }),
       });
-    } else if (url.includes(`/api/products/${PRODUCT_UUID}/reviews`)) {
+    } else if (pathname === `/api/products/${PRODUCT_UUID}/reviews`) {
       await route.fulfill({
         contentType: "application/json",
         body: JSON.stringify({ success: true, data: [] }),
       });
-    } else if (url.includes(`/api/products/${PRODUCT_UUID}/ai-summary`)) {
+    } else if (pathname === `/api/products/${PRODUCT_UUID}/ai-summary`) {
       await route.fulfill({
         contentType: "application/json",
         body: JSON.stringify({ success: true, data: { summary: "Produto excelente." } }),
       });
-    } else if (url.includes(`/api/products/${PRODUCT_UUID}`)) {
+    } else if (pathname === `/api/products/${PRODUCT_UUID}`) {
       await route.fulfill({
         contentType: "application/json",
         body: JSON.stringify({ success: true, data: mockProduct1 }),
       });
-    } else if (url.includes(`/api/products/${PRODUCT_UUID_2}`)) {
+    } else if (pathname === `/api/products/${PRODUCT_UUID_2}`) {
       await route.fulfill({
         contentType: "application/json",
         body: JSON.stringify({ success: true, data: mockProduct2 }),
       });
-    } else if (url.includes("/api/products")) {
+    } else if (pathname === "/api/products") {
       await route.fulfill({
         contentType: "application/json",
         body: JSON.stringify({
@@ -91,7 +96,7 @@ async function setupApiMocks(page: Page) {
         }),
       });
     } else {
-      await route.continue();
+      await route.fallback();
     }
   });
 }
