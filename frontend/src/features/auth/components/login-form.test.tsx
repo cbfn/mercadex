@@ -110,6 +110,7 @@ describe('LoginForm', () => {
     expect(screen.getByRole('button', { name: /entrando/i })).toBeDisabled();
 
     resolveLogin();
+    await waitFor(() => expect(screen.getByRole('button', { name: /entrar/i })).not.toBeDisabled());
   });
 
   it('exibe link para a página de registro', () => {

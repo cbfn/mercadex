@@ -92,18 +92,20 @@ describe("StorefrontPage – extended", () => {
     jest.clearAllMocks();
   });
 
-  it("renders header with Mercadex branding", () => {
+  it("renders header with Mercadex branding", async () => {
     renderPage();
-    expect(screen.getByAltText("Mercadex")).toBeInTheDocument();
+    expect(await screen.findByAltText("Mercadex")).toBeInTheDocument();
   });
 
-  it("renders search input", () => {
+  it("renders search input", async () => {
     renderPage();
+    await screen.findByTestId("products-grid");
     expect(screen.getByLabelText("Buscar produtos")).toBeInTheDocument();
   });
 
-  it("renders cart button with quantity", () => {
+  it("renders cart button with quantity", async () => {
     renderPage();
+    await screen.findByTestId("products-grid");
     expect(screen.getByTestId("open-cart-button")).toHaveTextContent("0");
   });
 
@@ -116,8 +118,9 @@ describe("StorefrontPage – extended", () => {
     }
   });
 
-  it("renders sort select", () => {
+  it("renders sort select", async () => {
     renderPage();
+    await screen.findByTestId("products-grid");
     expect(screen.getByTestId("sort-select")).toBeInTheDocument();
   });
 
