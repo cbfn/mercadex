@@ -51,6 +51,8 @@ describe('LoginForm', () => {
     await waitFor(() => expect(mockLogin).toHaveBeenCalledWith('user@test.com', 'senha123'));
     await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/'));
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    // Drain setIsLoading(false) from the finally block
+    await waitFor(() => expect(screen.getByRole('button', { name: /entrar/i })).not.toBeDisabled());
   });
 
   it('redireciona para URL do redirect param após login bem-sucedido', async () => {
@@ -65,6 +67,8 @@ describe('LoginForm', () => {
     await user.click(screen.getByRole('button', { name: /entrar/i }));
 
     await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/products/42?reviews=open'));
+    // Drain setIsLoading(false) from the finally block
+    await waitFor(() => expect(screen.getByRole('button', { name: /entrar/i })).not.toBeDisabled());
   });
 
   it('exibe mensagem de erro para credenciais inválidas (401)', async () => {
@@ -110,6 +114,7 @@ describe('LoginForm', () => {
     expect(screen.getByRole('button', { name: /entrando/i })).toBeDisabled();
 
     resolveLogin();
+    await waitFor(() => expect(screen.getByRole('button', { name: /entrar/i })).not.toBeDisabled());
   });
 
   it('exibe link para a página de registro', () => {
