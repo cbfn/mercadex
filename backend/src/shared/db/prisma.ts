@@ -16,10 +16,8 @@ function createPrismaClient() {
     throw new Error('DATABASE_URL não definida nas variáveis de ambiente');
   }
   
-  // Remove aspas caso a variável de ambiente tenha sido injetada com elas (ex: via Docker/Coolify)
-  if (connectionString.startsWith('"') && connectionString.endsWith('"')) {
-    connectionString = connectionString.slice(1, -1);
-  }
+  // Remove aspas duplas ou simples caso a variável tenha sido injetada com elas (ex: via Coolify/Docker)
+  connectionString = connectionString.replace(/^["']|["']$/g, '');
 
   // PrismaNeon v7 recebe PoolConfig diretamente (não um Pool instanciado)
   const adapter = new PrismaNeon({ connectionString });
