@@ -67,46 +67,50 @@ export default defineConfig({
 
 ## Teste Atual
 
-### `critical-flow.spec.ts` — Fluxo Crítico de Checkout
+### `critical-flow.spec.ts` — Fluxos Críticos
 
 **Localização:** `frontend/tests/e2e/critical-flow.spec.ts`
 
-Este é o teste E2E mais importante do projeto. Ele valida o **caminho feliz completo** desde a visualização de um produto até a confirmação do pedido, cobrindo todas as 4 etapas do drawer de checkout.
+Este spec cobre os **fluxos críticos** do frontend com API mockada via `page.route()` — nenhuma instância de backend é necessária.
 
-#### Fluxo Coberto
+> **UUID nos testids:** os produtos têm IDs no formato UUID. O testid de abertura de produto segue o padrão `open-product-<uuid>`, ex.: `open-product-11111111-1111-4111-8111-111111111111`. As asserções de URL também usam o UUID completo.
+
+#### Cenários cobertos
+
+| Describe | Teste | Fluxo |
+|---|---|---|
+| `happy-path flows` | Catalog displays products | Catálogo carrega via API mockada |
+| `happy-path flows` | Product detail page loads | Navega para `/products/<uuid>` e exibe info |
+| `happy-path flows` | Guest checkout redirect | Usuário não autenticado é redirecionado para login |
+| `error states` | Products API returns 500 | Catálogo exibe estado de erro |
+
+#### Fluxo do guest checkout (fluxo principal)
 
 ```
 Página inicial
+    │  (API mockada: GET /api/products → retorna produtos com UUIDs)
     │
-    ▼ clica em [data-testid="open-product-1"]
-Página de produto (/products/1)
+    ▼ clica em [data-testid="open-product-11111111-1111-4111-8111-111111111111"]
+Página de produto (/products/11111111-1111-4111-8111-111111111111)
+    │  (API mockada: GET /api/products/:uuid → retorna produto)
     │ verifica [data-testid="product-page-content"] visível
     ▼ clica em [data-testid="modal-add-to-cart"]
 Carrinho — Etapa 1: Resumo
     │ verifica [data-testid="cart-step"] visível
-    ▼ clica em [data-testid="go-to-delivery"]
-Carrinho — Etapa 2: Entrega
-    │ verifica [data-testid="delivery-step"] visível
-    │ preenche: Nome, CPF, Telefone, CEP, Endereço, Cidade, UF
-    ▼ clica em "Continuar para pagamento"
-Carrinho — Etapa 3: Pagamento (PIX)
-    │ verifica [data-testid="payment-step"] visível
-    ▼ clica em [data-testid="confirm-order-button"]
-Carrinho — Etapa 4: Confirmação
-    │ verifica [data-testid="confirm-step"] visível
-    ▼ clica em [data-testid="finish-order-button"]
-Botão do carrinho exibe "0" itens ✅
+    ▼ clica em [data-testid="go-to-checkout"]
+Redirecionamento para login (/login?redirect=/checkout) ✅
 ```
 
 #### Data-testids utilizados
 
 | `data-testid` | Elemento | Etapa |
 |---------------|----------|-------|
-| `open-product-1` | Botão de abrir produto na listagem | Catálogo |
+| `open-product-<uuid>` | Botão de abrir produto na listagem (ex: `open-product-11111111-1111-4111-8111-111111111111`) | Catálogo |
 | `product-page-content` | Conteúdo da página de produto | Produto |
 | `modal-add-to-cart` | Botão "Adicionar ao carrinho" | Produto |
 | `cart-step` | Container da etapa 1 do carrinho | Carrinho |
-| `go-to-delivery` | Botão de avançar para entrega | Carrinho (etapa 1) |
+| `go-to-checkout` | Botão de avançar para checkout / login | Carrinho (etapa 1) |
+| `go-to-delivery` | Botão de avançar para entrega (usuário logado) | Carrinho (etapa 1) |
 | `delivery-step` | Container da etapa 2 (entrega) | Carrinho |
 | `payment-step` | Container da etapa 3 (pagamento PIX) | Carrinho |
 | `confirm-order-button` | Botão de confirmar pedido | Carrinho (etapa 3) |

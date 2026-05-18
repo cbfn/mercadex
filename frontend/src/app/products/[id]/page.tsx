@@ -2,17 +2,21 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { use, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, MessageSquare, ShieldCheck, ShoppingBag, Star, Truck } from "lucide-react";
+import { ArrowLeft, MessageSquare, ShieldCheck, Star, Truck } from "lucide-react";
 import { CartDrawer } from "@/features/cart/components/cart-drawer";
 import { ReviewsDrawer } from "@/features/product-detail/components/reviews-drawer";
 import { useCart } from "@/features/cart/model/cart-context";
-import { PRODUCTS } from "@/shared/mocks/products";
+import { SiteHeader } from "@/shared/ui/site-header";
+import { productsApi, type ApiProduct } from "@/shared/lib/api/products";
+import { ApiError } from "@/shared/lib/api-client";
 import { formatBRL } from "@/shared/lib/currency";
 import { discountPct } from "@/shared/lib/catalog";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
+import { Skeleton } from "@/shared/ui/skeleton";
+import type { Product, ProductCondition } from "@/shared/types/catalog";
 
 interface ProductPageProps {
   params: Promise<{
@@ -20,22 +24,173 @@ interface ProductPageProps {
   }>;
 }
 
+interface ProductDetailViewModel extends Product {
+  images: string[];
+}
+
+const FALLBACK_IMAGE =
+  "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=400&auto=format&fit=crop";
+
+function mapCondition(condition: ApiProduct["condition"]): ProductCondition {
+  const map = {
+    NOVO: "Novo",
+    EXCELENTE: "Excelente",
+    BOM: "Bom",
+    USADO: "Usado",
+  } as const;
+
+  return map[condition];
+}
+
+function getFirstValidImage(images: unknown[]) {
+  return images.find((image) => typeof image === "string" && image.trim().length > 0) as string | undefined;
+}
+
+function adaptApiProductToViewModel(product: ApiProduct): ProductDetailViewModel {
+  const images = Array.isArray(product.images)
+    ? product.images.filter((image) => typeof image === "string" && image.trim().length > 0)
+    : [];
+  const image = getFirstValidImage(images) ?? FALLBACK_IMAGE;
+  const safeOriginalPrice = Math.max(product.price + 1, Math.round(product.price * 1.15));
+
+  return {
+    id: product.id,
+    backendProductId: product.id,
+    title: product.title,
+    category: product.category.name,
+    price: product.price,
+    originalPrice: safeOriginalPrice,
+    condition: mapCondition(product.condition),
+    seller: product.seller.name ?? product.seller.email,
+    sellerRating: 4.7,
+    sales: product.viewsCount,
+    description: product.description ?? "Sem descricao informada.",
+    specs: [],
+    image,
+    images,
+    views: product.viewsCount,
+  };
+}
+
 export default function ProductPage({ params }: ProductPageProps) {
-  const { quantity, openCart, addToCart } = useCart();
+  const { openCart, addToCart } = useCart();
   const [qty, setQty] = useState(1);
-  const { id } = use(params);
+  const [id, setId] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const [reviewsOpen, setReviewsOpen] = useState(searchParams.get('reviews') === 'open');
+  const [product, setProduct] = useState<ProductDetailViewModel | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isNotFound, setIsNotFound] = useState(false);
+  const [error, setError] = useState("");
 
-  const product = useMemo(() => {
-    const productId = Number(id);
-    if (Number.isNaN(productId)) return null;
-    return PRODUCTS.find((item) => item.id === productId) ?? null;
+  const loadProduct = useCallback(async () => {
+    if (!id) {
+      return;
+    }
+
+    setIsLoading(true);
+    setError("");
+    setIsNotFound(false);
+
+    try {
+      const response = await productsApi.get(id);
+      setProduct(adaptApiProductToViewModel(response.data));
+    } catch (err) {
+      setProduct(null);
+
+      if (err instanceof ApiError && err.status === 404) {
+        setIsNotFound(true);
+      } else {
+        setError("Nao foi possivel carregar os detalhes do produto. Tente novamente.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   }, [id]);
 
-  if (!product) {
+  useEffect(() => {
+    let mounted = true;
+
+    void params.then((resolvedParams) => {
+      if (mounted) {
+        setId(resolvedParams.id);
+      }
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, [params]);
+
+  useEffect(() => {
+    if (!id) {
+      setIsLoading(true);
+      return;
+    }
+
+    void loadProduct();
+  }, [loadProduct, id]);
+
+  useEffect(() => {
+    setQty(1);
+  }, [id]);
+
+  if (isLoading) {
     return (
-      <main className="container py-16 text-center">
+      <main className="container py-8" data-testid="product-loading" aria-busy="true" aria-live="polite">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+          <div className="space-y-4">
+            <Skeleton className="aspect-[4/3] w-full rounded-2xl" />
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Skeleton className="h-20 w-full rounded-xl" />
+              <Skeleton className="h-20 w-full rounded-xl" />
+              <Skeleton className="h-20 w-full rounded-xl" />
+            </div>
+          </div>
+
+          <div className="space-y-5 rounded-2xl border bg-white p-6">
+            <div className="flex gap-2">
+              <Skeleton className="h-6 w-20 rounded-full" />
+              <Skeleton className="h-6 w-24 rounded-full" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-4 w-5/6" />
+              <Skeleton className="h-4 w-3/4" />
+            </div>
+            <Skeleton className="h-28 w-full rounded-xl" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-24" />
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-9 w-9" />
+                <Skeleton className="h-9 w-12" />
+                <Skeleton className="h-9 w-9" />
+              </div>
+            </div>
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-24 w-full rounded-xl" />
+          </div>
+        </div>
+        <p className="mt-4 text-center text-sm text-muted-foreground">Carregando produto...</p>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className="container py-16 text-center" data-testid="product-error">
+        <p className="font-display text-2xl font-semibold">Falha ao carregar produto</p>
+        <p className="mt-2 text-sm text-muted-foreground">{error}</p>
+        <Button type="button" className="mt-6" onClick={() => void loadProduct()}>
+          Tentar novamente
+        </Button>
+      </main>
+    );
+  }
+
+  if (isNotFound || !product) {
+    return (
+      <main className="container py-16 text-center" data-testid="product-not-found">
         <p className="font-display text-2xl font-semibold">Produto nao encontrado</p>
         <p className="mt-2 text-sm text-muted-foreground">Pode ter sido removido ou ja vendido por outro comprador.</p>
         <Link href="/" className="mt-6 inline-flex rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
@@ -47,23 +202,13 @@ export default function ProductPage({ params }: ProductPageProps) {
 
   return (
     <main className="pb-16">
-      <header className="sticky top-0 z-40 border-b border-white/50 bg-white/80 backdrop-blur-xl">
-        <div className="container flex h-20 items-center justify-between">
-          <Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 hover:text-slate-900">
-            <ArrowLeft className="size-4" /> Voltar ao catalogo
-          </Link>
-          <Button onClick={openCart} data-testid="open-cart-button" variant="secondary">
-            <ShoppingBag size={18} />
-            {quantity}
-          </Button>
-        </div>
-      </header>
+      <SiteHeader />
 
       <section className="container mt-8 grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]" data-testid="product-page-content">
         <div className="space-y-4">
           <div className="overflow-hidden rounded-2xl border bg-white">
             <Image
-              src={product.image}
+              src={getFirstValidImage(product.images) ?? product.image ?? FALLBACK_IMAGE}
               alt={product.title}
               width={900}
               height={700}

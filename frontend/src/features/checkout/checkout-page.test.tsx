@@ -38,13 +38,18 @@ jest.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush, replace: mockReplace, back: mockBack }),
 }));
 
-jest.mock('@/shared/lib/api-client', () => ({
-  apiRequest: (...args: unknown[]) => mockApiRequest(...args),
-}));
+jest.mock('@/shared/lib/api-client', () => {
+  const actual = jest.requireActual('@/shared/lib/api-client') as Record<string, unknown>;
+  return {
+    ...actual,
+    apiRequest: (...args: unknown[]) => mockApiRequest(...args),
+  };
+});
 
 jest.mock('sonner', () => ({
   toast: {
     success: (...args: unknown[]) => mockToastSuccess(...args),
+    info: jest.fn(),
   },
 }));
 
@@ -184,25 +189,18 @@ describe('CheckoutPage', () => {
     });
   });
 
-  it('busca productId na API quando item nao possui backendProductId', async () => {
+  it('usa id UUID diretamente quando backendProductId esta ausente', async () => {
     const user = userEvent.setup();
     mockCartItems = [
       {
-        id: 1,
+        id: '22222222-2222-4222-8222-222222222222',
         title: 'iPhone',
         price: 4999,
         qty: 1,
       },
     ];
 
-    mockApiRequest
-      .mockResolvedValueOnce({
-        success: true,
-        data: {
-          items: [{ id: '22222222-2222-4222-8222-222222222222', title: 'iPhone' }],
-        },
-      })
-      .mockResolvedValueOnce({ success: true, data: { id: 'order-1' } });
+    mockApiRequest.mockResolvedValue({ success: true, data: { id: 'order-1' } });
 
     render(<CheckoutPage />);
 
@@ -218,10 +216,7 @@ describe('CheckoutPage', () => {
     await user.click(screen.getByRole('button', { name: /confirmar pedido/i }));
 
     await waitFor(() => {
-      expect(mockApiRequest).toHaveBeenNthCalledWith(1, '/api/products?search=iPhone&limit=20', {
-        skipAuth: true,
-      });
-      expect(mockApiRequest).toHaveBeenNthCalledWith(2, '/api/orders', {
+      expect(mockApiRequest).toHaveBeenCalledWith('/api/orders', expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({
           items: [{ productId: '22222222-2222-4222-8222-222222222222', quantity: 1 }],
@@ -234,22 +229,22 @@ describe('CheckoutPage', () => {
             state: 'SP',
           },
         }),
-      });
+      }));
     });
+
+    expect(mockFinishOrder).toHaveBeenCalledTimes(1);
   });
 
-  it('mostra erro quando nao consegue resolver productId para checkout', async () => {
+  it('exibe erro quando nenhum item do carrinho possui UUID valido', async () => {
     const user = userEvent.setup();
     mockCartItems = [
       {
-        id: 1,
+        id: 'invalid-legacy-id',
         title: 'Produto sem mapeamento',
         price: 4999,
         qty: 1,
       },
     ];
-
-    mockApiRequest.mockResolvedValueOnce({ success: true, data: { items: [] } });
 
     render(<CheckoutPage />);
 
@@ -264,7 +259,9 @@ describe('CheckoutPage', () => {
     await user.click(screen.getByRole('button', { name: /continuar para pagamento/i }));
     await user.click(screen.getByRole('button', { name: /confirmar pedido/i }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(/nao foi possivel identificar um ou mais produtos/i);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/nenhum produto v.lido/i);
+    expect(mockApiRequest).not.toHaveBeenCalled();
     expect(mockFinishOrder).not.toHaveBeenCalled();
   });
+
 });

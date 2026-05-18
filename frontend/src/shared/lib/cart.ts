@@ -23,18 +23,22 @@ export function addItem(items: CartItem[], product: Product, qty: number): CartI
 
   return items.map((item) => {
     if (item.id !== product.id) return item;
-    return { ...item, qty: item.qty + qty };
+    return {
+      ...item,
+      backendProductId: item.backendProductId ?? product.backendProductId,
+      qty: item.qty + qty,
+    };
   });
 }
 
-export function updateItemQty(items: CartItem[], id: number, delta: number): CartItem[] {
+export function updateItemQty(items: CartItem[], id: Product["id"], delta: number): CartItem[] {
   return items.map((item) => {
     if (item.id !== id) return item;
     return { ...item, qty: Math.max(1, item.qty + delta) };
   });
 }
 
-export function removeItem(items: CartItem[], id: number): CartItem[] {
+export function removeItem(items: CartItem[], id: Product["id"]): CartItem[] {
   return items.filter((item) => item.id !== id);
 }
 

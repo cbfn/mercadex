@@ -7,12 +7,14 @@ import { toast } from 'sonner';
 import { useCart } from '@/features/cart/model/cart-context';
 import { useAuth } from '@/features/auth/model/auth-context';
 import { PixDisplay } from './pix-display';
-import { apiRequest } from '@/shared/lib/api-client';
+import { apiRequest, ApiError } from '@/shared/lib/api-client';
 import { formatBRL } from '@/shared/lib/currency';
+import { SHIPPING } from '@/shared/lib/cart';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { Card } from '@/shared/ui/card';
 import { Input } from '@/shared/ui/input';
+import { Skeleton } from '@/shared/ui/skeleton';
 
 interface ShippingAddress {
   cep: string;
@@ -36,7 +38,11 @@ interface BrasilCepResponse {
 }
 
 type CepLookupStatus = 'idle' | 'loading' | 'success' | 'error';
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isUuid(value: string | undefined | null) {
+  return Boolean(value && UUID_REGEX.test(value));
+}
 
 function onlyDigits(value: string) {
   return value.replace(/\D/g, '');
@@ -63,47 +69,12 @@ function isAddressFilled(address: ShippingAddress) {
 }
 
 function resolveBackendProductId(item: { id: number | string; backendProductId?: string }) {
-  if (item.backendProductId && UUID_REGEX.test(item.backendProductId)) {
-    return item.backendProductId;
-  }
-
-  if (typeof item.id === 'string' && UUID_REGEX.test(item.id)) {
-    return item.id;
-  }
-
+  if (isUuid(item.backendProductId)) return item.backendProductId;
+  if (typeof item.id === 'string' && isUuid(item.id)) return item.id;
   return null;
 }
 
-function normalizeTitle(value: string) {
-  return value.trim().toLowerCase();
-}
 
-async function resolveCheckoutProductId(item: {
-  id: number | string;
-  backendProductId?: string;
-  title: string;
-}) {
-  const resolved = resolveBackendProductId(item);
-  if (resolved) return resolved;
-
-  const title = item.title.trim();
-  if (!title) return null;
-
-  try {
-    const search = encodeURIComponent(title);
-    const response = await apiRequest<{
-      success: boolean;
-      data: { items: Array<{ id: string; title: string }> };
-    }>(`/api/products?search=${search}&limit=20`, { skipAuth: true });
-
-    const normalizedTitle = normalizeTitle(title);
-    const exactMatch = response.data.items.find((product) => normalizeTitle(product.title) === normalizedTitle);
-
-    return exactMatch?.id ?? response.data.items[0]?.id ?? null;
-  } catch {
-    return null;
-  }
-}
 
 /**
  * Página de checkout com endereço, PIX estático e confirmação de pedido.
@@ -126,9 +97,9 @@ export function CheckoutPage() {
   const [error, setError] = useState('');
   const [cepStatus, setCepStatus] = useState<CepLookupStatus>('idle');
   const [cepMessage, setCepMessage] = useState('');
-
   const subtotal = useMemo(() => items.reduce((sum, item) => sum + item.price * item.qty, 0), [items]);
-  const total = subtotal;
+  const shipping = items.length > 0 ? SHIPPING : 0;
+  const total = subtotal + shipping;
   const stepNumber = step === 'address' ? 1 : 2;
 
   useEffect(() => {
@@ -196,7 +167,45 @@ export function CheckoutPage() {
     };
   }, [address.cep]);
 
-  if (isAuthLoading || !user) {
+  if (isAuthLoading) {
+    return (
+      <main className="container py-8" data-testid="checkout-loading" aria-busy="true" aria-live="polite">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+          <div className="space-y-4">
+            <Card className="rounded-2xl bg-white p-6">
+              <Skeleton className="mb-3 h-6 w-48" />
+              <Skeleton className="h-9 w-full" />
+              <Skeleton className="mt-3 h-4 w-5/6" />
+            </Card>
+            <Card className="rounded-2xl bg-white p-6">
+              <div className="space-y-4">
+                <Skeleton className="h-5 w-40" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-1/2" />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+                <Skeleton className="h-10 w-full" />
+              </div>
+            </Card>
+          </div>
+          <Card className="h-fit rounded-2xl bg-white p-6">
+            <Skeleton className="h-6 w-40" />
+            <div className="mt-4 space-y-3">
+              <Skeleton className="h-5 w-full" />
+              <Skeleton className="h-5 w-full" />
+              <Skeleton className="h-6 w-3/4" />
+            </div>
+            <Skeleton className="mt-5 h-10 w-full" />
+          </Card>
+        </div>
+      </main>
+    );
+  }
+
+  if (!user) {
     return null;
   }
 
@@ -238,24 +247,13 @@ export function CheckoutPage() {
     setError('');
     setIsLoading(true);
 
-    const orderItems = (await Promise.all(
-      items.map(async (item) => {
-        const productId = await resolveCheckoutProductId(item);
-        if (!productId) {
-          return null;
-        }
+    const orderItems = items
+      .map((item) => ({ productId: resolveBackendProductId(item), quantity: item.qty }))
+      .filter((r): r is { productId: string; quantity: number } => r.productId !== null);
 
-        return {
-          productId,
-          quantity: item.qty,
-        };
-      })
-    ))
-      .filter((item): item is { productId: string; quantity: number } => Boolean(item));
-
-    if (orderItems.length !== items.length) {
+    if (orderItems.length === 0) {
+      setError('Nenhum produto válido no carrinho. Recarregue a página e adicione os produtos novamente.');
       setIsLoading(false);
-      setError('Nao foi possivel identificar um ou mais produtos do carrinho. Recarregue a pagina e tente novamente.');
       return;
     }
 
@@ -281,8 +279,12 @@ export function CheckoutPage() {
       finishOrder();
       toast.success('Pedido criado com sucesso! Redirecionando para os detalhes.');
       router.push(`/orders/${res.data.id}`);
-    } catch {
-      setError('Erro ao criar pedido. Tente novamente.');
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        router.replace('/login?redirect=/checkout');
+      } else {
+        setError('Erro ao criar pedido. Tente novamente.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -343,8 +345,16 @@ export function CheckoutPage() {
               ))}
             </div>
 
-            <div className="mt-4 border-t pt-3">
-              <div className="flex items-center justify-between text-sm font-semibold">
+            <div className="mt-4 space-y-1.5 border-t pt-3 text-sm">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span>Subtotal</span>
+                <span>{formatBRL(subtotal)}</span>
+              </div>
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span>Frete</span>
+                <span>{formatBRL(shipping)}</span>
+              </div>
+              <div className="flex items-center justify-between font-semibold text-slate-900">
                 <span>Total</span>
                 <span>{formatBRL(total)}</span>
               </div>
@@ -490,9 +500,13 @@ export function CheckoutPage() {
               <PixDisplay pixCode={STATIC_PIX_KEY} total={total} />
 
               <div className="rounded-xl border bg-muted/40 p-4 text-sm">
-                <div className="flex justify-between">
+                <div className="flex justify-between text-muted-foreground">
                   <span>Subtotal</span>
                   <span>{formatBRL(subtotal)}</span>
+                </div>
+                <div className="mt-1 flex justify-between text-muted-foreground">
+                  <span>Frete</span>
+                  <span>{formatBRL(shipping)}</span>
                 </div>
                 <div className="mt-2 flex justify-between border-t pt-2 font-semibold text-slate-900">
                   <span>Total</span>

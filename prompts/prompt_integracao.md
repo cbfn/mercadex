@@ -1,0 +1,1 @@
+Preciso integrar os produtos reais vindo da api de produtos `/api/products` na pagina principal. Não deve usar os dados PRODUCTS (mockados) assim como as categorias devem vir da api `/api/categories` e não usar os dados CATEGORIES mockados
