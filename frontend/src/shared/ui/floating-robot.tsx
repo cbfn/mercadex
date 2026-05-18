@@ -6,8 +6,7 @@ import { Bot, Send, Sparkles } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Modal } from "@/shared/ui/modal";
-
-const SEARCH_API_PATH = "/api/products/search";
+import { apiRequest } from "@/shared/lib/api-client";
 
 type SearchProductItem = {
   id: number;
@@ -66,8 +65,10 @@ export function FloatingRobot() {
     setLoading(true);
 
     try {
-      const result = await fetch(`${SEARCH_API_PATH}?q=${encodeURIComponent(trimmedQuery)}`);
-      const data = (await result.json()) as SearchResponse;
+      const data = await apiRequest<SearchResponse>(
+        `/api/products/search?q=${encodeURIComponent(trimmedQuery)}`,
+        { skipAuth: true }
+      );
 
       setResult(buildSearchResult(data));
     } catch {
