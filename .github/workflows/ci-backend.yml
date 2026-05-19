@@ -46,6 +46,10 @@ jobs:
           cache: npm
           cache-dependency-path: backend/package-lock.json
 
+      - name: Validar governança da PR (template e commits)
+        if: github.event_name == 'pull_request'
+        run: node .github/scripts/validate-pr-governance.js
+
       # Cria .env mínimo para satisfazer dotenv/config nos testes unitários.
       # Testes mocam o banco — nenhuma conexão real é feita em CI.
       - name: Criar .env para testes CI
