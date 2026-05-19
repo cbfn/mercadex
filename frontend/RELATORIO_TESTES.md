@@ -2,7 +2,7 @@
 
 ---
 <!-- ci-auto-entry-start: frontend -->
-## Frontend — 2026-05-19 00:12:49 UTC — [ver execução](https://github.com/cbfn/mercadex/actions/runs/26068013592)
+## Frontend — 2026-05-19 00:13:21 UTC — [ver execução](https://github.com/cbfn/mercadex/actions/runs/26068038948)
 
 - **Cobertura (lines):** 96.28%
 - **Total de testes (statements):** 731
