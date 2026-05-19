@@ -3,13 +3,16 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, MessageSquare, ShieldCheck, Star, Truck } from "lucide-react";
 import { CartDrawer } from "@/features/cart/components/cart-drawer";
-import { ReviewsDrawer } from "@/features/product-detail/components/reviews-drawer";
+import { ReviewList } from "@/features/product-detail/components/review-list";
+import { ReviewForm } from "@/features/product-detail/components/review-form";
+import { useAuth } from "@/features/auth/model/auth-context";
 import { useCart } from "@/features/cart/model/cart-context";
 import { SiteHeader } from "@/shared/ui/site-header";
 import { productsApi, type ApiProduct } from "@/shared/lib/api/products";
+import { reviewsApi, type ApiReview } from "@/shared/lib/api/reviews";
 import { ApiError } from "@/shared/lib/api-client";
 import { formatBRL } from "@/shared/lib/currency";
 import { discountPct } from "@/shared/lib/catalog";
@@ -88,14 +91,17 @@ function adaptApiProductToViewModel(product: ApiProduct): ProductDetailViewModel
 
 export default function ProductPage({ params }: ProductPageProps) {
   const { openCart, addToCart } = useCart();
+  const { user } = useAuth();
+  const router = useRouter();
   const [qty, setQty] = useState(1);
   const [id, setId] = useState<string | null>(null);
-  const searchParams = useSearchParams();
-  const [reviewsOpen, setReviewsOpen] = useState(searchParams.get('reviews') === 'open');
   const [product, setProduct] = useState<ProductDetailViewModel | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isNotFound, setIsNotFound] = useState(false);
   const [error, setError] = useState("");
+  const [reviews, setReviews] = useState<ApiReview[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [showReviewForm, setShowReviewForm] = useState(false);
 
   const loadProduct = useCallback(async () => {
     if (!id) {
@@ -121,6 +127,24 @@ export default function ProductPage({ params }: ProductPageProps) {
       setIsLoading(false);
     }
   }, [id]);
+
+  const fetchReviews = useCallback(async () => {
+    if (!id) return;
+    setReviewsLoading(true);
+    try {
+      const res = await reviewsApi.list(id);
+      setReviews(res.data);
+    } catch {
+      setReviews([]);
+    } finally {
+      setReviewsLoading(false);
+    }
+  }, [id]);
+
+  const handleReviewSuccess = useCallback(async () => {
+    setShowReviewForm(false);
+    await fetchReviews();
+  }, [fetchReviews]);
 
   useEffect(() => {
     let mounted = true;
@@ -148,6 +172,13 @@ export default function ProductPage({ params }: ProductPageProps) {
   useEffect(() => {
     setQty(1);
   }, [id]);
+
+  useEffect(() => {
+    if (id) {
+      void fetchReviews();
+      setShowReviewForm(false);
+    }
+  }, [id, fetchReviews]);
 
   if (isLoading) {
     return (
@@ -301,7 +332,7 @@ export default function ProductPage({ params }: ProductPageProps) {
             </ul>
           </div>
 
-          <div className="border-t border-border pt-4">
+          {/* <div className="border-t border-border pt-4">
             <Button
               variant="secondary"
               className="w-full"
@@ -311,18 +342,54 @@ export default function ProductPage({ params }: ProductPageProps) {
               <MessageSquare size={16} />
               Ver avaliações
             </Button>
-          </div>
+          </div> */}
         </div>
       </section>
 
-      <ReviewsDrawer
-        open={reviewsOpen}
-        onClose={() => setReviewsOpen(false)}
-        productId={String(product.id)}
-        productTitle={product.title}
-      />
+      <section className="container mt-10" data-testid="product-reviews">
+        <h2 className="font-display text-xl font-bold text-slate-900 mb-6">Avaliações</h2>
+        {reviewsLoading ? (
+          <p className="text-sm text-muted-foreground" aria-live="polite">
+            Carregando avaliações...
+          </p>
+        ) : (
+          <ReviewList reviews={reviews} />
+        )}
+        <div className="mt-6 border-t border-border pt-4 space-y-3">
+          {user ? (
+            showReviewForm ? (
+              <ReviewForm productId={String(product.id)} onSuccess={handleReviewSuccess} />
+            ) : (
+              <Button
+                variant="secondary"
+                className="w-auto"
+                onClick={() => setShowReviewForm(true)}
+                data-testid="show-review-form-button"
+              >
+                Escrever avaliação
+              </Button>
+            )
+          ) : (
+            <div className="rounded-xl border border-dashed p-4 text-center space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Faça login para escrever uma avaliação.
+              </p>
+              <Button
+                className="w-auto"
+                onClick={() => {
+                  const returnTo = encodeURIComponent(`/products/${String(product.id)}?reviews=open`);
+                  router.push(`/login?redirect=${returnTo}`);
+                }}
+                data-testid="login-to-review-button"
+              >
+                Entrar e avaliar
+              </Button>
+            </div>
+          )}
+        </div>
+      </section>
 
-      <CartDrawer />
+      {/* <CartDrawer /> */}
     </main>
   );
 }

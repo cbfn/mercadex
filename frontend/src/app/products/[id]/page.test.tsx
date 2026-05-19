@@ -2,11 +2,13 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ProductPage from "./page";
 import { productsApi } from "@/shared/lib/api/products";
+import { reviewsApi } from "@/shared/lib/api/reviews";
 import { ApiError } from "@/shared/lib/api-client";
 
 const mockAddToCart = jest.fn();
 const mockOpenCart = jest.fn();
-const mockSearchParamsGet = jest.fn();
+const mockPush = jest.fn();
+const mockUseAuth = jest.fn();
 
 jest.mock("@/features/cart/model/cart-context", () => ({
   useCart: () => ({
@@ -17,12 +19,7 @@ jest.mock("@/features/cart/model/cart-context", () => ({
 }));
 
 jest.mock("@/features/auth/model/auth-context", () => ({
-  useAuth: () => ({
-    user: null,
-    isLoading: false,
-    login: jest.fn(),
-    logout: jest.fn(),
-  }),
+  useAuth: () => mockUseAuth(),
 }));
 
 jest.mock("@/shared/lib/api/products", () => ({
@@ -32,17 +29,29 @@ jest.mock("@/shared/lib/api/products", () => ({
 }));
 
 jest.mock("next/navigation", () => ({
-  useSearchParams: () => ({ get: mockSearchParamsGet }),
+  useRouter: () => ({ push: mockPush }),
 }));
 
 jest.mock("@/features/cart/components/cart-drawer", () => ({
   CartDrawer: () => <div data-testid="cart-drawer" />,
 }));
 
-jest.mock("@/features/product-detail/components/reviews-drawer", () => ({
-  ReviewsDrawer: ({ productId, productTitle }: { productId: string; productTitle: string }) => (
-    <div data-testid="reviews-drawer">{productId}:{productTitle}</div>
+jest.mock("@/features/product-detail/components/review-list", () => ({
+  ReviewList: ({ reviews }: { reviews: unknown[] }) => (
+    <div data-testid="review-list">{reviews.length} avaliações</div>
   ),
+}));
+
+jest.mock("@/features/product-detail/components/review-form", () => ({
+  ReviewForm: ({ onSuccess }: { onSuccess: () => void }) => (
+    <button onClick={onSuccess} data-testid="review-form-submit">Enviar avaliação</button>
+  ),
+}));
+
+jest.mock("@/shared/lib/api/reviews", () => ({
+  reviewsApi: {
+    list: jest.fn(),
+  },
 }));
 
 const apiProduct = {
@@ -64,8 +73,9 @@ const apiProduct = {
 describe("ProductPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockSearchParamsGet.mockReturnValue(null);
+    mockUseAuth.mockReturnValue({ user: null, isLoading: false, login: jest.fn(), logout: jest.fn() });
     (productsApi.get as jest.Mock).mockResolvedValue({ success: true, data: apiProduct });
+    (reviewsApi.list as jest.Mock).mockResolvedValue({ success: true, data: [] });
   });
 
   function renderPage(id = apiProduct.id) {
@@ -128,5 +138,69 @@ describe("ProductPage", () => {
       1
     );
     expect(mockOpenCart).toHaveBeenCalledTimes(1);
+  });
+
+  describe("seção de reviews", () => {
+    it("exibe 'Carregando avaliações...' enquanto reviewsApi.list está pendente", async () => {
+      (reviewsApi.list as jest.Mock).mockReturnValue(new Promise(() => {}));
+
+      renderPage();
+
+      await screen.findByText("iPhone 14 Pro 256GB");
+
+      expect(screen.getByText("Carregando avaliações...")).toBeInTheDocument();
+    });
+
+    it("exibe a lista de reviews após carregamento", async () => {
+      const mockReview = {
+        id: "r-1",
+        rating: 5,
+        title: "Ótimo produto",
+        body: "Chegou rápido",
+        createdAt: "2026-01-01T00:00:00.000Z",
+        user: { id: "u-1", name: "Ana" },
+      };
+      (reviewsApi.list as jest.Mock).mockResolvedValue({ success: true, data: [mockReview] });
+
+      renderPage();
+
+      expect(await screen.findByTestId("review-list")).toBeInTheDocument();
+      expect(screen.getByText("1 avaliações")).toBeInTheDocument();
+    });
+
+    it("exibe CTA 'Entrar e avaliar' para usuário não autenticado", async () => {
+      renderPage();
+
+      expect(await screen.findByTestId("login-to-review-button")).toBeInTheDocument();
+    });
+
+    it("exibe botão 'Escrever avaliação' para usuário autenticado", async () => {
+      mockUseAuth.mockReturnValue({
+        user: { id: "u-1", name: "Carlos", email: "carlos@example.com" },
+        isLoading: false,
+        login: jest.fn(),
+        logout: jest.fn(),
+      });
+
+      renderPage();
+
+      expect(await screen.findByTestId("show-review-form-button")).toBeInTheDocument();
+    });
+
+    it("exibe formulário ao clicar em 'Escrever avaliação'", async () => {
+      const user = userEvent.setup();
+      mockUseAuth.mockReturnValue({
+        user: { id: "u-1", name: "Carlos", email: "carlos@example.com" },
+        isLoading: false,
+        login: jest.fn(),
+        logout: jest.fn(),
+      });
+
+      renderPage();
+
+      await user.click(await screen.findByTestId("show-review-form-button"));
+
+      expect(await screen.findByTestId("review-form-submit")).toBeInTheDocument();
+    });
   });
 });
