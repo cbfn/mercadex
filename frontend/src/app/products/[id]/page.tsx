@@ -42,13 +42,27 @@ function mapCondition(condition: ApiProduct["condition"]): ProductCondition {
   return map[condition];
 }
 
+/** Extrai a URL de uma entrada de imagem (string direta ou objeto `{ url }` do banco). */
+function extractImageUrl(image: unknown): string | undefined {
+  if (typeof image === "string" && image.trim().length > 0) return image;
+  if (typeof image === "object" && image !== null && "url" in image) {
+    const url = (image as { url?: string }).url;
+    if (typeof url === "string" && url.trim().length > 0) return url;
+  }
+  return undefined;
+}
+
 function getFirstValidImage(images: unknown[]) {
-  return images.find((image) => typeof image === "string" && image.trim().length > 0) as string | undefined;
+  for (const image of images) {
+    const url = extractImageUrl(image);
+    if (url) return url;
+  }
+  return undefined;
 }
 
 function adaptApiProductToViewModel(product: ApiProduct): ProductDetailViewModel {
   const images = Array.isArray(product.images)
-    ? product.images.filter((image) => typeof image === "string" && image.trim().length > 0)
+    ? product.images.map(extractImageUrl).filter((url): url is string => url !== undefined)
     : [];
   const image = getFirstValidImage(images) ?? FALLBACK_IMAGE;
   const safeOriginalPrice = Math.max(product.price + 1, Math.round(product.price * 1.15));
