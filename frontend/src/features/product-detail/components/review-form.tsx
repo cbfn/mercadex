@@ -49,7 +49,7 @@ export function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} aria-label="Formulário de avaliação" className="space-y-3">
+    <form onSubmit={handleSubmit} aria-label="Formulário de avaliação" className="space-y-3 bg-white p-4 rounded-md shadow">
       <div className="space-y-1">
         <label htmlFor="review-rating" className="text-sm font-semibold text-foreground">
           Nota (1–5)
