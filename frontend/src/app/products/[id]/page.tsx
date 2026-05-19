@@ -4,8 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, MessageSquare, ShieldCheck, Star, Truck } from "lucide-react";
-import { CartDrawer } from "@/features/cart/components/cart-drawer";
+import { ShieldCheck, Star, Truck } from "lucide-react";
 import { ReviewList } from "@/features/product-detail/components/review-list";
 import { ReviewForm } from "@/features/product-detail/components/review-form";
 import { useAuth } from "@/features/auth/model/auth-context";
@@ -389,7 +388,6 @@ export default function ProductPage({ params }: ProductPageProps) {
         </div>
       </section>
 
-      {/* <CartDrawer /> */}
     </main>
   );
 }

@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/features/auth/model/auth-context";
 import { CartProvider } from "@/features/cart/model/cart-context";
+import { CartDrawer } from "@/features/cart/components/cart-drawer";
 import { FloatingRobot } from "@/shared/ui/floating-robot";
 import "./globals.css";
 
@@ -18,6 +19,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <AuthProvider>
           <CartProvider>
             {children}
+            <CartDrawer />
             <FloatingRobot />
             <Toaster richColors position="top-right" closeButton />
           </CartProvider>
