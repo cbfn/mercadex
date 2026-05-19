@@ -2,7 +2,7 @@
 
 ---
 <!-- ci-auto-entry-start: frontend -->
-## Frontend — 2026-05-18 23:43:48 UTC — [ver execução](https://github.com/cbfn/mercadex/actions/runs/26066716011)
+## Frontend — 2026-05-19 00:12:49 UTC — [ver execução](https://github.com/cbfn/mercadex/actions/runs/26068013592)
 
 - **Cobertura (lines):** 96.28%
 - **Total de testes (statements):** 731
@@ -173,6 +173,7 @@ npm run test:watch
 - `localStorage` limpo via `afterEach` configurado em `jest.setup.ts`
 - Formulários com `required` validados via `fireEvent.submit` (contorna validação HTML5 do jsdom)
 - CartProvider sync testado com variável de módulo que o mock de `useAuth` lê via closure
+
 
 
 
