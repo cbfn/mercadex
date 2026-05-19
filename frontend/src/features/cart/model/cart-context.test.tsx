@@ -222,7 +222,10 @@ describe("CartProvider / useCart", () => {
     const { rerender } = renderWithProvider();
 
     // Add item to local cart first
-    useCart.getState().addToCart(PRODUCTS[0], 1);
+    const { act } = await import("@testing-library/react");
+    await act(async () => {
+      useCart.getState().addToCart(PRODUCTS[0], 1);
+    });
 
     // Simulate login
     mockUseAuth.mockReturnValue({ user: { id: "user-uuid-456", email: "test@test.com" }, isLoading: false });
