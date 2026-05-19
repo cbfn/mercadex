@@ -2,7 +2,8 @@
 
 [![Status](https://img.shields.io/badge/status-MVP%20Lean%20Phase%203-blue)]()
 [![License](https://img.shields.io/badge/license-MIT-green)]()
-[![Frontend CI](https://github.com/cbfn/mercadex/actions/workflows/ci.yml/badge.svg)](https://github.com/cbfn/mercadex/actions/workflows/ci.yml)
+[![Frontend CI](https://github.com/cbfn/mercadex/actions/workflows/ci-frontend.yml/badge.svg)](https://github.com/cbfn/mercadex/actions/workflows/ci-frontend.yml)
+[![Backend CI](https://github.com/cbfn/mercadex/actions/workflows/ci-backend.yml/badge.svg)](https://github.com/cbfn/mercadex/actions/workflows/ci-backend.yml)
 
 ## 📋 Sobre o Projeto
 
