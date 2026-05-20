@@ -52,8 +52,8 @@ O checkout do Mercadex é o fluxo final de compra que converte itens no carrinho
 
 ### Métodos Aceitos
 - **PIX Estático (Fake)** — Único método no MVP Lean. Exibe chave PIX estática + QR Code fixo. Pedido criado imediatamente com status `PENDING_PIX`. Confirmação manual via Prisma Studio.
-- **Cartão de Crédito/Débito** (planejado pós-MVP) — Via gateway. Código em `backend/src/legacy/`.
-- **Boleto bancário** (planejado pós-MVP)
+- **Cartão de Crédito/Débito** (planejado pós-MVP) — Via gateway. Sem implementação versionada neste repositório no ciclo atual.
+- **Boleto bancário** (planejado pós-MVP) — Sem implementação versionada neste repositório no ciclo atual.
 
 > Status real: somente PIX estatico esta implementado no ciclo atual.
 
