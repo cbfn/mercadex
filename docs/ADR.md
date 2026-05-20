@@ -225,12 +225,12 @@ CREATE TABLE reviews (
 - Sem endpoint `/api/auth/refresh`
 - Risco aceito: tokens não podem ser revogados antes da expiração; mitigação futura via blacklist Redis
 
-> **Nota:** A implementação original com refresh token em HTTP-only cookie foi movida para `backend/src/legacy/`. Retomar em sprint futura.
+> **Nota:** A implementação com refresh token em cookie HTTP-only não foi movida para `backend/src/legacy/`; ela permanece no código atual de autenticação neste ciclo. Retomar a convergência com o escopo do JWT único em sprint futura, se a decisão arquitetural for mantida.
 
 **Estado real do ciclo atual (2026-05-20):**
-- Implementacao entregue com access token + refresh token.
-- Motivo: reducao de risco de regressao no fluxo de auth ja estabilizado e melhor postura de seguranca operacional.
-- Implicacao documental: o JWT unico permanece como referencia de escopo simplificado esperado no pivot, mas nao como estado efetivo do codigo neste ciclo.
+- Implementação entregue com access token + refresh token, incluindo refresh token via cookie HTTP-only.
+- Motivo: redução de risco de regressão no fluxo de auth já estabilizado e melhor postura de segurança operacional.
+- Implicação documental: o JWT único permanece como referência de escopo simplificado esperado no pivot, mas não como estado efetivo do código neste ciclo.
 
 ### Cache: Redis
 
