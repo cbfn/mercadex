@@ -9,6 +9,7 @@ on:
       - '.github/workflows/ci-backend.yml'
       - '.github/scripts/**'
   pull_request:
+    types: [opened, synchronize, reopened, edited, ready_for_review]
     branches: [main,develop]
     paths:
       - 'backend/**'
