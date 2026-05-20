@@ -45,10 +45,8 @@ function validatePrTemplateBody(body) {
   }
 
   const criticalEmptyPatterns = [
-    /^- Included:\s*$/m,
-    /^- Excluded:\s*$/m,
-    /^- Main risks:\s*$/m,
-    /^- Mitigations:\s*$/m,
+    /- Included:\s*\n- Excluded:/m,
+    /- Main risks:\s*\n- Mitigations:/m,
     /^Commands executed:\s*\n\s*```\s*\n\s*# paste commands here \(for example\)/m,
   ];
 
