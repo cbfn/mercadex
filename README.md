@@ -11,7 +11,11 @@
 
 **Objetivo:** Validar fluxos de compra e UX antes de escalar para produção. A Fase 2 foi concluída com frontend React/Next.js 16.2 e testes automatizados; a Fase 3 está em andamento com consolidação do backend, reviews e features de IA.
 
-**MVP Lean:** JWT único 7d (sem refresh), carrinho 100% localStorage, checkout PIX estático fake, admin via Prisma Studio, features de IA (reviews, resumo, chat).
+**MVP Lean (planejado):** JWT único 7d (sem refresh), carrinho 100% localStorage, checkout PIX estático fake, admin via Prisma Studio, features de IA (reviews, resumo, chat).
+
+**Entregue no ciclo atual (estado real):** auth com access token + refresh token, pedidos e reviews implementados no backend, checkout PIX estático funcional e busca assistida por IA em `/api/products/search`.
+
+**Repensado por prazo (mantido como referência):** endpoints dedicados de IA para resumo (`/api/products/:id/ai-summary`) e chat (`/api/products/:id/chat`) permanecem como escopo planejado para retomada.
 
 **Padrão de documentação:** novos módulos, funções públicas, contratos de API e utilitários compartilhados devem usar JSDoc.
 
@@ -42,13 +46,14 @@
 
 ### Backend (Fase 3 - Em andamento)
 - 🔄 API REST em Node.js + TypeScript + Express.js
-- 🟡 Autenticação com JWT único 7 dias em `localStorage` (sem refresh token, iniciado)
-- 🟡 Persistência em Neon Postgres + Prisma 7.8.0 (iniciado)
-- 🟡 Módulo de produtos com rotas e testes (iniciado)
-- ⬜ Módulos de reviews e pedidos (planejado)
-- ⬜ Checkout PIX estático fake — chave estática + QR code + `PENDING_PIX` (planejado)
-- ⬜ Features de IA: resumo de reviews + chat stateless por produto (planejado)
-- ⬜ Admin via Prisma Studio (sem dashboard no frontend)
+- ✅ Autenticação com JWT (access + refresh) e testes automatizados
+- ✅ Persistência em Neon Postgres + Prisma 7.8.0
+- ✅ Módulo de produtos com rotas, validação e testes
+- ✅ Módulos de pedidos e reviews implementados
+- ✅ Checkout PIX estático fake — chave estática + QR code + `PENDING_PIX`
+- 🟡 IA no produto via busca assistida em `/api/products/search`
+- ⬜ IA dedicada por produto (`ai-summary` e `chat`) repensada para próxima janela
+- ✅ Admin via Prisma Studio (sem dashboard no frontend)
 - ✅ Documentação interativa da API via Swagger UI (`/api-docs`)
 
 ---
@@ -75,7 +80,7 @@ Node.js 20+ (runtime)
 ├── Express.js (API REST)
 ├── Neon Postgres (persistência)
 ├── Prisma 7.8.0 (ORM)
-├── JWT único 7d em localStorage (autenticação)
+├── JWT (access + refresh) com sessão restaurada no frontend
 ├── LLM Provider (features de IA — via LLM_PROVIDER_API_KEY)
 └── Zod (validação de inputs)
 ```
@@ -400,7 +405,25 @@ feature/nome-curto (seu trabalho)
 - R: Componentes que usam `useCart` precisam ser renderizados dentro de `CartProvider`. Use o wrapper nas chamadas de `render()`.
 
 **P: Posso rodar o backend agora?**
-- R: Parcialmente. Os módulos `auth` e `products` estão implementados e já expõem rotas; `cart`, `users` e `orders` ainda estão em evolução.
+- R: Sim. Os módulos `auth`, `products`, `orders` e `reviews` estão implementados e expostos via rotas. O carrinho segue 100% client-side no frontend por decisão de escopo MVP Lean.
+
+---
+
+## 📌 Esperado vs Entregue (Trilhas 1–5)
+
+Resumo executivo para rastreabilidade entre planejamento e execução.
+
+| Tema | Esperado nas trilhas | Entregue no ciclo | Status |
+|------|----------------------|-------------------|--------|
+| Infra e organização | Reestruturação do repo e CI base | Reestruturação aplicada + CI frontend/backend ativo | ✅ |
+| Auth | JWT único 7d | Access + refresh token com cobertura de testes | 🔄 Repensado |
+| Carrinho | Persistência backend + endpoints dedicados | Carrinho 100% localStorage + criação de pedido via `/api/orders` | 🔄 Repensado |
+| Pagamento | Stripe planejado originalmente | PIX estático fake com status `PENDING_PIX` | 🔄 Repensado |
+| Pedidos e reviews | Implementar módulos backend | Módulos implementados com testes | ✅ |
+| IA no produto | `ai-summary` e `chat` dedicados por produto | Busca assistida em `/api/products/search`; summary/chat postergados | 🟡 Parcial |
+| Admin | Dashboard frontend | Prisma Studio (sem dashboard) | 🔄 Repensado |
+
+Referências: `docs/PRD.md`, `docs/VIABILIDADE.md`, `docs/ADR.md`, `docs/BACKLOG.md`, `docs/USER_STORIES.md`.
 
 **P: Como exploro os endpoints do backend?**
 - R: Com o backend rodando (`npm run dev` na pasta `backend`), acesse `http://localhost:3001/api-docs` para a documentação interativa via Swagger UI. Também está disponível a coleção Bruno em `backend/bruno/`.

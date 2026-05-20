@@ -3,6 +3,23 @@
 ## Visão Geral
 As 5 User Stories abaixo cobrem os momentos críticos do fluxo de compra, priorizadas por impacto na taxa de conclusão de vendas. Cada uma resolve um pain point específico que causa abandono de carrinho.
 
+## Status de Execucao (2026-05-20)
+
+Este documento preserva o esperado original. Status real do ciclo:
+
+| User Story | Status | Nota de execucao |
+| --- | --- | --- |
+| US-1 Carrinho | Implementado | Fluxo funcional no frontend com persistencia local |
+| US-2 Endereco e CEP | Implementado | Consulta de CEP + fallback manual |
+| US-3 Resumo do pedido | Implementado | Totalizacao e revisao antes do pagamento |
+| US-4 PIX estatico | Implementado | Criacao de pedido com `PENDING_PIX` |
+| US-5 Confirmacao | Parcial | Confirmacao implementada; rastreio avancado ficou para evolucao |
+| US-6 Reviews | Implementado | Endpoints e interfaces de review ativos |
+| US-7 AI Summary por produto | Planejado | Postergado por prazo no MVP Lean |
+| US-8 Chat IA por produto | Planejado | Postergado por prazo no MVP Lean |
+
+Escopo repensado por prazo: dashboard admin frontend, pagamento real com gateway e carrinho persistido no backend.
+
 ---
 
 ## 1. Revisar e Ajustar Carrinho Antes do Checkout

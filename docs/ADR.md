@@ -227,6 +227,11 @@ CREATE TABLE reviews (
 
 > **Nota:** A implementação original com refresh token em HTTP-only cookie foi movida para `backend/src/legacy/`. Retomar em sprint futura.
 
+**Estado real do ciclo atual (2026-05-20):**
+- Implementacao entregue com access token + refresh token.
+- Motivo: reducao de risco de regressao no fluxo de auth ja estabilizado e melhor postura de seguranca operacional.
+- Implicacao documental: o JWT unico permanece como referencia de escopo simplificado esperado no pivot, mas nao como estado efetivo do codigo neste ciclo.
+
 ### Cache: Redis
 
 - Sessões de usuário
@@ -472,7 +477,7 @@ Toda gestão administrativa no MVP é realizada via **Prisma Studio** (`npx pris
 
 ## 10. Decisão: Features de IA (Reviews, Resumo e Chat de Produto)
 
-**Status:** Aprovado (Pivot MVP Lean — 2026-05-15)
+**Status:** Parcialmente implementado no ciclo atual (Pivot MVP Lean — 2026-05-15)
 
 ### Contexto
 
@@ -489,12 +494,18 @@ Implementar os seguintes contratos de API (JSDoc obrigatório em todos):
 | `DELETE /api/reviews/:id` | Deletar próprio review | Sim |
 | `GET /api/products/:id/ai-summary` | Resumo IA de 3 frases das reviews | Não |
 | `POST /api/products/:id/chat` | Chat stateless com IA sobre o produto | Não |
+| `GET /api/products/search` | Busca assistida por IA com filtros extraídos de linguagem natural | Não |
 
 **AI Summary:** Backend busca reviews do produto, envia para LLM com prompt estruturado, retorna resumo de 3 frases sobre pontos positivos e negativos.
 
 **Product Chat:** Endpoint stateless — recebe `{ message }`, carrega specs + reviews do produto, chama LLM, retorna resposta. **Histórico de chat reside apenas no estado React (sem persistência no banco).**
 
 **LLM Provider:** A definir na implementação (OpenAI, Anthropic ou outro). Configurado via variável de ambiente `LLM_PROVIDER_API_KEY`.
+
+**Estado real do ciclo atual (2026-05-20):**
+- Reviews: implementado.
+- Busca assistida por IA no catalogo (`/api/products/search`): implementado.
+- Endpoints dedicados `ai-summary` e `chat` por produto: postergados por prazo para proxima janela.
 
 ### Consequências
 
