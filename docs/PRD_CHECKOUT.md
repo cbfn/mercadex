@@ -6,6 +6,19 @@
 
 O checkout do Mercadex é o fluxo final de compra que converte itens no carrinho em pedidos confirmados. Deve ser rápido, seguro e inspirar confiança no usuário, reduzindo abandono de carrinho através de um processo direto em 3 etapas (entrega → pagamento → confirmação).
 
+## Status de Execucao (2026-05-20)
+
+- Implementado:
+  - Fluxo de checkout com preenchimento de endereco.
+  - Consulta de CEP com preenchimento de cidade/estado e fallback manual.
+  - Pagamento PIX estatico (chave + QR code) e criacao de pedido em `PENDING_PIX`.
+  - Confirmacao de pedido e limpeza do carrinho local.
+- Parcial:
+  - Rastreabilidade/pos-venda no frontend ainda sem historico completo de pedidos por usuario final.
+- Repensado por prazo:
+  - Stripe/cartao/boleto no MVP.
+  - Dashboard admin frontend para conciliacao operacional.
+
 ---
 
 ## Personas
@@ -39,8 +52,10 @@ O checkout do Mercadex é o fluxo final de compra que converte itens no carrinho
 
 ### Métodos Aceitos
 - **PIX Estático (Fake)** — Único método no MVP Lean. Exibe chave PIX estática + QR Code fixo. Pedido criado imediatamente com status `PENDING_PIX`. Confirmação manual via Prisma Studio.
-- **Cartão de Crédito/Débito** (planejado pós-MVP) — Via gateway. Código em `backend/src/legacy/`.
-- **Boleto bancário** (planejado pós-MVP)
+- **Cartão de Crédito/Débito** (planejado pós-MVP) — Via gateway. Sem implementação versionada neste repositório no ciclo atual.
+- **Boleto bancário** (planejado pós-MVP) — Sem implementação versionada neste repositório no ciclo atual.
+
+> Status real: somente PIX estatico esta implementado no ciclo atual.
 
 ### Limites de Transação
 - **Mínimo:** R$ 10,00
@@ -140,10 +155,16 @@ O checkout do Mercadex é o fluxo final de compra que converte itens no carrinho
 - [ ] Previsão de frete dinâmica (integração com transportadora)
 - [ ] Dashboard de pedidos do usuário com rastreamento em tempo real
 
+## Esperado x Entregue
+
+- Esperado originalmente nas trilhas: maior abrangencia de metodos de pagamento e operacao administrativa frontend.
+- Entregue no ciclo: checkout funcional com PIX estatico e criacao de pedido no backend.
+- Ajuste por prazo: funcionalidades de pagamento real e admin frontend foram postergadas para proteger prazo e qualidade do MVP.
+
 ---
 
 ## Referências
 
 - Ver `docs/ADR.md` para decisões arquiteturais de segurança e infraestrutura
-- Frontend: `frontend/js/main.js` (estado e fluxo atual)
-- Backend: `backend/src/modules/checkout/` (estrutura planejada)
+- Frontend: `frontend/src/features/checkout/checkout-page.tsx` (estado e fluxo atual)
+- Backend: `backend/src/modules/orders/` (criacao e consulta de pedidos)

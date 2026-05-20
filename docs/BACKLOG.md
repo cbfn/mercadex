@@ -1,5 +1,22 @@
 # Backlog com Critérios de Aceitação (BDD)
 
+## Status Consolidado do Ciclo (2026-05-20)
+
+Este backlog preserva o esperado original das trilhas. Para evitar ambiguidade, o status real de execucao neste ciclo e:
+
+| Historia | Status no ciclo | Observacao |
+| --- | --- | --- |
+| 1. Revisar/Ajustar carrinho | Implementado | Carrinho 100% localStorage, com ajustes de quantidade/remocao e persistencia no mesmo navegador |
+| 2. Endereco + CEP | Implementado | Consulta de CEP e fallback para preenchimento manual |
+| 3. Resumo do pedido | Implementado | Resumo e total final no fluxo de checkout |
+| 4. Pagamento PIX estatico | Implementado | Pedido criado com `PENDING_PIX` |
+| 5. Confirmacao do pedido | Parcial | Confirmacao implementada; historico completo e rastreio avancado permanecem evolucao |
+| 6. Reviews | Implementado | CRD de reviews (listar/criar/deletar) com regras de ownership/unicidade |
+| 7. Resumo IA por produto | Planejado | Escopo mantido para proxima janela |
+| 8. Chat IA por produto | Planejado | Escopo mantido para proxima janela |
+
+Itens repensados por prazo (pivot MVP Lean): pagamento real via gateway, dashboard admin frontend e persistencia de carrinho no backend.
+
 ## História 1: Revisar e Ajustar Carrinho Antes do Checkout
 
 **Descrição:** Como cliente, quero visualizar todos os itens no meu carrinho, alterar quantidades e remover produtos, para que eu tenha controle total sobre minha compra e confiança de que vou pagar apenas pelo que realmente desejo.
