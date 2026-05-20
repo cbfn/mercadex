@@ -2,7 +2,8 @@
 
 [![Status](https://img.shields.io/badge/status-MVP%20Lean%20Phase%203-blue)]()
 [![License](https://img.shields.io/badge/license-MIT-green)]()
-[![Frontend CI](https://github.com/cbfn/mercadex/actions/workflows/ci.yml/badge.svg)](https://github.com/cbfn/mercadex/actions/workflows/ci.yml)
+[![Frontend CI](https://github.com/cbfn/mercadex/actions/workflows/ci-frontend.yml/badge.svg)](https://github.com/cbfn/mercadex/actions/workflows/ci-frontend.yml)
+[![Backend CI](https://github.com/cbfn/mercadex/actions/workflows/ci-backend.yml/badge.svg)](https://github.com/cbfn/mercadex/actions/workflows/ci-backend.yml)
 
 ## 📋 Sobre o Projeto
 
@@ -13,6 +14,17 @@
 **MVP Lean:** JWT único 7d (sem refresh), carrinho 100% localStorage, checkout PIX estático fake, admin via Prisma Studio, features de IA (reviews, resumo, chat).
 
 **Padrão de documentação:** novos módulos, funções públicas, contratos de API e utilitários compartilhados devem usar JSDoc.
+
+## Governança de Entrega
+
+- Commits devem seguir semantic commit (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`).
+- Pull Requests devem preencher completamente o template em `.github/pull_request_template.md`.
+- Tarefas com uso de IA devem registrar evidência de prompt seguindo `docs/PROMPT_TEMPLATE.md`.
+- Documentos canônicos para auditoria técnica:
+  - `docs/PRD.md`
+  - `docs/VIABILIDADE.md`
+  - `docs/ADR.md`
+  - `docs/PR_EVIDENCIAS.md`
 
 ---
 
