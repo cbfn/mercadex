@@ -29,7 +29,7 @@ Taxonomia usada neste documento:
 | Carrinho | Persistencia backend + endpoints dedicados | Carrinho client-side (localStorage) + envio para orders no checkout | Repensado (pivot) |
 | Checkout | Fluxo funcional com PIX | Checkout PIX estatico com `PENDING_PIX` | Implementado |
 | Pedidos | Criacao e consulta de pedidos | Modulo de orders implementado | Implementado |
-| Reviews | CRUD de reviews por produto | Modulo de reviews implementado | Implementado |
+| Reviews | Criacao, listagem e exclusao de reviews por produto | Modulo de reviews implementado | Implementado |
 | IA no produto | Summary + chat por produto | Busca assistida em `/api/products/search` | Parcial |
 | Admin | Dashboard frontend | Operacao via Prisma Studio | Repensado (pivot) |
 
