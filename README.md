@@ -80,7 +80,7 @@ Node.js 20+ (runtime)
 ├── Express.js (API REST)
 ├── Neon Postgres (persistência)
 ├── Prisma 7.8.0 (ORM)
-├── JWT (access + refresh) com sessão restaurada no frontend
+├── JWT (access + refresh no backend; frontend atual usa access token e ainda não consome refresh)
 ├── LLM Provider (features de IA — via LLM_PROVIDER_API_KEY)
 └── Zod (validação de inputs)
 ```
