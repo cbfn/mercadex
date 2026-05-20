@@ -11,7 +11,7 @@ Este backlog preserva o esperado original das trilhas. Para evitar ambiguidade, 
 | 3. Resumo do pedido | Implementado | Resumo e total final no fluxo de checkout |
 | 4. Pagamento PIX estatico | Implementado | Pedido criado com `PENDING_PIX` |
 | 5. Confirmacao do pedido | Parcial | Confirmacao implementada; historico completo e rastreio avancado permanecem evolucao |
-| 6. Reviews | Implementado | CRUD de reviews com regras de ownership/unicidade |
+| 6. Reviews | Implementado | CRD de reviews (listar/criar/deletar) com regras de ownership/unicidade |
 | 7. Resumo IA por produto | Planejado | Escopo mantido para proxima janela |
 | 8. Chat IA por produto | Planejado | Escopo mantido para proxima janela |
 
