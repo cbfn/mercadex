@@ -1,5 +1,7 @@
 # PRD - Módulo de Checkout
 
+> Este documento detalha apenas o modulo de checkout. Para escopo geral do produto, consulte `docs/PRD.md`.
+
 ## Objetivo do Módulo
 
 O checkout do Mercadex é o fluxo final de compra que converte itens no carrinho em pedidos confirmados. Deve ser rápido, seguro e inspirar confiança no usuário, reduzindo abandono de carrinho através de um processo direto em 3 etapas (entrega → pagamento → confirmação).

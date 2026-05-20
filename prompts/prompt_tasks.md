@@ -1,33 +1,68 @@
-Atue como um Especialista em DevOps e Agile.
+# 1. Objetivo
 
-Com base na separação de tarefas que definimos, gere comandos da GitHub CLI (gh issue create) para criar as issues no meu repositório. Use os seguintes mapeamentos de colaboradores para os usuários do GitHub:
+Gerar comandos `gh issue create` para distribuir trilhas de trabalho com padrao consistente de naming, labels e atribuicao.
 
-Christian: cbfn
+## 2. Contexto
 
-Leandro: lpradopires
+- Modulo/area impactada: gestao de trabalho e backlog operacional.
+- Estado atual: trilhas 3, 4 e 5 ja definidas, precisando converter em issues executaveis.
+- Restricoes tecnicas: manter padrao de titulos e labels por contexto.
 
-Henrique: henriqueferraz
+## 3. Escopo
 
-Matheus: mateus-bernarte
+- Incluido: comandos prontos em bash para criacao de issues.
+- Excluido: execucao dos comandos e alteracao de codigo de produto.
 
-Endryo: EndryoBittencourt
+## 4. Entradas
 
-Regras de Formatação:
+- Mapeamento de colaboradores:
+	- Christian: `cbfn`
+	- Leandro: `lpradopires`
+	- Henrique: `henriqueferraz`
+	- Matheus: `mateus-bernarte`
+	- Endryo: `EndryoBittencourt`
+- Regras obrigatorias:
+	- Prefixo `[FRONT] - ` para frontend e `[BACK] - ` para backend.
+	- Labels `frontend` (`#007bff`) e `backend` (`#28a745`).
+	- Corpo da issue com resumo da tarefa.
+	- Uso de `--assignee` conforme distribuicao.
 
-Prefixos: Tasks de Frontend devem começar com [FRONT] -  e Backend com [BACK] - .
+## 5. Saida Esperada
 
-Labels e Cores: >    - Crie (ou assuma que existem) as labels frontend (cor #007bff) e backend (cor #28a745).
+- Lista de comandos bash prontos para execucao com `gh issue create`.
+- Comandos agrupados por trilha e responsavel.
 
-Conteúdo: O corpo da issue deve conter um resumo da tarefa baseada nas Trilhas 3, 4 e 5.
+## 6. Criterios de Validacao
 
-Atribuição: Cada issue deve ser atribuída (--assignee) ao respectivo usuário do GitHub acima.
+- Cada issue tem prefixo correto no titulo.
+- Cada issue tem label correta.
+- Cada issue possui descricao objetiva e assignee correto.
 
-Distribuição de Tarefas:
+## 7. Riscos e Cuidados
 
-Trilha 3 (Back): Christian (3.1), Leandro (3.2), Henrique (3.3 e 3.4).
+- Evitar titulos genericos.
+- Evitar distribuicao incorreta de tarefas por colaborador.
 
-Trilha 4 (Front): Matheus (4.1 a 4.3), Endryo (4.4 a 4.6).
+## 8. Prompt Final
 
-Trilha 5 (Convergência): Christian (Qualidade Back), Leandro (Integração Stripe FE), Henrique (Infra/CI-CD), Matheus (Integração API), Endryo (Polimento UX).
+Atue como especialista em DevOps e Agile.
 
-Gere a lista de comandos bash prontos para execução.
+Com base nas trilhas 3, 4 e 5, gere comandos `gh issue create` para criar issues no repositorio usando os mapeamentos:
+
+- Christian: `cbfn`
+- Leandro: `lpradopires`
+- Henrique: `henriqueferraz`
+- Matheus: `mateus-bernarte`
+- Endryo: `EndryoBittencourt`
+
+Regras:
+
+- Titulos frontend com prefixo `[FRONT] - ` e backend com `[BACK] - `.
+- Labels: `frontend` (cor `#007bff`) e `backend` (cor `#28a745`).
+- Corpo da issue deve resumir claramente a tarefa da trilha.
+- Atribuir com `--assignee` conforme distribuicao:
+	- Trilha 3: Christian (3.1), Leandro (3.2), Henrique (3.3 e 3.4)
+	- Trilha 4: Matheus (4.1 a 4.3), Endryo (4.4 a 4.6)
+	- Trilha 5: Christian (Qualidade Back), Leandro (Integracao Stripe FE), Henrique (Infra/CI-CD), Matheus (Integracao API), Endryo (Polimento UX)
+
+Retorne apenas os comandos bash prontos para execucao.
