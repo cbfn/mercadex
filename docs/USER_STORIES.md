@@ -1,7 +1,7 @@
 # User Stories - Fluxo de Compra (Checkout)
 
 ## Visão Geral
-As 5 User Stories abaixo cobrem os momentos críticos do fluxo de compra, priorizadas por impacto na taxa de conclusão de vendas. Cada uma resolve um pain point específico que causa abandono de carrinho.
+As 8 User Stories abaixo cobrem os momentos críticos do fluxo de compra, priorizadas por impacto na taxa de conclusão de vendas. Cada uma resolve um pain point específico que causa abandono de carrinho.
 
 ## Status de Execucao (2026-05-20)
 
