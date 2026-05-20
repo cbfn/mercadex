@@ -225,7 +225,12 @@ CREATE TABLE reviews (
 - Sem endpoint `/api/auth/refresh`
 - Risco aceito: tokens não podem ser revogados antes da expiração; mitigação futura via blacklist Redis
 
-> **Nota:** A implementação original com refresh token em HTTP-only cookie foi movida para `backend/src/legacy/`. Retomar em sprint futura.
+> **Nota:** A implementação com refresh token em cookie HTTP-only não foi movida para `backend/src/legacy/`; ela permanece no código atual de autenticação neste ciclo. Retomar a convergência com o escopo do JWT único em sprint futura, se a decisão arquitetural for mantida.
+
+**Estado real do ciclo atual (2026-05-20):**
+- Implementação entregue com access token + refresh token, incluindo refresh token via cookie HTTP-only.
+- Motivo: redução de risco de regressão no fluxo de auth já estabilizado e melhor postura de segurança operacional.
+- Implicação documental: o JWT único permanece como referência de escopo simplificado esperado no pivot, mas não como estado efetivo do código neste ciclo.
 
 ### Cache: Redis
 
@@ -472,7 +477,7 @@ Toda gestão administrativa no MVP é realizada via **Prisma Studio** (`npx pris
 
 ## 10. Decisão: Features de IA (Reviews, Resumo e Chat de Produto)
 
-**Status:** Aprovado (Pivot MVP Lean — 2026-05-15)
+**Status:** Parcialmente implementado no ciclo atual (Pivot MVP Lean — 2026-05-15)
 
 ### Contexto
 
@@ -489,12 +494,18 @@ Implementar os seguintes contratos de API (JSDoc obrigatório em todos):
 | `DELETE /api/reviews/:id` | Deletar próprio review | Sim |
 | `GET /api/products/:id/ai-summary` | Resumo IA de 3 frases das reviews | Não |
 | `POST /api/products/:id/chat` | Chat stateless com IA sobre o produto | Não |
+| `GET /api/products/search` | Busca assistida por IA com filtros extraídos de linguagem natural | Não |
 
 **AI Summary:** Backend busca reviews do produto, envia para LLM com prompt estruturado, retorna resumo de 3 frases sobre pontos positivos e negativos.
 
 **Product Chat:** Endpoint stateless — recebe `{ message }`, carrega specs + reviews do produto, chama LLM, retorna resposta. **Histórico de chat reside apenas no estado React (sem persistência no banco).**
 
 **LLM Provider:** A definir na implementação (OpenAI, Anthropic ou outro). Configurado via variável de ambiente `LLM_PROVIDER_API_KEY`.
+
+**Estado real do ciclo atual (2026-05-20):**
+- Reviews: implementado.
+- Busca assistida por IA no catalogo (`/api/products/search`): implementado.
+- Endpoints dedicados `ai-summary` e `chat` por produto: postergados por prazo para proxima janela.
 
 ### Consequências
 

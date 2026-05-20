@@ -11,6 +11,22 @@ Formalizar viabilidade tecnica, operacional e de evolucao do MVP Lean, com foco 
 - Features de IA para busca e assistencia no produto.
 - Processo de qualidade baseado em testes e CI.
 
+## Esperado x Entregue (Ciclo Atual)
+
+Visao consolidada para reduzir ambiguidade documental:
+
+- Entregue:
+  - Orders e reviews implementados com testes.
+  - Checkout PIX estatico com status `PENDING_PIX`.
+  - Busca assistida por IA no endpoint `/api/products/search`.
+  - Governanca de PR e commits reforcada em CI.
+- Parcial:
+  - IA no produto entregue como busca assistida; summary/chat dedicados por produto ficaram para proxima janela.
+- Repensado por prazo:
+  - Carrinho persistido no backend.
+  - Dashboard admin frontend.
+  - Pagamento real com gateway.
+
 ## Alternativas Consideradas
 
 1. Microservicos completos no MVP.
@@ -32,6 +48,17 @@ Decisao adotada: manter monolito modular, pagamento simplificado e IA focada em 
 - Latencia de provedor LLM pode impactar experiencia do assistente.
 - Governanca documental precisa enforcement para evitar divergencia.
 
+## Trade-offs de Prazo Adotados
+
+Para preservar entrega ponta a ponta no prazo do MVP Lean, o time priorizou funcionalidades com maior impacto no fluxo de compra e menor risco operacional:
+
+- Troca de escopo de pagamento real por PIX estatico.
+- Troca de admin frontend por operacao via Prisma Studio.
+- Troca de carrinho backend por localStorage no frontend.
+- Priorizacao de IA em busca assistida em vez de chat/summary dedicados por produto.
+
+Esses trade-offs foram adotados por prazo, nao por inviabilidade tecnica definitiva.
+
 ## Riscos e Mitigacoes
 
 - Risco: variacao de custo de IA.
@@ -52,6 +79,7 @@ Decisao adotada: manter monolito modular, pagamento simplificado e IA focada em 
 1. Automatizar validacao de qualidade de PR (campos criticos e padrao de commit).
 2. Medir KPIs minimos de IA (latencia, taxa de erro, uso).
 3. Evoluir checkout para integracao com PSP apos validacao do MVP.
+4. Retomar escopo postergado: `ai-summary`, `chat` por produto e painel admin frontend.
 
 ## Fontes Canonicas
 

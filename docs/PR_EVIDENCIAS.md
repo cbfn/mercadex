@@ -54,6 +54,40 @@ PRs reais para auditoria (base publica do repositorio):
 		- CI checks de release em verde
 		- Commit de atualizacao de relatorio de cobertura
 
+- `https://github.com/cbfn/mercadex/pull/121` - `chore(governance): strengthen PR evidence and CI validation gates`
+	- Branch: `feature/ajusta-docs`
+	- Merge: em `develop`
+	- Evidencias de validacao na PR:
+		- Template de PR completo (Summary, Scope, Validation, Risks)
+		- Script de governanca em CI para template + semantic commits
+		- Checks frontend/backend/e2e em verde
+
+- `https://github.com/cbfn/mercadex/pull/122` - `chore(release): merge develop into main`
+	- Branch: `develop`
+	- Merge: em `main`
+	- Evidencias de validacao na PR:
+		- Promocao de release com checks em verde
+		- Corpo estruturado com riscos e validacao
+
+## Fechamento de Ciclo (Trilhas 1-5)
+
+Resumo de rastreabilidade entre expectativa original e entrega real:
+
+- Entregue no ciclo:
+	- Reforco de governanca de PR/CI e padronizacao documental.
+	- Modulos de orders e reviews ativos no backend.
+	- Checkout PIX estatico funcional e busca assistida por IA no catalogo.
+
+- Parcial no ciclo:
+	- IA por produto: busca assistida entregue, mas `ai-summary`/`chat` dedicados ficaram para evolucao.
+
+- Repensado por prazo (pivot MVP Lean):
+	- Carrinho persistido no backend.
+	- Pagamento real com gateway (Stripe/PSP).
+	- Dashboard administrativo frontend.
+
+Essa separacao deve permanecer explicita em README, PRD, VIABILIDADE, BACKLOG e USER_STORIES para evitar divergencia de narrativa.
+
 ## Observacoes de Maturidade
 
 - As PRs acima tem evidencia tecnica de validacao, mas ainda ha oportunidade de melhorar a qualidade de review humano (em varios casos sem reviewers formais).
