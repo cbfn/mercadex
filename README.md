@@ -547,6 +547,10 @@ Este projeto é licenciado sob a **MIT License** - veja [LICENSE](./LICENSE) par
 - Email: leandropradopires02@gmail.com
 - GitHub: [@cbfn](https://github.com/cbfn)
 
+**Mateus Davi Bernart**
+- Email: mateusbernart14@gmail.com
+- GitHub: [@mateus-bernart](https://github.com/mateus-bernart)
+
 ---
 
 ## 🙋 Suporte
