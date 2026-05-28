@@ -541,17 +541,24 @@ Este projeto é licenciado sob a **MIT License** - veja [LICENSE](./LICENSE) par
 
 ---
 
-## 👤 Autor
+## 👤 Autores
 
 **Leandro Prado Pires**
 - Email: leandropradopires02@gmail.com
-- GitHub: [@cbfn](https://github.com/cbfn)
 
 **Mateus Davi Bernart**
 - Email: mateusbernart14@gmail.com
-- GitHub: [@mateus-bernart](https://github.com/mateus-bernart)
 
----
+**Christian**
+- Email: cnascimentobr@gmail.com
+
+**Henrique**
+- Email: henriqueferraz@ofnet.com.br
+
+**Endryo**
+- Email: endryobittencourt@gmail.com
+
+- Github: https://github.com/cbfn/mercadex
 
 ## 🙋 Suporte
 
