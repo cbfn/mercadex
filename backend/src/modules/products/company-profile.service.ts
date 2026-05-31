@@ -56,6 +56,16 @@ function parseSections(content: string) {
   return sections;
 }
 
+function extractCategorySuggestions(sectionBody: string) {
+  return sectionBody
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => /^-\s+/.test(line))
+    .map((line) => line.replace(/^-\s+/, '').trim())
+    .filter(Boolean)
+    .slice(0, 3);
+}
+
 function pickSectionTitles(query: string) {
   const text = normalizeText(query);
 
@@ -93,10 +103,6 @@ function pickSectionTitles(query: string) {
     picks.push('Trocas e garantia');
   }
 
-  if (!picks.length) {
-    picks.push('Sobre a empresa', 'Produtos e categorias', 'Horário de atendimento', 'Endereço', 'Telefones', 'E-mail');
-  }
-
   return [...new Set(picks)];
 }
 
@@ -121,6 +127,19 @@ export class CompanyProfileService {
   async getAnswer(query: string) {
     const sections = await this.loadSections();
     const selectedTitles = pickSectionTitles(query);
+
+    if (!selectedTitles.length) {
+      const catalogSection = sections.get('Produtos e categorias');
+      const suggestions = catalogSection ? extractCategorySuggestions(catalogSection) : [];
+      const suggestionText = suggestions.length
+        ? `Posso sugerir ${suggestions.join(', ')}.`
+        : 'Posso sugerir categorias como Smartphones, Notebooks ou Acessórios.';
+
+      return [
+        'Claro! Não encontrei um produto específico.',
+        `${suggestionText} Se quiser, me diga marca, faixa de preço ou condição para eu refinar a busca.`,
+      ].join(' ');
+    }
 
     const parts = selectedTitles
       .map((title) => {
