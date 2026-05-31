@@ -13,7 +13,14 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
       <header className="border-b border-border/60 bg-white/80 backdrop-blur-xl">
         <div className="container flex h-16 items-center">
           <Link href="/" aria-label="Mercadex — página inicial">
-            <Image src={logoMercadex} alt="Mercadex" width={160} height={46} priority />
+            <Image
+              src={logoMercadex}
+              alt="Mercadex"
+              width={160}
+              height={46}
+              priority
+              style={{ width: 'auto', height: 'auto' }}
+            />
           </Link>
         </div>
       </header>
