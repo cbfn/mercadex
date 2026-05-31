@@ -4,7 +4,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useCatalogFilters } from "@/features/catalog/model/use-catalog-filters";
-import { CartDrawer } from "@/features/cart/components/cart-drawer";
 import { productsApi, type ApiCategory, type ApiProduct } from "@/shared/lib/api/products";
 import type { Category, Product, ProductCondition } from "@/shared/types/catalog";
 import { Card } from "@/shared/ui/card";
@@ -352,7 +351,6 @@ export function StorefrontPage() {
         </div>
       </footer>
 
-      <CartDrawer />
     </main>
   );
 }

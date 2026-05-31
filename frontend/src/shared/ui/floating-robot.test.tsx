@@ -72,6 +72,10 @@ describe("FloatingRobot", () => {
       expect(responseBox.textContent).toContain("Sim! Encontrei 2 produtos.");
       expect(responseBox.textContent).toContain("Notebook Gamer RTX 4060");
       expect(responseBox.textContent).toContain("Console PS5");
+      expect(responseBox.textContent).toContain("Notebooks");
+      expect(responseBox.textContent).toContain("Games");
+      expect(responseBox.textContent).toContain("R$ 7.499,90");
+      expect(responseBox.textContent).toContain("R$ 3.399,90");
     });
 
     const firstProductLink = screen.getByRole("link", { name: "Abrir produto Notebook Gamer RTX 4060" });

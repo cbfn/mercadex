@@ -41,10 +41,118 @@ function normalizeText(value: string) {
     .toLowerCase();
 }
 
+function buildFallbackSearchQuery(userMessage: string) {
+  const stopwords = new Set([
+    'a',
+    'agora',
+    'algo',
+    'algum',
+    'alguma',
+    'alguns',
+    'algumas',
+    'ao',
+    'aos',
+    'as',
+    'com',
+    'da',
+    'das',
+    'de',
+    'do',
+    'dos',
+    'e',
+    'em',
+    'entre',
+    'eu',
+    'gostaria',
+    'me',
+    'mes',
+    'meu',
+    'minha',
+    'na',
+    'nas',
+    'no',
+    'nos',
+    'o',
+    'os',
+    'ou',
+    'para',
+    'por',
+    'pra',
+    'preciso',
+    'pro',
+    'quais',
+    'qual',
+    'quero',
+    'quais',
+    'queria',
+    'quero',
+    'ser',
+    'sobre',
+    'tem',
+    'um',
+    'uma',
+    'uns',
+    'umas',
+    'ver',
+    'voc',
+    'voce',
+    'voces',
+    'vocês',
+  ]);
+
+  const tokens = normalizeText(userMessage)
+    .split(/[^a-z0-9]+/i)
+    .map((token) => token.trim())
+    .filter((token) => token.length > 2 && !stopwords.has(token));
+
+  if (!tokens.length) {
+    return userMessage.trim();
+  }
+
+  return tokens.join(' ');
+}
+
+function buildQualifiedProductSearchQuery(userMessage: string, matchedProductTerm: string) {
+  const text = normalizeText(userMessage);
+
+  // Usa o texto original do usuário como base para preservar modelos e números
+  // (ex: "iPhone 14", "Galaxy S23 Ultra"), removendo apenas stopwords e verbos de intenção.
+  const intentPrefixes = /^(tem|quero|preciso de|procuro|busco|gostaria de|queria|me mostra|mostra|ver|veja|qual|quais)\s+/i;
+  const cleanedOriginal = userMessage.trim().replace(intentPrefixes, '').trim();
+  const fragments = [cleanedOriginal || matchedProductTerm];
+
+  const qualifiers: Record<string, string[]> = {
+    mouse: ['gamer', 'sem fio', 'semfio', 'wireless', 'bluetooth', 'ergonomico', 'ergonomica', 'vertical'],
+    fone: ['bluetooth', 'wireless', 'sem fio', 'semfio', 'gamer', 'gaming', 'noise cancelling', 'cancelamento de ruido'],
+    fones: ['bluetooth', 'wireless', 'sem fio', 'semfio', 'gamer', 'gaming', 'noise cancelling', 'cancelamento de ruido'],
+    headset: ['bluetooth', 'wireless', 'sem fio', 'semfio', 'gamer', 'gaming', 'noise cancelling', 'cancelamento de ruido'],
+    headphone: ['bluetooth', 'wireless', 'sem fio', 'semfio', 'gamer', 'gaming', 'noise cancelling', 'cancelamento de ruido'],
+    headphones: ['bluetooth', 'wireless', 'sem fio', 'semfio', 'gamer', 'gaming', 'noise cancelling', 'cancelamento de ruido'],
+    carregador: ['usb-c', 'usbc', 'rapido', 'rápido', 'wireless', 'turbo', 'magsafe', 'portatil', 'portátil'],
+    cabo: ['usb-c', 'usbc', 'hdmi', 'tipo c', 'type c', 'usb a', 'usb-c', 'lightning'],
+    teclado: ['mecanico', 'mecânico', 'sem fio', 'semfio', 'wireless', 'bluetooth', 'gamer', 'compacto', 'rgb'],
+  };
+
+  const candidateQualifiers = qualifiers[matchedProductTerm] ?? [];
+
+  for (const qualifier of candidateQualifiers) {
+    const normalizedQualifier = normalizeText(qualifier);
+    if (
+      text.includes(normalizedQualifier) &&
+      !fragments.some((fragment) => normalizeText(fragment).includes(normalizedQualifier))
+    ) {
+      fragments.push(qualifier);
+    }
+  }
+
+  return fragments.join(' ');
+}
+
 function inferHintsFromText(userMessage: string): SearchHints {
   const text = normalizeText(userMessage);
 
   const hints: SearchHints = {};
+  let matchedProductTerm: string | null = null;
 
   if (/\b(usado|usados)\b/.test(text)) {
     hints.condition = 'USADO';
@@ -59,24 +167,55 @@ function inferHintsFromText(userMessage: string): SearchHints {
   const categoryMap: Record<string, string> = {
     smartphone: 'Smartphones',
     smartphones: 'Smartphones',
+    celular: 'Smartphones',
+    celulares: 'Smartphones',
+    iphone: 'Smartphones',
+    android: 'Smartphones',
     notebook: 'Notebooks',
     notebooks: 'Notebooks',
-    game: 'Games',
-    games: 'Games',
+    laptop: 'Notebooks',
+    laptops: 'Notebooks',
     tablet: 'Tablets',
     tablets: 'Tablets',
     audio: 'Áudio',
+    audiofones: 'Áudio',
+    fone: 'Áudio',
+    fones: 'Áudio',
+    headphone: 'Áudio',
+    headphones: 'Áudio',
+    headset: 'Áudio',
+    airpods: 'Áudio',
     cameras: 'Câmeras',
     camera: 'Câmeras',
     wearable: 'Wearables',
     wearables: 'Wearables',
+    smartwatch: 'Wearables',
+    relogio: 'Wearables',
+    relógio: 'Wearables',
+    xiaomi: 'Wearables',
+    'mi band': 'Wearables',
+    miband: 'Wearables',
+    fitbit: 'Wearables',
+    garmin: 'Wearables',
     acessorios: 'Acessórios',
     acessorio: 'Acessórios',
+    mouse: 'Acessórios',
+    teclado: 'Acessórios',
+    carregador: 'Acessórios',
+    cabo: 'Acessórios',
+    game: 'Games',
+    games: 'Games',
+    console: 'Games',
+    playstation: 'Games',
+    ps5: 'Games',
+    xbox: 'Games',
+    nintendo: 'Games',
   };
 
   for (const [needle, category] of Object.entries(categoryMap)) {
     if (text.includes(needle)) {
       hints.category = category;
+      matchedProductTerm = needle;
       break;
     }
   }
@@ -91,11 +230,21 @@ function inferHintsFromText(userMessage: string): SearchHints {
     hints.minPrice = Number(minPriceMatch[2].replace(',', '.'));
   }
 
-  if (!hints.category && !hints.condition && !hints.minPrice && !hints.maxPrice) {
-    hints.search = userMessage.trim();
+  if (matchedProductTerm && !hints.search) {
+    // Usa o texto original do usuário como base para preservar modelos e números
+    // (ex: "iPhone 14", "Galaxy S23"), mas enriquece com qualificadores detectados.
+    hints.search = buildQualifiedProductSearchQuery(userMessage, matchedProductTerm);
+  }
+
+  if (!hints.category && !hints.condition && !hints.minPrice && !hints.maxPrice && !hints.search) {
+    hints.search = buildFallbackSearchQuery(userMessage);
   }
 
   return hints;
+}
+
+function hasStructuredHints(hints: SearchHints) {
+  return Boolean(hints.category || hints.condition || hints.minPrice || hints.maxPrice);
 }
 
 const SEARCH_HINT_TOOL = {
@@ -141,6 +290,9 @@ function parseToolArguments(rawArguments: string): SearchHints {
 
 export class AiSearchAgentService {
   private readonly client?: AiClient;
+  private readonly cache = new Map<string, { expiresAt: number; hints: SearchHints }>();
+  private readonly cacheTtlMs = 5 * 60 * 1000;
+  private readonly cacheLimit = 100;
 
   constructor(client?: AiClient) {
     if (client) {
@@ -153,6 +305,42 @@ export class AiSearchAgentService {
       // bloquear `npm ci` quando a dependencia nao estiver instalada.
       this.client = this.createOptionalClient(process.env.OPENAI_API_KEY);
     }
+  }
+
+  private getCacheKey(userMessage: string) {
+    return normalizeText(userMessage).trim();
+  }
+
+  private getCachedHints(userMessage: string) {
+    const key = this.getCacheKey(userMessage);
+    const cached = this.cache.get(key);
+
+    if (!cached) {
+      return null;
+    }
+
+    if (cached.expiresAt < Date.now()) {
+      this.cache.delete(key);
+      return null;
+    }
+
+    return cached.hints;
+  }
+
+  private setCachedHints(userMessage: string, hints: SearchHints) {
+    const key = this.getCacheKey(userMessage);
+
+    if (this.cache.size >= this.cacheLimit && !this.cache.has(key)) {
+      const oldestKey = this.cache.keys().next().value as string | undefined;
+      if (oldestKey) {
+        this.cache.delete(oldestKey);
+      }
+    }
+
+    this.cache.set(key, {
+      expiresAt: Date.now() + this.cacheTtlMs,
+      hints,
+    });
   }
 
   private createOptionalClient(apiKey: string): AiClient | undefined {
@@ -175,44 +363,70 @@ export class AiSearchAgentService {
   }
 
   async run(userMessage: string): Promise<SearchHints> {
+    const cached = this.getCachedHints(userMessage);
+    if (cached) {
+      return cached;
+    }
+
+    const localHints = inferHintsFromText(userMessage);
+
     if (!process.env.OPENAI_API_KEY || !this.client) {
-      return inferHintsFromText(userMessage);
+      this.setCachedHints(userMessage, localHints);
+      return localHints;
+    }
+
+    if (hasStructuredHints(localHints)) {
+      this.setCachedHints(userMessage, localHints);
+      return localHints;
     }
 
     try {
-      const completion = await this.client.chat.completions.create({
-        model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-        temperature: 0,
-        messages: [
-          {
-            role: 'system',
-            content:
-              'Você é um assistente de busca de produtos. Extraia os filtros mais úteis da mensagem do usuário e chame a ferramenta interpretar_busca_produtos.',
-          },
-          {
-            role: 'user',
-            content: userMessage,
-          },
-        ],
-        tools: [SEARCH_HINT_TOOL],
-        tool_choice: 'required',
+      // Timeout de 3 segundos para fallback rápido caso a API esteja lenta
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('OpenAI timeout')), 3000);
       });
+
+      const completion = await Promise.race([
+        this.client.chat.completions.create({
+          model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+          temperature: 0,
+          messages: [
+            {
+              role: 'system',
+              content:
+                'Você é um assistente de busca de produtos. Extraia os filtros mais úteis da mensagem do usuário e chame a ferramenta interpretar_busca_produtos.',
+            },
+            {
+              role: 'user',
+              content: userMessage,
+            },
+          ],
+          tools: [SEARCH_HINT_TOOL],
+          tool_choice: 'required',
+        }),
+        timeoutPromise,
+      ]);
 
       const toolCall = completion.choices?.[0]?.message?.tool_calls?.[0];
       const functionName = toolCall?.function?.name;
       const functionArguments = toolCall?.function?.arguments;
 
       if (!toolCall || toolCall.type !== 'function' || functionName !== TOOL_NAME || !functionArguments) {
-        return inferHintsFromText(userMessage);
+        this.setCachedHints(userMessage, localHints);
+        return localHints;
       }
 
       try {
-        return parseToolArguments(functionArguments);
+        const parsedHints = parseToolArguments(functionArguments);
+        this.setCachedHints(userMessage, parsedHints);
+        return parsedHints;
       } catch {
-        return inferHintsFromText(userMessage);
+        this.setCachedHints(userMessage, localHints);
+        return localHints;
       }
     } catch {
-      return inferHintsFromText(userMessage);
+      this.setCachedHints(userMessage, localHints);
+      return localHints;
     }
   }
 }

@@ -58,6 +58,7 @@ export function SiteHeader({ children }: SiteHeaderProps) {
             height={58}
             priority
             className="h-auto w-auto"
+            style={{ width: 'auto', height: 'auto' }}
             sizes="200px"
           />
         </Link>

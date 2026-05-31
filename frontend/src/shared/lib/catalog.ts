@@ -14,6 +14,7 @@ export function filterProducts(products: Product[], category: string, query: str
     list = list.filter((product) => {
       return (
         product.title.toLowerCase().includes(q) ||
+        product.description.toLowerCase().includes(q) ||
         product.category.toLowerCase().includes(q) ||
         product.condition.toLowerCase().includes(q) ||
         product.seller.toLowerCase().includes(q)

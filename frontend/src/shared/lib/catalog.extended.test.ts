@@ -39,7 +39,8 @@ describe("filterProducts – edge cases", () => {
 
   it("trims whitespace from search query", () => {
     const result = filterProducts(PRODUCTS, "Todos", "  macbook  ", "relevancia");
-    expect(result).toHaveLength(1);
+    expect(result.length).toBeGreaterThanOrEqual(1);
+    expect(result.some((p) => p.title.includes("MacBook"))).toBe(true);
   });
 
   it("search is case insensitive", () => {

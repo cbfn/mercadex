@@ -151,4 +151,62 @@ describe('SearchProductsService', () => {
     expect(result.message).toContain('Horário de atendimento');
     expect(result.items).toEqual([]);
   });
+
+  it('busca produtos para pedidos de compra genericos', async () => {
+    const mockedRepo = {
+      findMany: jest.fn().mockResolvedValue({
+        items: [],
+        total: 0,
+      }),
+    };
+
+    const mockedAgent = {
+      run: jest.fn().mockResolvedValue({
+        search: 'algo barato',
+      }),
+    } satisfies Pick<AiSearchAgentService, 'run'>;
+
+    const service = new SearchProductsService(mockedRepo as never, mockedAgent);
+
+    await service.execute({
+      q: 'quero algo barato',
+      page: 1,
+      limit: 20,
+    } as never);
+
+    expect(companyProfileService.getAnswer).not.toHaveBeenCalled();
+    expect(mockedAgent.run).toHaveBeenCalledWith('quero algo barato');
+    expect(mockedRepo.findMany).toHaveBeenCalled();
+  });
+
+  it('preserva termo especifico do produto ao buscar mouse', async () => {
+    const mockedRepo = {
+      findMany: jest.fn().mockResolvedValue({
+        items: [],
+        total: 0,
+      }),
+    };
+
+    const mockedAgent = {
+      run: jest.fn().mockResolvedValue({
+        category: 'Acessórios',
+        search: 'mouse',
+      }),
+    } satisfies Pick<AiSearchAgentService, 'run'>;
+
+    const service = new SearchProductsService(mockedRepo as never, mockedAgent);
+
+    await service.execute({
+      q: 'tem mouse',
+      page: 1,
+      limit: 20,
+    } as never);
+
+    expect(mockedRepo.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        category: 'Acessórios',
+        search: 'mouse',
+      }),
+    );
+  });
 });

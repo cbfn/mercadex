@@ -7,6 +7,7 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Modal } from "@/shared/ui/modal";
 import { apiRequest } from "@/shared/lib/api-client";
+import { formatBRL } from "@/shared/lib/currency";
 
 type SearchProductItem = {
   id: number;
@@ -46,6 +47,18 @@ function buildSearchResult(response: SearchResponse | null): SearchResultState |
   };
 }
 
+function getCategoryLabel(category?: SearchProductItem["category"]) {
+  if (!category) {
+    return null;
+  }
+
+  if (typeof category === "string") {
+    return category;
+  }
+
+  return category.name ?? null;
+}
+
 export function FloatingRobot() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -62,6 +75,7 @@ export function FloatingRobot() {
       return;
     }
 
+    setQuery("");
     setLoading(true);
 
     try {
@@ -146,13 +160,26 @@ export function FloatingRobot() {
                         <Link
                           href={`/products/${item.id}`}
                           onClick={handleSelectProduct}
-                          className="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+                          className="flex w-full items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
                           aria-label={`Abrir produto ${item.title}`}
                         >
                           <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white">
                             {index + 1}
                           </span>
-                          <span className="font-medium text-slate-800">{item.title}</span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block font-medium text-slate-800">{item.title}</span>
+                            <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
+                              {getCategoryLabel(item.category) ? (
+                                <span className="rounded-full bg-slate-100 px-2 py-0.5 font-medium text-slate-600">
+                                  {getCategoryLabel(item.category)}
+                                </span>
+                              ) : null}
+                              <span>{item.condition ?? "Condição não informada"}</span>
+                            </span>
+                          </span>
+                          <span className="shrink-0 text-right">
+                            <span className="block font-semibold text-slate-900">{formatBRL(item.price)}</span>
+                          </span>
                         </Link>
                       </li>
                     ))}
